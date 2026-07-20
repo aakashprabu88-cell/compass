@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  onboarded Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assessment Assessment?
+  paths      UserPath[]
+  skillGaps  SkillGap[]
+}
+
+model Assessment {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  skills       String   @default("[]")
+  interests    String   @default("[]")
+  personality  String   @default("{}")
+  values       String   @default("[]")
+  workStyle    String   @default("hybrid")
+  education    String   @default("")
+  experience   String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CareerPath {
+  id              String   @id @default(cuid())
+  title           String
+  slug            String   @unique
+  description     String
+  salaryMin       Int
+  salaryMax       Int
+  growthOutlook   String   @default("stable") // declining, stable, growing, booming
+  aiRisk          String   @default("medium") // none, low, medium, high, critical
+  aiRiskScore     Float    @default(0.5) // 0.0 - 1.0
+  requiredSkills  String   @default("[]")
+  industries      String   @default("[]")
+  educationLevel  String   @default("bachelors")
+  timeToEntry     String   @default("4 years")
+  keyTasks        String   @default("[]")
+  futureOutlook   String   @default("")
+  createdAt       DateTime @default(now())
+
+  users UserPath[]
+}
+
+model UserPath {
+  id           String   @id @default(cuid())
+  userId       String
+  careerPathId String
+  matchScore   Float    @default(0)
+  skillMatch   Float    @default(0)
+  interestMatch Float   @default(0)
+  aiSafetyScore Float   @default(0)
+  rank         Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  careerPath CareerPath @relation(fields: [careerPathId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, careerPathId])
+}
+
+model SkillGap {
+  id            String   @id @default(cuid())
+  userId        String
+  skillName     String
+  currentLevel  Int      @default(0) // 0-10
+  requiredLevel Int      @default(5) // 0-10
+  gap           Int      @default(5)
+  learningPath  String   @default("[]")
+  priority      String   @default("medium") // low, medium, high
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skillName])
+}
