@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Mail, Compass, LogOut, LayoutDashboard, Route, Target, BarChart3, Shield, ChevronRight, ArrowRight, ExternalLink, CheckCircle, AlertTriangle, TrendingUp, Briefcase, FileText, Building2, GraduationCap, GitBranch, Radar, IndianRupee, Trophy, Mic } from "lucide-react";
 import { formatSalary, getRiskBg, getGrowthBg } from "@/lib/utils";
 
@@ -78,8 +79,13 @@ export default function PathsPage() {
           <div className="grid grid-cols-3 gap-6">
             {/* List */}
             <div className="col-span-1 space-y-3">
-              {paths.map(p => (
-                <button key={p.id} onClick={() => setSelected(p)}
+              {paths.map((p, i) => (
+                <motion.button
+                  key={p.id}
+                  initial={{ opacity: 0, x: -15 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: i * 0.06 }}
+                  onClick={() => setSelected(p)}
                   className={`w-full text-left p-4 rounded-xl border transition-all ${
                     selected?.id === p.id
                       ? "bg-indigo-500/10 border-indigo-500/30"
@@ -94,14 +100,20 @@ export default function PathsPage() {
                     <span className={`text-[10px] px-1.5 py-0.5 rounded border ${getRiskBg(p.careerPath.aiRisk)}`}>AI: {p.careerPath.aiRisk}</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded border ${getGrowthBg(p.careerPath.growthOutlook)}`}>{p.careerPath.growthOutlook}</span>
                   </div>
-                </button>
+                </motion.button>
               ))}
             </div>
 
             {/* Detail */}
             <div className="col-span-2">
               {selected ? (
-                <div className="glass p-8">
+                <motion.div
+                  key={selected.id}
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="glass p-8"
+                >
                   <div className="flex items-start justify-between mb-6">
                     <div>
                       <h2 className="text-2xl font-bold mb-1">{selected.careerPath.title}</h2>
@@ -189,7 +201,7 @@ export default function PathsPage() {
                       <p className="text-sm text-slate-400 leading-relaxed">{selected.careerPath.futureOutlook}</p>
                     </div>
                   )}
-                </div>
+                </motion.div>
               ) : (
                 <div className="glass p-12 text-center">
                   <Route className="w-12 h-12 text-slate-600 mx-auto mb-4" />

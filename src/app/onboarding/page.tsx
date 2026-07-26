@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { Compass, ArrowRight, ArrowLeft, Loader2, Check, Sparkles } from "lucide-react";
 
 const SKILLS = [
@@ -171,51 +172,59 @@ export default function OnboardingPage() {
         </div>
 
         <div className="glass p-8 mb-6">
-          <h2 className="text-2xl font-bold mb-1">{STEPS[step].title}</h2>
-          <p className="text-slate-400 text-sm mb-6">{STEPS[step].subtitle}</p>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <h2 className="text-2xl font-bold mb-1">{STEPS[step].title}</h2>
+              <p className="text-slate-400 text-sm mb-6">{STEPS[step].subtitle}</p>
 
-          {step === 0 && (
-            <div className="flex flex-wrap gap-2">
-              {SKILLS.map(skill => (
-                <button key={skill} onClick={() => toggle("skills", skill)}
-                  className={`px-3 py-1.5 rounded-lg text-sm transition-all ${data.skills.includes(skill) ? "bg-indigo-500 text-white" : "bg-white/5 text-slate-300 hover:bg-white/10"}`}>
-                  {skill}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {step === 1 && (
-            <div className="flex flex-wrap gap-2">
-              {INTERESTS.map(interest => (
-                <button key={interest} onClick={() => toggle("interests", interest)}
-                  className={`px-3 py-1.5 rounded-lg text-sm transition-all ${data.interests.includes(interest) ? "bg-indigo-500 text-white" : "bg-white/5 text-slate-300 hover:bg-white/10"}`}>
-                  {interest}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-4">
-              {PERSONALITY_TRAITS.map(trait => (
-                <div key={trait.key} className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
-                  <div>
-                    <span className="font-medium">{trait.label}</span>
-                    <p className="text-xs text-slate-500 mt-0.5">{trait.desc}</p>
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    {["low", "medium", "high"].map(level => (
-                      <button key={level} onClick={() => setPersonality(trait.key, level)}
-                        className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${data.personality[trait.key] === level ? "bg-indigo-500 text-white" : "bg-white/5 text-slate-400 hover:bg-white/10"}`}>
-                        {level.charAt(0).toUpperCase() + level.slice(1)}
-                      </button>
-                    ))}
-                  </div>
+              {step === 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {SKILLS.map(skill => (
+                    <button key={skill} onClick={() => toggle("skills", skill)}
+                      className={`px-3 py-1.5 rounded-lg text-sm transition-all ${data.skills.includes(skill) ? "bg-indigo-500 text-white" : "bg-white/5 text-slate-300 hover:bg-white/10"}`}>
+                      {skill}
+                    </button>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )}
+
+              {step === 1 && (
+                <div className="flex flex-wrap gap-2">
+                  {INTERESTS.map(interest => (
+                    <button key={interest} onClick={() => toggle("interests", interest)}
+                      className={`px-3 py-1.5 rounded-lg text-sm transition-all ${data.interests.includes(interest) ? "bg-indigo-500 text-white" : "bg-white/5 text-slate-300 hover:bg-white/10"}`}>
+                      {interest}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {step === 2 && (
+                <div className="space-y-4">
+                  {PERSONALITY_TRAITS.map(trait => (
+                    <div key={trait.key} className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                      <div>
+                        <span className="font-medium">{trait.label}</span>
+                        <p className="text-xs text-slate-500 mt-0.5">{trait.desc}</p>
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        {["low", "medium", "high"].map(level => (
+                          <button key={level} onClick={() => setPersonality(trait.key, level)}
+                            className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${data.personality[trait.key] === level ? "bg-indigo-500 text-white" : "bg-white/5 text-slate-400 hover:bg-white/10"}`}>
+                            {level.charAt(0).toUpperCase() + level.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
           {step === 3 && (
             <div className="flex flex-wrap gap-2">
@@ -253,6 +262,8 @@ export default function OnboardingPage() {
               </div>
             </div>
           )}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         <div className="flex items-center justify-between">

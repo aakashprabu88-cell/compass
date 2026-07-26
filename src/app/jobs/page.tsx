@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Compass, LogOut, LayoutDashboard, Route, Target, BarChart3, Briefcase, ExternalLink, MapPin, Clock, DollarSign, Mail, Send, CheckCircle, Search, Upload, GraduationCap, FileText, Zap, Users, MessageCircle, Building2, GitBranch, Shield, Radar, IndianRupee, Trophy, Mic } from "lucide-react";
 import ApplyModal from "@/components/ApplyModal";
 
@@ -262,10 +263,16 @@ export default function JobsPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {jobs.map(job => {
+              {jobs.map((job, idx) => {
                 const isApplied = appliedJobs.has(job.id);
                 return (
-                  <div key={job.id} className="glass p-5 glass-hover transition-all">
+                  <motion.div
+                    key={job.id}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: Math.min(idx * 0.05, 0.3) }}
+                    className="glass p-5 glass-hover transition-all"
+                  >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
@@ -328,7 +335,7 @@ export default function JobsPage() {
                         <ExternalLink className="w-3.5 h-3.5" /> Company Page
                       </a>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
