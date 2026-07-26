@@ -32,6 +32,8 @@ const NAV = [
   { href: "/courses", label: "Courses", icon: GraduationCap },
   { href: "/skills", label: "Skill Gaps", icon: Target },
   { href: "/skill-graph", label: "Skill Graph", icon: Radar },
+  { href: "/ab-test", label: "A/B Resume Test", icon: FileText },
+  { href: "/benchmark", label: "Benchmarking", icon: Users },
 ];
 
 interface SidebarProps {
