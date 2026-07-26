@@ -16,9 +16,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  assessment Assessment?
-  paths      UserPath[]
-  skillGaps  SkillGap[]
+  assessment  Assessment?
+  paths       UserPath[]
+  skillGaps   SkillGap[]
+  resumes     Resume[]
+  applications JobApplication[]
 }
 
 model Assessment {
@@ -89,4 +91,109 @@ model SkillGap {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, skillName])
+}
+
+model Resume {
+  id              String   @id @default(cuid())
+  userId          String
+  fileName        String
+  extractedSkills String   @default("[]")
+  experience      String   @default("")
+  education       String   @default("")
+  summary         String   @default("")
+  createdAt       DateTime @default(now())
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications JobApplication[]
+}
+
+model JobApplication {
+  id          String   @id @default(cuid())
+  userId      String
+  resumeId    String?
+  jobId       String
+  jobTitle    String
+  company     String
+  location    String
+  status      String   @default("applied") // applied, sent, pending, rejected, interview
+  appliedAt   DateTime @default(now())
+  autoApplied Boolean  @default(false)
+  coverLetter String   @default("")
+  emailDraft  String   @default("")
+  matchScore  Float    @default(0)
+  notes       String   @default("")
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume Resume? @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  industry    String
+  headquarters String
+  size        String   @default("1000+")
+  founded    Int      @default(2000)
+  rating     Float    @default(4.0)
+  culture    String   @default("")
+  benefits   String   @default("[]")
+  salaryRange String  @default("")
+  growthRate String   @default("stable")
+  techStack  String   @default("[]")
+  description String  @default("")
+  website    String   @default("")
+  logo       String   @default("")
+  createdAt  DateTime @default(now())
+
+  mentors Mentor[]
+}
+
+model Mentor {
+  id          String   @id @default(cuid())
+  name        String
+  title       String
+  company     String
+  companyId   String?
+  experience  Int      @default(5)
+  skills      String   @default("[]")
+  bio         String   @default("")
+  linkedin    String   @default("")
+  available   Boolean  @default(true)
+  rating      Float    @default(4.5)
+  mentees     Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  companyRef Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  userMatches UserMentor[]
+}
+
+model UserMentor {
+  id        String   @id @default(cuid())
+  userId    String
+  mentorId  String
+  status    String   @default("pending") // pending, accepted, rejected
+  message   String   @default("")
+  createdAt DateTime @default(now())
+
+  mentor Mentor @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mentorId])
+}
+
+model WeeklyReport {
+  id              String   @id @default(cuid())
+  userId          String
+  weekStart       DateTime
+  weekEnd         DateTime
+  applicationsSent Int     @default(0)
+  interviewsScheduled Int @default(0)
+  skillsImproved  String   @default("[]")
+  newMatches      Int      @default(0)
+  topCareerMatch  String   @default("")
+  summary         String   @default("")
+  recommendations String   @default("[]")
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, weekStart])
 }

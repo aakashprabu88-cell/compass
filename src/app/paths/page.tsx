@@ -3,14 +3,26 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Compass, LogOut, LayoutDashboard, Route, Target, BarChart3, Shield, ChevronRight, ArrowRight, ExternalLink, CheckCircle, AlertTriangle, TrendingUp } from "lucide-react";
+import { Mail, Compass, LogOut, LayoutDashboard, Route, Target, BarChart3, Shield, ChevronRight, ArrowRight, ExternalLink, CheckCircle, AlertTriangle, TrendingUp, Briefcase, FileText, Building2, GraduationCap, GitBranch, Radar, IndianRupee, Trophy, Mic } from "lucide-react";
 import { formatSalary, getRiskBg, getGrowthBg } from "@/lib/utils";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/paths", label: "Career Paths", icon: Route },
+  { href: "/jobs", label: "Jobs", icon: Briefcase },
+  { href: "/applications", label: "Applications", icon: FileText },
+  { href: "/simulator", label: "Simulator", icon: GitBranch },
+  { href: "/govt-exams", label: "Govt Exams", icon: Shield },
+  { href: "/intelligence", label: "Intelligence", icon: Radar },
+  { href: "/negotiation", label: "Negotiate", icon: IndianRupee },
+  { href: "/companies", label: "Companies", icon: Building2 },
+  { href: "/company-prep", label: "Company Prep", icon: Target },
+  { href: "/mock-interview", label: "Mock Interview", icon: Mic },
+  { href: "/resume-builder", label: "Resume Builder", icon: FileText },
+  { href: "/internships", label: "Internships", icon: Briefcase },
+  { href: "/tracker", label: "Tracker", icon: Trophy },
+  { href: "/courses", label: "Courses", icon: GraduationCap },
   { href: "/skills", label: "Skill Gaps", icon: Target },
-  { href: "/market", label: "Market Intel", icon: BarChart3 },
 ];
 
 interface PathData { id: string; matchScore: number; skillMatch: number; interestMatch: number; aiSafetyScore: number; rank: number; careerPath: any; }
@@ -40,8 +52,8 @@ export default function PathsPage() {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
-    <div className="min-h-screen flex">
-      <aside className="w-64 border-r border-white/5 p-4 flex flex-col shrink-0" style={{ background: "rgba(17,17,24,0.5)" }}>
+    <div className="h-screen flex overflow-hidden">
+      <aside className="w-64 border-r border-white/5 p-4 flex flex-col shrink-0 overflow-y-auto" style={{ background: "rgba(17,17,24,0.5)" }}>
         <div className="flex items-center gap-2 mb-8 px-2">
           <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center"><Compass className="w-5 h-5 text-indigo-400" /></div>
           <span className="font-bold">Compass</span>
@@ -53,7 +65,7 @@ export default function PathsPage() {
             </Link>
           ))}
         </nav>
-        <div className="border-t border-white/5 pt-4 mt-4">
+        <div className="border-t border-white/5 pt-4 mt-4 shrink-0">
           <button onClick={logout} className="flex items-center gap-2 px-3 py-2 text-sm text-slate-500 hover:text-red-400 w-full"><LogOut className="w-4 h-4" /> Sign out</button>
         </div>
       </aside>

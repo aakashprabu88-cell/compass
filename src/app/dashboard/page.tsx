@@ -3,18 +3,31 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Compass, LogOut, LayoutDashboard, Route, Target, BarChart3, Shield, ChevronRight, TrendingUp, TrendingDown, AlertTriangle, Sparkles, ArrowRight } from "lucide-react";
+import { Mail, Compass, LogOut, LayoutDashboard, Route, Target, BarChart3, Shield, ChevronRight, TrendingUp, TrendingDown, AlertTriangle, Sparkles, ArrowRight, Building2, Users, TrendingUp as Timeline, FileText, Upload, GraduationCap, Briefcase, Calendar, Zap, GitBranch, Radar, IndianRupee, Trophy, Mic } from "lucide-react";
 import { formatSalary, getRiskBg, getGrowthBg } from "@/lib/utils";
 
 interface UserData { id: string; name: string; email: string; onboarded: boolean; }
 interface PathData { id: string; matchScore: number; skillMatch: number; interestMatch: number; aiSafetyScore: number; rank: number; careerPath: any; }
 interface SkillGapData { id: string; skillName: string; currentLevel: number; requiredLevel: number; gap: number; priority: string; }
+interface WeeklyReport { applicationsSent: number; interviewsScheduled: number; summary: string; recommendations: string[]; topCareerMatch: string; }
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/paths", label: "Career Paths", icon: Route },
+  { href: "/jobs", label: "Jobs", icon: Briefcase },
+  { href: "/applications", label: "Applications", icon: FileText },
+  { href: "/simulator", label: "Simulator", icon: GitBranch },
+  { href: "/govt-exams", label: "Govt Exams", icon: Shield },
+  { href: "/intelligence", label: "Intelligence", icon: Radar },
+  { href: "/negotiation", label: "Negotiate", icon: IndianRupee },
+  { href: "/companies", label: "Companies", icon: Building2 },
+  { href: "/company-prep", label: "Company Prep", icon: Target },
+  { href: "/mock-interview", label: "Mock Interview", icon: Mic },
+  { href: "/resume-builder", label: "Resume Builder", icon: FileText },
+  { href: "/internships", label: "Internships", icon: Briefcase },
+  { href: "/tracker", label: "Tracker", icon: Trophy },
+  { href: "/courses", label: "Courses", icon: GraduationCap },
   { href: "/skills", label: "Skill Gaps", icon: Target },
-  { href: "/market", label: "Market Intel", icon: BarChart3 },
 ];
 
 export default function DashboardPage() {
@@ -22,21 +35,53 @@ export default function DashboardPage() {
   const [user, setUser] = useState<UserData | null>(null);
   const [paths, setPaths] = useState<PathData[]>([]);
   const [gaps, setGaps] = useState<SkillGapData[]>([]);
+  const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null);
+  const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/auth/me").then(r => r.json()),
-      fetch("/api/paths").then(r => r.json()),
-      fetch("/api/skills").then(r => r.json()),
-    ]).then(([userData, pathsData, gapsData]) => {
-      if (userData.error) { router.push("/login"); return; }
-      if (!userData.onboarded) { router.push("/onboarding"); return; }
-      setUser(userData);
-      setPaths(Array.isArray(pathsData) ? pathsData : []);
-      setGaps(Array.isArray(gapsData) ? gapsData : []);
-      setLoading(false);
-    }).catch(() => router.push("/login"));
+    let cancelled = false;
+    async function loadDashboard() {
+      try {
+        const authRes = await fetch("/api/auth/me").catch(() => null);
+        if (cancelled) return;
+        if (!authRes || !authRes.ok) { router.push("/login"); return; }
+        const userData = await authRes.json();
+        if (!userData || userData.error) { router.push("/login"); return; }
+        if (!userData.onboarded) { router.push("/onboarding"); return; }
+        setUser(userData);
+
+        const safeFetch = (url: string) =>
+          fetch(url).then(r => r.ok ? r.json() : null).catch(() => null);
+
+        const [pathsData, gapsData, reportData] = await Promise.all([
+          safeFetch("/api/paths"),
+          safeFetch("/api/skills"),
+          safeFetch("/api/weekly-report"),
+        ]);
+
+        const appsData = await safeFetch("/api/apply");
+        setApplications(Array.isArray(appsData) ? appsData : []);
+
+        if (cancelled) return;
+        setPaths(Array.isArray(pathsData) ? pathsData : []);
+        setGaps(Array.isArray(gapsData) ? gapsData : []);
+        const report = reportData && !reportData.error ? reportData : null;
+        if (report && typeof report.recommendations === "string") {
+          try { report.recommendations = JSON.parse(report.recommendations); } catch { report.recommendations = []; }
+        }
+        if (report && typeof report.skillsImproved === "string") {
+          try { report.skillsImproved = JSON.parse(report.skillsImproved); } catch { report.skillsImproved = []; }
+        }
+        setWeeklyReport(report);
+        setLoading(false);
+      } catch {
+        if (!cancelled) router.push("/login");
+      }
+    }
+
+    loadDashboard();
+    return () => { cancelled = true; };
   }, [router]);
 
   const logout = async () => {
@@ -58,9 +103,9 @@ export default function DashboardPage() {
   const highPriorityGaps = gaps.filter(g => g.priority === "high").length;
 
   return (
-    <div className="min-h-screen flex">
+    <div className="h-screen flex overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-white/5 p-4 flex flex-col shrink-0" style={{ background: "rgba(17,17,24,0.5)" }}>
+      <aside className="w-64 border-r border-white/5 p-4 flex flex-col shrink-0 overflow-y-auto" style={{ background: "rgba(17,17,24,0.5)" }}>
         <div className="flex items-center gap-2 mb-8 px-2">
           <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
             <Compass className="w-5 h-5 text-indigo-400" />
@@ -78,7 +123,7 @@ export default function DashboardPage() {
             </Link>
           ))}
         </nav>
-        <div className="border-t border-white/5 pt-4 mt-4">
+        <div className="border-t border-white/5 pt-4 mt-4 shrink-0">
           <div className="flex items-center gap-3 px-3 mb-3">
             <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-sm font-bold text-indigo-400">
               {user?.name?.[0]}
@@ -112,6 +157,22 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-xl font-bold mb-0.5">{stat.value}</div>
                 <div className="text-xs text-slate-500">{stat.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Application Activity */}
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            {[
+              { label: "Applications Sent", value: applications.length, icon: FileText, color: "indigo" },
+              { label: "Auto-Applied", value: applications.filter(a => a.autoApplied).length, icon: Zap, color: "purple" },
+            ].map((stat, i) => (
+              <div key={i} className="glass p-5 glass-hover transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">{stat.label}</span>
+                  <stat.icon className={`w-4 h-4 text-${stat.color}-400`} />
+                </div>
+                <div className="text-xl font-bold mb-0.5">{stat.value}</div>
               </div>
             ))}
           </div>
@@ -186,6 +247,68 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+
+          {/* Weekly Report */}
+          {weeklyReport && (
+            <div className="mt-6 glass p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Weekly Progress Report</h3>
+                  <p className="text-xs text-slate-500">Your activity this week</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="text-center p-3 bg-white/[0.02] rounded-xl border border-white/5">
+                  <div className="text-2xl font-bold text-indigo-400">{weeklyReport.applicationsSent}</div>
+                  <div className="text-xs text-slate-500">Applications Sent</div>
+                </div>
+                <div className="text-center p-3 bg-white/[0.02] rounded-xl border border-white/5">
+                  <div className="text-2xl font-bold text-emerald-400">{weeklyReport.interviewsScheduled}</div>
+                  <div className="text-xs text-slate-500">Interviews Scheduled</div>
+                </div>
+                <div className="text-center p-3 bg-white/[0.02] rounded-xl border border-white/5">
+                  <div className="text-lg font-bold text-amber-400 truncate">{weeklyReport.topCareerMatch}</div>
+                  <div className="text-xs text-slate-500">Top Match</div>
+                </div>
+              </div>
+              <p className="text-sm text-slate-400 mb-3">{weeklyReport.summary}</p>
+              {weeklyReport.recommendations.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2">Recommendations</h4>
+                  <ul className="space-y-1">
+                    {weeklyReport.recommendations.slice(0, 3).map((rec, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-slate-400">
+                        <span className="text-indigo-400 mt-0.5">•</span>{rec}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Recent Activity */}
+          {applications.length > 0 && (
+            <div className="mt-6 glass p-6">
+              <h2 className="font-semibold mb-4">Recent Applications</h2>
+              <div className="space-y-2">
+                {applications.slice(0, 5).map((app: any) => (
+                  <div key={app.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                    <div className={`w-2 h-2 rounded-full ${app.status === "applied" ? "bg-green-400" : app.status === "viewed" ? "bg-blue-400" : "bg-slate-500"}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{app.jobTitle}</div>
+                      <div className="text-xs text-slate-500">{app.company} · {new Date(app.appliedAt).toLocaleDateString()}</div>
+                    </div>
+                    {app.autoApplied && <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400">AUTO</span>}
+                    {app.matchScore > 0 && <span className="text-xs text-indigo-400">{Math.round(app.matchScore * 10)}%</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Quick Insight */}
           {topPath && (
