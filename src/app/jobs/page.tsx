@@ -4,27 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Compass, LogOut, LayoutDashboard, Route, Target, BarChart3, Briefcase, ExternalLink, MapPin, Clock, DollarSign, Mail, Send, CheckCircle, Search, Upload, GraduationCap, FileText, Zap, Users, MessageCircle, Building2, GitBranch, Shield, Radar, IndianRupee, Trophy, Mic } from "lucide-react";
+import { Briefcase, ExternalLink, MapPin, Clock, DollarSign, Mail, Send, CheckCircle, Zap, Users, Search } from "lucide-react";
+import Sidebar from "@/components/Sidebar";
 import ApplyModal from "@/components/ApplyModal";
-
-const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/paths", label: "Career Paths", icon: Route },
-  { href: "/jobs", label: "Jobs", icon: Briefcase },
-  { href: "/applications", label: "Applications", icon: FileText },
-  { href: "/simulator", label: "Simulator", icon: GitBranch },
-  { href: "/govt-exams", label: "Govt Exams", icon: Shield },
-  { href: "/intelligence", label: "Intelligence", icon: Radar },
-  { href: "/negotiation", label: "Negotiate", icon: IndianRupee },
-  { href: "/companies", label: "Companies", icon: Building2 },
-  { href: "/company-prep", label: "Company Prep", icon: Target },
-  { href: "/mock-interview", label: "Mock Interview", icon: Mic },
-  { href: "/resume-builder", label: "Resume Builder", icon: FileText },
-  { href: "/internships", label: "Internships", icon: Briefcase },
-  { href: "/tracker", label: "Tracker", icon: Trophy },
-  { href: "/courses", label: "Courses", icon: GraduationCap },
-  { href: "/skills", label: "Skill Gaps", icon: Target },
-];
 
 interface Job {
   id: string; title: string; company: string; location: string; city: string;
@@ -142,21 +124,9 @@ export default function JobsPage() {
 
   return (
     <div className="h-screen flex overflow-hidden">
-      <aside className="w-64 border-r border-white/5 p-4 flex flex-col shrink-0 overflow-y-auto" style={{ background: "rgba(17,17,24,0.5)" }}>
-        <div className="flex items-center gap-2 mb-8 px-2"><div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center"><Compass className="w-5 h-5 text-indigo-400" /></div><span className="font-bold">Compass</span></div>
-        <nav className="space-y-1 flex-1">
-          {NAV.map(item => (
-            <Link key={item.href} href={item.href} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${item.href === "/jobs" ? "bg-indigo-500/10 text-indigo-400" : "text-slate-400 hover:text-white hover:bg-white/5"}`}>
-              <item.icon className="w-4 h-4" />{item.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="border-t border-white/5 pt-4 mt-4 shrink-0">
-          <button onClick={logout} className="flex items-center gap-2 px-3 py-2 text-sm text-slate-500 hover:text-red-400 w-full"><LogOut className="w-4 h-4" /> Sign out</button>
-        </div>
-      </aside>
+      <Sidebar user={user} onLogout={logout} />
 
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-2xl font-bold mb-1">Job Search — Tamil Nadu</h1>
           <p className="text-slate-400 text-sm mb-6">

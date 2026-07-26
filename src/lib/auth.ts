@@ -1,9 +1,9 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "compass-secret-key-change-in-production-2026"
-);
+const secretKey = process.env.JWT_SECRET;
+if (!secretKey) throw new Error("JWT_SECRET environment variable is required");
+const SECRET = new TextEncoder().encode(secretKey);
 
 export async function signToken(payload: { id: string; email: string; name: string }) {
   return new SignJWT(payload)

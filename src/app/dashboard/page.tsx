@@ -3,40 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail, Compass, LogOut, LayoutDashboard, Route, Target, BarChart3, Shield, ChevronRight, TrendingUp, TrendingDown, AlertTriangle, Sparkles, ArrowRight, Building2, Users, FileText, Upload, GraduationCap, Briefcase, Calendar, Zap, GitBranch, Radar, IndianRupee, Trophy, Mic } from "lucide-react";
+import { Target, Shield, AlertTriangle, Sparkles, ArrowRight, FileText, Calendar, Zap, ChevronRight, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
+import Sidebar from "@/components/Sidebar";
 import { formatSalary, getRiskBg, getGrowthBg } from "@/lib/utils";
 
 interface UserData { id: string; name: string; email: string; onboarded: boolean; }
 interface PathData { id: string; matchScore: number; skillMatch: number; interestMatch: number; aiSafetyScore: number; rank: number; careerPath: any; }
 interface SkillGapData { id: string; skillName: string; currentLevel: number; requiredLevel: number; gap: number; priority: string; }
 interface WeeklyReport { applicationsSent: number; interviewsScheduled: number; summary: string; recommendations: string[]; topCareerMatch: string; }
-
-interface AICareerAdvice {
-  recommendedPaths: { title: string; matchScore: number; reason: string; salaryRange: string; growthOutlook: string }[];
-  skillGaps: { skill: string; priority: string; howToLearn: string }[];
-  actionPlan: string[];
-  summary: string;
-}
-
-const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/paths", label: "Career Paths", icon: Route },
-  { href: "/jobs", label: "Jobs", icon: Briefcase },
-  { href: "/applications", label: "Applications", icon: FileText },
-  { href: "/simulator", label: "Simulator", icon: GitBranch },
-  { href: "/govt-exams", label: "Govt Exams", icon: Shield },
-  { href: "/intelligence", label: "Intelligence", icon: Radar },
-  { href: "/negotiation", label: "Negotiate", icon: IndianRupee },
-  { href: "/companies", label: "Companies", icon: Building2 },
-  { href: "/company-prep", label: "Company Prep", icon: Target },
-  { href: "/mock-interview", label: "Mock Interview", icon: Mic },
-  { href: "/resume-builder", label: "Resume Builder", icon: FileText },
-  { href: "/internships", label: "Internships", icon: Briefcase },
-  { href: "/tracker", label: "Tracker", icon: Trophy },
-  { href: "/courses", label: "Courses", icon: GraduationCap },
-  { href: "/skills", label: "Skill Gaps", icon: Target },
-];
+interface AICareerAdvice { recommendedPaths: { title: string; matchScore: number; reason: string; salaryRange: string; growthOutlook: string }[]; skillGaps: { skill: string; priority: string; howToLearn: string }[]; actionPlan: string[]; summary: string; }
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -127,54 +103,36 @@ export default function DashboardPage() {
 
   return (
     <div className="h-screen flex overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-white/5 p-4 flex flex-col shrink-0 overflow-y-auto" style={{ background: "rgba(17,17,24,0.5)" }}>
-        <div className="flex items-center gap-2 mb-8 px-2">
-          <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-            <Compass className="w-5 h-5 text-indigo-400" />
-          </div>
-          <span className="font-bold">Compass</span>
-        </div>
-        <nav className="space-y-1 flex-1">
-          {NAV.map(item => (
-            <Link key={item.href} href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
-                item.href === "/dashboard" ? "bg-indigo-500/10 text-indigo-400" : "text-slate-400 hover:text-white hover:bg-white/5"
-              }`}>
-              <item.icon className="w-4 h-4" />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="border-t border-white/5 pt-4 mt-4 shrink-0">
-          <div className="flex items-center gap-3 px-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-sm font-bold text-indigo-400">
-              {user?.name?.[0]}
-            </div>
-            <div className="text-sm truncate">{user?.name}</div>
-          </div>
-          <button onClick={logout} className="flex items-center gap-2 px-3 py-2 text-sm text-slate-500 hover:text-red-400 w-full transition-colors">
-            <LogOut className="w-4 h-4" /> Sign out
-          </button>
-        </div>
-      </aside>
+      <Sidebar user={user} onLogout={logout} />
 
-      {/* Main */}
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <h1 className="text-2xl font-bold mb-1">Welcome back, {user?.name?.split(" ")[0]}</h1>
             <p className="text-slate-400 text-sm mb-8">Here&apos;s your career intelligence overview</p>
           </motion.div>
 
-          {/* AI Career Advice Summary — from onboarding */}
+          {/* Quick Actions */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+            {[
+              { href: "/co-pilot", label: "Ask AI Co-pilot", icon: Sparkles, color: "from-indigo-500 to-purple-500" },
+              { href: "/mock-interview", label: "Practice Interview", icon: Target, color: "from-rose-500 to-pink-500" },
+              { href: "/resume-builder", label: "Build Resume", icon: FileText, color: "from-cyan-500 to-blue-500" },
+              { href: "/jobs", label: "Find Jobs", icon: Zap, color: "from-amber-500 to-orange-500" },
+            ].map((action, i) => (
+              <Link key={i} href={action.href}
+                className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all group">
+                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${action.color} flex items-center justify-center shrink-0`}>
+                  <action.icon className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-sm font-medium group-hover:text-indigo-400 transition-colors">{action.label}</span>
+              </Link>
+            ))}
+          </motion.div>
+
+          {/* AI Career Advice Summary */}
           {aiAdvice && aiAdvice.recommendedPaths && aiAdvice.recommendedPaths.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="glass p-6 mb-8 glow-sm relative overflow-hidden"
-            >
+            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, delay: 0.1 }} className="glass p-6 mb-8 glow-sm relative overflow-hidden">
               <div className="absolute top-0 right-0 w-40 h-40 opacity-10" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.5), transparent 70%)" }} />
               <div className="flex items-start gap-4 relative">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0">
@@ -186,17 +144,9 @@ export default function DashboardPage() {
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 font-medium">GEMINI POWERED</span>
                   </div>
                   <p className="text-sm text-slate-400 leading-relaxed mb-4">{aiAdvice.summary}</p>
-
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
                     {aiAdvice.recommendedPaths.slice(0, 5).map((path, i) => (
-                      <motion.div
-                        key={i}
-                        custom={i}
-                        variants={fadeUp}
-                        initial="hidden"
-                        animate="visible"
-                        className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-indigo-500/20 transition-all"
-                      >
+                      <motion.div key={i} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-indigo-500/20 transition-all">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm font-medium truncate">{path.title}</span>
                           <span className="text-xs font-bold text-indigo-400">{path.matchScore}%</span>
@@ -209,15 +159,12 @@ export default function DashboardPage() {
                       </motion.div>
                     ))}
                   </div>
-
                   {aiAdvice.actionPlan && aiAdvice.actionPlan.length > 0 && (
                     <div>
                       <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2">Your Action Plan</h4>
                       <div className="flex flex-wrap gap-2">
                         {aiAdvice.actionPlan.map((step, i) => (
-                          <span key={i} className="text-xs px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/5 text-slate-300">
-                            {i + 1}. {step}
-                          </span>
+                          <span key={i} className="text-xs px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/5 text-slate-300">{i + 1}. {step}</span>
                         ))}
                       </div>
                     </div>
@@ -228,7 +175,7 @@ export default function DashboardPage() {
           )}
 
           {/* Stats Row */}
-          <div className="grid grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {[
               { label: "Top Match", value: topPath?.careerPath?.title?.split(" ").slice(0, 2).join(" ") || aiAdvice?.recommendedPaths?.[0]?.title?.split(" ").slice(0, 2).join(" ") || "—", sub: topPath ? `${Math.round(topPath.matchScore * 100)}% match` : aiAdvice?.recommendedPaths?.[0] ? `${aiAdvice.recommendedPaths[0].matchScore}% match` : "", icon: Sparkles, color: "indigo" },
               { label: "Avg Compatibility", value: `${avgMatch || (aiAdvice ? Math.round(aiAdvice.recommendedPaths.reduce((s, p) => s + p.matchScore, 0) / aiAdvice.recommendedPaths.length) : 0)}%`, sub: `Across ${paths.length || aiAdvice?.recommendedPaths?.length || 0} paths`, icon: Target, color: "emerald" },
@@ -262,32 +209,23 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-3 gap-6">
-            {/* Top 3 Career Paths */}
-            <motion.div custom={6} variants={fadeUp} initial="hidden" animate="visible" className="col-span-2 glass p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Top Career Paths */}
+            <motion.div custom={6} variants={fadeUp} initial="hidden" animate="visible" className="lg:col-span-2 glass p-6">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="font-semibold">Your Top Career Paths</h2>
-                <Link href="/paths" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                  View all <ChevronRight className="w-3 h-3" />
-                </Link>
+                <Link href="/paths" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
               </div>
               <div className="space-y-3">
-                {paths.slice(0, 5).map((p, i) => (
-                  <Link key={p.id} href={`/paths`}
-                    className="flex items-center gap-4 p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-indigo-500/20 transition-all group">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-sm font-bold text-indigo-400 shrink-0">
-                      #{p.rank}
-                    </div>
+                {paths.slice(0, 5).map((p) => (
+                  <Link key={p.id} href="/paths" className="flex items-center gap-4 p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-indigo-500/20 transition-all group">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-sm font-bold text-indigo-400 shrink-0">#{p.rank}</div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm group-hover:text-indigo-400 transition-colors truncate">{p.careerPath.title}</div>
                       <div className="flex items-center gap-3 mt-1">
                         <span className="text-xs text-slate-500">{formatSalary(p.careerPath.salaryMin)}–{formatSalary(p.careerPath.salaryMax)}</span>
-                        <span className={`text-xs px-1.5 py-0.5 rounded border ${getRiskBg(p.careerPath.aiRisk)}`}>
-                          AI: {p.careerPath.aiRisk}
-                        </span>
-                        <span className={`text-xs px-1.5 py-0.5 rounded border ${getGrowthBg(p.careerPath.growthOutlook)}`}>
-                          {p.careerPath.growthOutlook}
-                        </span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded border ${getRiskBg(p.careerPath.aiRisk)}`}>AI: {p.careerPath.aiRisk}</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded border ${getGrowthBg(p.careerPath.growthOutlook)}`}>{p.careerPath.growthOutlook}</span>
                       </div>
                     </div>
                     <div className="text-right shrink-0">
@@ -300,26 +238,20 @@ export default function DashboardPage() {
               </div>
             </motion.div>
 
-            {/* Skill Gaps Summary */}
+            {/* Skill Gaps */}
             <motion.div custom={7} variants={fadeUp} initial="hidden" animate="visible" className="glass p-6">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="font-semibold">Skill Gaps</h2>
-                <Link href="/skills" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                  Fix <ChevronRight className="w-3 h-3" />
-                </Link>
+                <Link href="/skills" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Fix <ChevronRight className="w-3 h-3" /></Link>
               </div>
               <div className="space-y-4">
                 {gaps.slice(0, 6).map(gap => (
                   <div key={gap.id}>
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-sm">{gap.skillName}</span>
-                      <span className={`text-xs ${gap.priority === "high" ? "text-red-400" : gap.priority === "medium" ? "text-yellow-400" : "text-slate-500"}`}>
-                        {gap.gap} gap
-                      </span>
+                      <span className={`text-xs ${gap.priority === "high" ? "text-red-400" : gap.priority === "medium" ? "text-yellow-400" : "text-slate-500"}`}>{gap.gap} gap</span>
                     </div>
-                    <div className="skill-bar">
-                      <div className="skill-bar-fill bg-gradient-to-r from-indigo-500 to-indigo-400" style={{ width: `${gap.currentLevel * 10}%` }} />
-                    </div>
+                    <div className="skill-bar"><div className="skill-bar-fill bg-gradient-to-r from-indigo-500 to-indigo-400" style={{ width: `${gap.currentLevel * 10}%` }} /></div>
                     <div className="flex justify-between mt-1">
                       <span className="text-[10px] text-slate-600">Current: {gap.currentLevel}/10</span>
                       <span className="text-[10px] text-slate-600">Need: {gap.requiredLevel}/10</span>
@@ -332,18 +264,14 @@ export default function DashboardPage() {
                       <div key={i}>
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm">{gap.skill}</span>
-                          <span className={`text-xs ${gap.priority === "High" ? "text-red-400" : gap.priority === "Medium" ? "text-yellow-400" : "text-slate-500"}`}>
-                            {gap.priority}
-                          </span>
+                          <span className={`text-xs ${gap.priority === "High" ? "text-red-400" : gap.priority === "Medium" ? "text-yellow-400" : "text-slate-500"}`}>{gap.priority}</span>
                         </div>
                         <p className="text-[10px] text-slate-600 leading-relaxed">{gap.howToLearn}</p>
                       </div>
                     ))}
                   </div>
                 )}
-                {gaps.length === 0 && !aiAdvice && (
-                  <p className="text-sm text-slate-500 text-center py-4">Complete your assessment to see skill gaps</p>
-                )}
+                {gaps.length === 0 && !aiAdvice && <p className="text-sm text-slate-500 text-center py-4">Complete your assessment to see skill gaps</p>}
               </div>
             </motion.div>
           </div>
@@ -352,45 +280,25 @@ export default function DashboardPage() {
           {weeklyReport && (
             <motion.div custom={8} variants={fadeUp} initial="hidden" animate="visible" className="mt-6 glass p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-emerald-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">Weekly Progress Report</h3>
-                  <p className="text-xs text-slate-500">Your activity this week</p>
-                </div>
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center"><Calendar className="w-5 h-5 text-emerald-400" /></div>
+                <div><h3 className="font-semibold">Weekly Progress Report</h3><p className="text-xs text-slate-500">Your activity this week</p></div>
               </div>
               <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="text-center p-3 bg-white/[0.02] rounded-xl border border-white/5">
-                  <div className="text-2xl font-bold text-indigo-400">{weeklyReport.applicationsSent}</div>
-                  <div className="text-xs text-slate-500">Applications Sent</div>
-                </div>
-                <div className="text-center p-3 bg-white/[0.02] rounded-xl border border-white/5">
-                  <div className="text-2xl font-bold text-emerald-400">{weeklyReport.interviewsScheduled}</div>
-                  <div className="text-xs text-slate-500">Interviews Scheduled</div>
-                </div>
-                <div className="text-center p-3 bg-white/[0.02] rounded-xl border border-white/5">
-                  <div className="text-lg font-bold text-amber-400 truncate">{weeklyReport.topCareerMatch}</div>
-                  <div className="text-xs text-slate-500">Top Match</div>
-                </div>
+                <div className="text-center p-3 bg-white/[0.02] rounded-xl border border-white/5"><div className="text-2xl font-bold text-indigo-400">{weeklyReport.applicationsSent}</div><div className="text-xs text-slate-500">Applications Sent</div></div>
+                <div className="text-center p-3 bg-white/[0.02] rounded-xl border border-white/5"><div className="text-2xl font-bold text-emerald-400">{weeklyReport.interviewsScheduled}</div><div className="text-xs text-slate-500">Interviews Scheduled</div></div>
+                <div className="text-center p-3 bg-white/[0.02] rounded-xl border border-white/5"><div className="text-lg font-bold text-amber-400 truncate">{weeklyReport.topCareerMatch}</div><div className="text-xs text-slate-500">Top Match</div></div>
               </div>
               <p className="text-sm text-slate-400 mb-3">{weeklyReport.summary}</p>
               {weeklyReport.recommendations.length > 0 && (
                 <div>
                   <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2">Recommendations</h4>
-                  <ul className="space-y-1">
-                    {weeklyReport.recommendations.slice(0, 3).map((rec, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-slate-400">
-                        <span className="text-indigo-400 mt-0.5">•</span>{rec}
-                      </li>
-                    ))}
-                  </ul>
+                  <ul className="space-y-1">{weeklyReport.recommendations.slice(0, 3).map((rec, i) => (<li key={i} className="flex items-start gap-2 text-sm text-slate-400"><span className="text-indigo-400 mt-0.5">•</span>{rec}</li>))}</ul>
                 </div>
               )}
             </motion.div>
           )}
 
-          {/* Recent Activity */}
+          {/* Recent Applications */}
           {applications.length > 0 && (
             <motion.div custom={9} variants={fadeUp} initial="hidden" animate="visible" className="mt-6 glass p-6">
               <h2 className="font-semibold mb-4">Recent Applications</h2>
@@ -410,26 +318,18 @@ export default function DashboardPage() {
             </motion.div>
           )}
 
-          {/* Quick Insight */}
+          {/* AI Insight */}
           {(topPath || aiAdvice) && (
             <motion.div custom={10} variants={fadeUp} initial="hidden" animate="visible" className="mt-6 glass p-6 glow-sm">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-6 h-6 text-indigo-400" />
-                </div>
+                <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0"><Sparkles className="w-6 h-6 text-indigo-400" /></div>
                 <div>
                   <h3 className="font-semibold mb-1">AI Career Insight</h3>
                   <p className="text-sm text-slate-400 leading-relaxed">
                     {topPath ? (
-                      <>
-                        Based on your profile, <strong className="text-white">{topPath.careerPath.title}</strong> is your strongest match at <strong className="text-indigo-400">{Math.round(topPath.matchScore * 100)}%</strong> compatibility.
-                        {topPath.careerPath.futureOutlook ? ` ${topPath.careerPath.futureOutlook}` : ""}
-                        {highPriorityGaps > 0 ? ` Focus on building ${highPriorityGaps} high-priority skills to strengthen your candidacy.` : ""}
-                      </>
+                      <>Based on your profile, <strong className="text-white">{topPath.careerPath.title}</strong> is your strongest match at <strong className="text-indigo-400">{Math.round(topPath.matchScore * 100)}%</strong> compatibility. {topPath.careerPath.futureOutlook} {highPriorityGaps > 0 ? `Focus on building ${highPriorityGaps} high-priority skills.` : ""}</>
                     ) : aiAdvice ? (
-                      <>
-                        <strong className="text-white">{aiAdvice.recommendedPaths[0]?.title}</strong> is your top AI-recommended career at <strong className="text-indigo-400">{aiAdvice.recommendedPaths[0]?.matchScore}%</strong> match. {aiAdvice.recommendedPaths[0]?.reason}
-                      </>
+                      <><strong className="text-white">{aiAdvice.recommendedPaths[0]?.title}</strong> is your top AI-recommended career at <strong className="text-indigo-400">{aiAdvice.recommendedPaths[0]?.matchScore}%</strong> match. {aiAdvice.recommendedPaths[0]?.reason}</>
                     ) : null}
                   </p>
                 </div>
