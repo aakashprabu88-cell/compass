@@ -1,0 +1,23 @@
+▲ Next.js 16.2.10 (Turbopack)
+- Local:         http://localhost:3099
+- Network:       http://10.73.176.133:3099
+- Environments: .env
+✓ Ready in 382ms
+
+ GET /company-prep 200 in 316ms (next.js: 139ms, application-code: 176ms)
+ GET /api/auth/me 200 in 2.6s (next.js: 85ms, application-code: 2.5s)
+ GET /company-prep 200 in 30ms (next.js: 3ms, application-code: 28ms)
+ GET /tracker 200 in 78ms (next.js: 32ms, application-code: 46ms)
+ GET /company-prep 200 in 31ms (next.js: 3ms, application-code: 29ms)
+ GET /dashboard 200 in 581ms (next.js: 524ms, application-code: 57ms)
+ GET / 200 in 391ms (next.js: 346ms, application-code: 45ms)
+ GET /company-prep 200 in 27ms (next.js: 3ms, application-code: 24ms)
+ GET /tracker 200 in 25ms (next.js: 2ms, application-code: 22ms)
+ GET /tracker 200 in 26ms (next.js: 2ms, application-code: 24ms)
+ GET /company-prep 200 in 26ms (next.js: 2ms, application-code: 24ms)
+ GET /tracker 200 in 25ms (next.js: 2ms, application-code: 23ms)
+ GET /company-prep 200 in 25ms (next.js: 2ms, application-code: 23ms)
+ GET /tracker 200 in 26ms (next.js: 1935µs, application-code: 24ms)
+ GET /tracker 200 in 26ms (next.js: 1941µs, application-code: 24ms)
+ GET /company-prep 200 in 91ms (next.js: 7ms, application-code: 84ms)
+ GET /api/auth/me 200 in 555ms (next.js: 6ms, application-code: 549ms)

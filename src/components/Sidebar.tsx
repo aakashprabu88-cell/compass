@@ -16,6 +16,7 @@ const NAV = [
   { href: "/co-pilot", label: "AI Co-pilot", icon: Sparkles },
   { href: "/paths", label: "Career Paths", icon: Route },
   { href: "/jobs", label: "Jobs", icon: Briefcase },
+  { href: "/pipeline", label: "Pipeline", icon: GitBranch },
   { href: "/applications", label: "Applications", icon: FileText },
   { href: "/simulator", label: "Simulator", icon: GitBranch },
   { href: "/govt-exams", label: "Govt Exams", icon: Shield },
@@ -24,11 +25,13 @@ const NAV = [
   { href: "/companies", label: "Companies", icon: Building2 },
   { href: "/company-prep", label: "Company Prep", icon: Target },
   { href: "/mock-interview", label: "Mock Interview", icon: Mic },
+  { href: "/interview-tracker", label: "Interview Tracker", icon: BarChart3 },
   { href: "/resume-builder", label: "Resume Builder", icon: FileText },
   { href: "/internships", label: "Internships", icon: Briefcase },
   { href: "/tracker", label: "Tracker", icon: Trophy },
   { href: "/courses", label: "Courses", icon: GraduationCap },
   { href: "/skills", label: "Skill Gaps", icon: Target },
+  { href: "/skill-graph", label: "Skill Graph", icon: Radar },
 ];
 
 interface SidebarProps {
