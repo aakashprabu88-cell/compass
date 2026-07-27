@@ -8,7 +8,7 @@ import {
   Compass, LogOut, LayoutDashboard, Route, Target, BarChart3, Shield,
   TrendingUp, Sparkles, Building2, Users, FileText, GraduationCap,
   Briefcase, Zap, Radar, IndianRupee, Trophy, Mic, Menu, X, ChevronDown,
-  GitBranch, Search
+  GitBranch, Search, Brain, UsersRound, Layers
 } from "lucide-react";
 import { CommandPalette } from "./CommandPalette";
 
@@ -29,7 +29,10 @@ const NAV_GROUPS: NavGroup[] = [
     title: "Core",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/co-pilot", label: "AI Co-pilot", icon: Sparkles, badge: "AI" },
+      { href: "/agent", label: "AI Career Agent", icon: Brain, badge: "NEW" },
+      { href: "/panel-interview", label: "Panel Interview", icon: UsersRound, badge: "NEW" },
+      { href: "/digital-twin", label: "Digital Twin", icon: Layers, badge: "NEW" },
+      { href: "/co-pilot", label: "AI Co-pilot", icon: Sparkles },
       { href: "/paths", label: "Career Paths", icon: Route },
     ],
   },
