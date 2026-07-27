@@ -21,6 +21,7 @@ model User {
   skillGaps   SkillGap[]
   resumes     Resume[]
   applications JobApplication[]
+  internships   UserInternship[]
 }
 
 model Assessment {
@@ -196,4 +197,66 @@ model WeeklyReport {
   createdAt       DateTime @default(now())
 
   @@unique([userId, weekStart])
+}
+
+model Internship {
+  id              String   @id @default(cuid())
+  title           String
+  company         String
+  companyLogo     String   @default("")
+  location        String
+  city            String   @default("")
+  country         String   @default("India")
+  type            String   @default("paid") // paid, unpaid, stipend
+  stipend         String   @default("")
+  stipendMin      Int      @default(0)
+  stipendMax      Int      @default(0)
+  currency        String   @default("INR")
+  duration        String   @default("3 months")
+  durationWeeks   Int      @default(12)
+  workMode        String   @default("hybrid") // remote, hybrid, onsite
+  domain          String   @default("")
+  description     String   @default("")
+  requirements    String   @default("[]")
+  skillsRequired  String   @default("[]")
+  applyUrl        String   @default("")
+  deadline        DateTime?
+  startDate       DateTime?
+  openings        Int      @default(1)
+  isPPO           Boolean  @default(false)
+  isCertified     Boolean  @default(true)
+  isWomenOnly     Boolean  @default(false)
+  isGovt          Boolean  @default(false)
+  difficulty      String   @default("medium") // easy, medium, hard
+  acceptanceRate  Float    @default(0.3)
+  competitionLevel String  @default("medium") // low, medium, high, extreme
+  companyRating   Float    @default(4.0)
+  internshipRating Float   @default(4.0)
+  mentorAvailable Boolean  @default(true)
+  lorAvailable    Boolean  @default(false)
+  visaSponsorship Boolean  @default(false)
+  source          String   @default("curated")
+  category        String   @default("tech") // tech, startup, fortune500, government, research
+  hiringSpeed     String   @default("normal") // fast, normal, slow
+  techStack       String   @default("[]")
+  interviewRounds Int      @default(3)
+  createdAt       DateTime @default(now())
+
+  users UserInternship[]
+}
+
+model UserInternship {
+  id              String   @id @default(cuid())
+  userId          String
+  internshipId    String
+  status          String   @default("saved") // saved, applied, shortlisted, assessment, interview, rejected, offer, accepted, withdrawn
+  matchScore      Float    @default(0)
+  appliedAt       DateTime?
+  notes           String   @default("")
+  createdAt       DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  internship Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, internshipId])
 }

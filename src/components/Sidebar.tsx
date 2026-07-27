@@ -6,7 +6,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Compass, LogOut, LayoutDashboard, Route, Sparkles, UsersRound,
-  Layers, FileText, Briefcase, TrendingUp, Mic, Menu, X
+  Layers, FileText, Briefcase, TrendingUp, Mic, Menu, X, GraduationCap
 } from "lucide-react";
 import { CommandPalette } from "./CommandPalette";
 
@@ -14,6 +14,7 @@ const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/paths", label: "Career Paths", icon: Route },
   { href: "/jobs", label: "Jobs", icon: Briefcase },
+  { href: "/internships", label: "Internships", icon: GraduationCap, badge: "AI" },
   { href: "/agent", label: "AI Co-pilot", icon: Sparkles },
   { href: "/panel-interview", label: "Panel Interview", icon: UsersRound, badge: "AI" },
   { href: "/digital-twin", label: "Digital Twin", icon: Layers },
