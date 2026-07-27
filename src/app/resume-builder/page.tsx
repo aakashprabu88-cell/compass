@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Sparkles, Loader2, Plus, X, Copy, CheckCircle2, FileText, Target, AlertTriangle, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from "@/components/Sidebar";
+import { toast } from "@/components/Toast";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function ResumeBuilderPage() {
   const router = useRouter();
@@ -29,8 +31,8 @@ export default function ResumeBuilderPage() {
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.json()).then(d => {
-      if (d.error) { router.push("/login"); return; }
-      if (!d.onboarded) { router.push("/onboarding"); return; }
+      if (d.error) { router.push("/"); return; }
+      if (!d.onboarded) { router.push("/dashboard"); return; }
       setName(d.name || "");
       setUser({ name: d.name, email: d.email });
       setLoading(false);
@@ -77,6 +79,7 @@ export default function ResumeBuilderPage() {
         body: JSON.stringify({ resumeText, jobDescription: jobDescription.trim() }),
       });
       setAtsResult(await res.json());
+      if (res.ok) toast.success("ATS analysis complete");
     } catch {
       setAtsResult({ overallScore: 0, error: "Failed to analyze" });
     }
@@ -88,14 +91,16 @@ export default function ResumeBuilderPage() {
     const text = [name, `Target: ${targetRole}`, "", "Professional Summary", result.summary, "", "Skills", skills.join(", "), "", "Experience & Projects", ...result.bullets.map((b: any) => `• ${b.content}`), "", "ATS Tips", ...result.atsTips.map((t: string) => `→ ${t}`)].join("\n");
     navigator.clipboard.writeText(text);
     setCopied(true);
+    toast.success("Resume copied to clipboard");
     setTimeout(() => setCopied(false), 2000);
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
-    <div className="h-screen flex overflow-hidden">
-      <Sidebar user={user} onLogout={logout} />
+    <ErrorBoundary>
+      <div className="h-screen flex overflow-hidden">
+        <Sidebar user={user} onLogout={logout} />
 
       <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
         <div className="max-w-6xl mx-auto">
@@ -312,5 +317,6 @@ export default function ResumeBuilderPage() {
         </div>
       </main>
     </div>
+    </ErrorBoundary>
   );
 }

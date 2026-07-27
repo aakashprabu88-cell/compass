@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, Send, Target, TrendingUp, AlertTriangle, CheckCircle,
   Clock, Zap, ArrowRight, Briefcase, FileText, Mic, Brain, RefreshCw
 } from "lucide-react";
+import { toast } from "@/components/Toast";
 
 interface ActionItem {
   id: string;
@@ -46,6 +48,8 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 export default function AgentPage() {
+  const router = useRouter();
+  const [authed, setAuthed] = useState(false);
   const [messages, setMessages] = useState<AgentMessage[]>([
     {
       role: "assistant",
@@ -58,6 +62,13 @@ export default function AgentPage() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"chat" | "actions">("actions");
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me").then(r => r.json()).then(d => {
+      if (d.error || !d.onboarded) { router.push("/"); return; }
+      setAuthed(true);
+    }).catch(() => router.push("/"));
+  }, [router]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -103,6 +114,8 @@ export default function AgentPage() {
 
   const completedCount = actions.filter(a => a.done).length;
   const highPriority = actions.filter(a => a.priority === "high" && !a.done).length;
+
+  if (!authed) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">

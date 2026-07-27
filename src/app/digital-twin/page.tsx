@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Brain, Target, TrendingUp, Briefcase, Star, Zap, Shield,
@@ -75,10 +76,19 @@ const CATEGORY_COLORS_BG: Record<string, string> = {
 };
 
 export default function DigitalTwinPage() {
+  const router = useRouter();
+  const [authed, setAuthed] = useState(false);
   const [selectedNode, setSelectedNode] = useState<SkillNode | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"skills" | "career">("skills");
   const [selectedPath, setSelectedPath] = useState<CareerPath | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me").then(r => r.json()).then(d => {
+      if (d.error || !d.onboarded) { router.push("/"); return; }
+      setAuthed(true);
+    }).catch(() => router.push("/"));
+  }, [router]);
 
   const connectedNodes = useMemo(() => {
     if (!selectedNode) return new Set<string>();
@@ -94,6 +104,8 @@ export default function DigitalTwinPage() {
     const avg = SKILL_NODES.reduce((sum, n) => sum + n.marketDemand, 0) / SKILL_NODES.length;
     return Math.round(avg);
   }, []);
+
+  if (!authed) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">

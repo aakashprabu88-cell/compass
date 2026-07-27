@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Mic, MicOff, Send, Users, Brain, Heart, Briefcase, Star,
@@ -68,6 +69,8 @@ const INTERVIEWERS: Interviewer[] = [
 type Phase = "setup" | "interview" | "results";
 
 export default function PanelInterviewPage() {
+  const router = useRouter();
+  const [authed, setAuthed] = useState(false);
   const [phase, setPhase] = useState<Phase>("setup");
   const [role, setRole] = useState("Software Engineer");
   const [company, setCompany] = useState("Google");
@@ -81,6 +84,13 @@ export default function PanelInterviewPage() {
   const [transcript, setTranscript] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me").then(r => r.json()).then(d => {
+      if (d.error || !d.onboarded) { router.push("/"); return; }
+      setAuthed(true);
+    }).catch(() => router.push("/"));
+  }, [router]);
 
   const MAX_QUESTIONS = 9; // 3 per interviewer
 
@@ -274,6 +284,8 @@ export default function PanelInterviewPage() {
   };
 
   const getInterviewer = (id: string) => INTERVIEWERS.find(i => i.id === id) || INTERVIEWERS[0];
+
+  if (!authed) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   // Setup Phase
   if (phase === "setup") {

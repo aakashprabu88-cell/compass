@@ -7,6 +7,8 @@ import { motion } from "framer-motion";
 import { Briefcase, ExternalLink, MapPin, Clock, DollarSign, Mail, Send, CheckCircle, Zap, Users, Search } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import ApplyModal from "@/components/ApplyModal";
+import { toast } from "@/components/Toast";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface Job {
   id: string; title: string; company: string; location: string; city: string;
@@ -34,16 +36,13 @@ export default function JobsPage() {
   const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set());
   const [hasRealData, setHasRealData] = useState(false);
   const [realJobCount, setRealJobCount] = useState(0);
-  const [atsScores, setAtsScores] = useState<Record<string, number>>({});
-  const [salaryInfo, setSalaryInfo] = useState<Record<string, { min: number; max: number; median: number }>>({});
-  const [expandedAts, setExpandedAts] = useState<string | null>(null);
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [applyModalJob, setApplyModalJob] = useState<Job | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.json()).then(d => {
-      if (d.error) { router.push("/login"); return; }
-      if (!d.onboarded) { router.push("/onboarding"); return; }
+      if (d.error) { router.push("/"); return; }
+      if (!d.onboarded) { router.push("/dashboard"); return; }
       setEmail(d.email || "");
       setUser({ name: d.name || "Applicant", email: d.email || "" });
     });
@@ -63,13 +62,7 @@ export default function JobsPage() {
         setAppliedJobs(new Set(appsData.map((a: any) => a.jobId)));
       }
       setLoading(false);
-      // Fetch ATS scores for top 5 jobs
-      const topJobs = [...real, ...fallback].slice(0, 5);
-      topJobs.forEach((j: any) => {
-        fetch("/api/ats-score", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jobId: j.id }) })
-          .then(r => r.json()).then(d => { if (d.score !== undefined) setAtsScores(prev => ({ ...prev, [j.id]: d.score })); }).catch(() => {});
-      });
-    });
+    }).catch(() => setLoading(false));
   }, [router]);
 
   useEffect(() => {
@@ -106,13 +99,16 @@ export default function JobsPage() {
       const data = await res.json();
       if (data.success) {
         setAppliedJobs(prev => new Set([...prev, job.id]));
+        toast.success(`Applied to ${job.title} at ${job.company}`);
         if (job.applyUrl && job.applyUrl !== "#") window.open(job.applyUrl, "_blank");
       } else if (data.warning) {
-        alert(`Warning: ${data.warning}`);
+        toast.warning(data.warning);
         setAppliedJobs(prev => new Set([...prev, job.id]));
         if (job.applyUrl && job.applyUrl !== "#") window.open(job.applyUrl, "_blank");
       }
-    } catch {}
+    } catch {
+      toast.error("Failed to submit application. Please try again.");
+    }
     setApplying(null);
   };
 
@@ -123,8 +119,9 @@ export default function JobsPage() {
   const liveJobs = allJobs.filter(j => j._isReal);
 
   return (
-    <div className="h-screen flex overflow-hidden">
-      <Sidebar user={user} onLogout={logout} />
+    <ErrorBoundary>
+      <div className="h-screen flex overflow-hidden">
+        <Sidebar user={user} onLogout={logout} />
 
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
@@ -186,9 +183,6 @@ export default function JobsPage() {
                   placeholder="Search jobs, skills, companies..."
                   className="!pl-10 !py-2.5 !text-sm" />
               </div>
-              <Link href="/upload-resume" className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 text-sm font-medium hover:bg-purple-500/20 transition-all shrink-0">
-                <Zap className="w-4 h-4" /> Auto-Apply
-              </Link>
             </div>
             <div className="flex gap-4">
               <div>
@@ -277,17 +271,6 @@ export default function JobsPage() {
                         <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">{s}</span>
                       ))}
                     </div>
-                    {atsScores[job.id] !== undefined && (
-                      <div className="flex items-center gap-3 mb-3 p-2.5 rounded-lg bg-white/[0.02] border border-white/5">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${atsScores[job.id] >= 70 ? "bg-green-500/10 text-green-400" : atsScores[job.id] >= 40 ? "bg-yellow-500/10 text-yellow-400" : "bg-red-500/10 text-red-400"}`}>
-                          {atsScores[job.id]}
-                        </div>
-                        <div>
-                          <div className="text-[10px] text-slate-500 uppercase">ATS Score</div>
-                          <div className="text-xs text-slate-400">{atsScores[job.id] >= 70 ? "Strong match — apply now" : atsScores[job.id] >= 40 ? "Moderate match — tailor your resume" : "Low match — consider upskilling"}</div>
-                        </div>
-                      </div>
-                    )}
                     <div className="flex items-center gap-3">
                       {isApplied ? (
                         <span className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/10 text-green-400 text-sm">
@@ -324,5 +307,6 @@ export default function JobsPage() {
         />
       )}
     </div>
+    </ErrorBoundary>
   );
 }

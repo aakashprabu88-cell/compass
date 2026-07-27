@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Compass, ArrowRight, Command } from "lucide-react";
+import { Search, ArrowRight, Command } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface CommandItem {
@@ -10,31 +10,19 @@ interface CommandItem {
   label: string;
   href: string;
   category: string;
-  icon: string;
 }
 
 const COMMANDS: CommandItem[] = [
-  { id: "dashboard", label: "Dashboard", href: "/dashboard", category: "Navigation", icon: "LayoutDashboard" },
-  { id: "co-pilot", label: "AI Co-pilot", href: "/co-pilot", category: "AI", icon: "Sparkles" },
-  { id: "paths", label: "Career Paths", href: "/paths", category: "Navigation", icon: "Route" },
-  { id: "jobs", label: "Jobs & Internships", href: "/jobs", category: "Job Search", icon: "Briefcase" },
-  { id: "pipeline", label: "Application Pipeline", href: "/pipeline", category: "Job Search", icon: "GitBranch" },
-  { id: "applications", label: "Applications", href: "/applications", category: "Job Search", icon: "FileText" },
-  { id: "mock-interview", label: "Mock Interview", href: "/mock-interview", category: "Interview", icon: "Mic" },
-  { id: "interview-tracker", label: "Interview Tracker", href: "/interview-tracker", category: "Interview", icon: "BarChart3" },
-  { id: "company-prep", label: "Company Prep", href: "/company-prep", category: "Interview", icon: "Target" },
-  { id: "skills", label: "Skill Analysis", href: "/skills", category: "Skills", icon: "TrendingUp" },
-  { id: "skill-graph", label: "Skill Graph", href: "/skill-graph", category: "Skills", icon: "Radar" },
-  { id: "resume-builder", label: "Resume Builder", href: "/resume-builder", category: "Resume", icon: "FileText" },
-  { id: "ab-test", label: "A/B Resume Test", href: "/ab-test", category: "Resume", icon: "Zap" },
-  { id: "companies", label: "Companies", href: "/companies", category: "Insights", icon: "Building2" },
-  { id: "intelligence", label: "Intelligence", href: "/intelligence", category: "Insights", icon: "Shield" },
-  { id: "benchmark", label: "Benchmarking", href: "/benchmark", category: "Insights", icon: "Users" },
-  { id: "negotiation", label: "Negotiation", href: "/negotiation", category: "Insights", icon: "IndianRupee" },
-  { id: "tracker", label: "Leaderboard", href: "/tracker", category: "Gamification", icon: "Trophy" },
-  { id: "courses", label: "Courses", href: "/courses", category: "Learning", icon: "GraduationCap" },
-  { id: "govt-exams", label: "Govt Exams", href: "/govt-exams", category: "Insights", icon: "Shield" },
-  { id: "simulator", label: "Career Simulator", href: "/simulator", category: "Insights", icon: "TrendingUp" },
+  { id: "dashboard", label: "Dashboard", href: "/dashboard", category: "Navigation" },
+  { id: "paths", label: "Career Paths", href: "/paths", category: "Navigation" },
+  { id: "jobs", label: "Jobs", href: "/jobs", category: "Navigation" },
+  { id: "skills", label: "Skill Gaps", href: "/skills", category: "Navigation" },
+  { id: "courses", label: "Courses", href: "/courses", category: "Navigation" },
+  { id: "resume-builder", label: "Resume Builder", href: "/resume-builder", category: "AI Tools" },
+  { id: "co-pilot", label: "AI Co-pilot", href: "/co-pilot", category: "AI Tools" },
+  { id: "agent", label: "AI Career Agent", href: "/agent", category: "AI Tools" },
+  { id: "panel-interview", label: "Panel Interview", href: "/panel-interview", category: "AI Tools" },
+  { id: "digital-twin", label: "Digital Twin", href: "/digital-twin", category: "AI Tools" },
 ];
 
 export function CommandPalette() {
@@ -102,7 +90,6 @@ export function CommandPalette() {
 
   return (
     <>
-      {/* Trigger button */}
       <button
         onClick={() => setOpen(true)}
         className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-sm text-slate-400 hover:text-white hover:border-white/20 transition-all"

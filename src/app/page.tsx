@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Compass, ArrowRight, Check, Brain, Mic, FileText, Layers, TrendingUp, Shield, UsersRound } from "lucide-react";
+import { Compass, ArrowRight, Check, Brain, Mic, FileText, Layers, TrendingUp, Shield, UsersRound, Loader2, Zap } from "lucide-react";
 
 const FEATURES = [
   { icon: Brain, title: "AI Career Matching", desc: "5-minute assessment. AI finds careers that match your skills, interests, and personality.", color: "rgba(99,102,241,0.15)" },
@@ -14,6 +16,22 @@ const FEATURES = [
 ];
 
 export default function LandingPage() {
+  const router = useRouter();
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  const startDemo = async () => {
+    setDemoLoading(true);
+    try {
+      const res = await fetch("/api/demo", { method: "POST" });
+      if (res.ok) {
+        router.push("/dashboard");
+      }
+    } catch {
+    } finally {
+      setDemoLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen overflow-hidden">
       {/* Nav */}
@@ -25,9 +43,19 @@ export default function LandingPage() {
             </div>
             <span className="font-bold text-lg">Compass</span>
           </div>
-          <Link href="/dashboard" className="px-4 py-2 text-sm bg-indigo-500 hover:bg-indigo-400 rounded-lg font-medium transition-colors">
-            Open Dashboard
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={startDemo}
+              disabled={demoLoading}
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg font-medium transition-colors disabled:opacity-50"
+            >
+              {demoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5 text-amber-400" />}
+              Quick Demo
+            </button>
+            <Link href="/dashboard" className="px-4 py-2 text-sm bg-indigo-500 hover:bg-indigo-400 rounded-lg font-medium transition-colors">
+              Open Dashboard
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -51,7 +79,15 @@ export default function LandingPage() {
           </motion.p>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/dashboard" className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-500 hover:bg-indigo-400 rounded-xl font-semibold transition-all glow-sm group">
+            <button
+              onClick={startDemo}
+              disabled={demoLoading}
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 rounded-xl font-semibold transition-all glow-sm group disabled:opacity-50"
+            >
+              {demoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+              {demoLoading ? "Setting up demo..." : "Try Quick Demo"}
+            </button>
+            <Link href="/dashboard" className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-semibold transition-all group">
               Get Started <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </motion.div>
@@ -96,9 +132,14 @@ export default function LandingPage() {
             <div className="relative">
               <h2 className="text-3xl font-bold mb-3">Start navigating.</h2>
               <p className="text-slate-400 mb-6">5-minute assessment. AI-matched career paths. Real job data.</p>
-              <Link href="/dashboard" className="inline-flex items-center gap-2 px-8 py-3 bg-indigo-500 hover:bg-indigo-400 rounded-xl font-semibold transition-all glow-sm">
-                Open Compass <ArrowRight className="w-4 h-4" />
-              </Link>
+              <button
+                onClick={startDemo}
+                disabled={demoLoading}
+                className="inline-flex items-center gap-2 px-8 py-3 bg-indigo-500 hover:bg-indigo-400 rounded-xl font-semibold transition-all glow-sm disabled:opacity-50"
+              >
+                {demoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                {demoLoading ? "Setting up..." : "Try Demo Now"}
+              </button>
             </div>
           </motion.div>
         </div>

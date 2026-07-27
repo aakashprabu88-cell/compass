@@ -27,7 +27,7 @@ export default function DashboardPage() {
         if (!authRes || !authRes.ok) { router.push("/"); return; }
         const userData = await authRes.json();
         if (!userData || userData.error) { router.push("/"); return; }
-        if (!userData.onboarded) { router.push("/onboarding"); return; }
+        if (!userData.onboarded) { router.push("/dashboard"); return; }
         if (cancelled) return;
         setUser(userData);
 
