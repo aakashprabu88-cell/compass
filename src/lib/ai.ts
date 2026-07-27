@@ -1,24 +1,50 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+const GROQ_API = "https://api.groq.com/openai/v1/chat/completions";
+const MODEL = "llama-3.3-70b-versatile";
+const FALLBACK_MODEL = "llama-3.1-8b-instant";
 
-let genAI: GoogleGenerativeAI | null = null;
-
-function getGenAI(): GoogleGenerativeAI {
-  if (!genAI) {
-    const key = process.env.GEMINI_API_KEY;
-    if (!key) throw new Error("GEMINI_API_KEY not set");
-    genAI = new GoogleGenerativeAI(key);
-  }
-  return genAI;
-}
+const SYSTEM_DEFAULT = "You are a helpful AI career advisor. Be concise, specific, and actionable. Use Indian context (LPA for salary, Indian companies). Respond in plain text, no markdown headers.";
 
 async function generateText(prompt: string, systemInstruction?: string): Promise<string> {
-  const ai = getGenAI();
-  const model = ai.getGenerativeModel({
-    model: "gemini-2.0-flash",
-    systemInstruction: systemInstruction || "You are a helpful AI career advisor. Be concise, specific, and actionable. Use Indian context (LPA for salary, Indian companies). Respond in plain text, no markdown headers.",
-  });
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  const key = process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY;
+  if (!key) throw new Error("AI API key not set");
+
+  const models = [MODEL, FALLBACK_MODEL];
+  let lastError: Error | null = null;
+
+  for (const model of models) {
+    try {
+      const res = await fetch(GROQ_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: systemInstruction || SYSTEM_DEFAULT },
+            { role: "user", content: prompt },
+          ],
+          temperature: 0.7,
+          max_tokens: 2048,
+        }),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.text();
+        lastError = new Error(`Groq ${res.status}: ${errBody.substring(0, 200)}`);
+        continue;
+      }
+
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || "";
+    } catch (err: any) {
+      lastError = err;
+      continue;
+    }
+  }
+
+  throw lastError || new Error("All AI models failed");
 }
 
 export interface CareerAdvice {

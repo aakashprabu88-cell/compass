@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+
+const GROQ_API = "https://api.groq.com/openai/v1/chat/completions";
+const MODEL = "llama-3.3-70b-versatile";
+const FALLBACK_MODEL = "llama-3.1-8b-instant";
 
 const SYSTEM_INSTRUCTION = `You are Compass, an AI career co-pilot for Indian students and job seekers. You are warm, encouraging, and practical.
 
@@ -20,6 +23,51 @@ Rules:
 - Never make up statistics or salary figures
 - If asked about something outside career guidance, gently redirect`;
 
+async function chatWithGroq(messages: { role: string; content: string }[], systemPrompt: string): Promise<string> {
+  const key = process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY;
+  if (!key) throw new Error("AI API key not set");
+
+  const models = [MODEL, FALLBACK_MODEL];
+  let lastError: Error | null = null;
+
+  for (const model of models) {
+    try {
+      const apiMessages = [
+        { role: "system", content: systemPrompt },
+        ...messages.map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })),
+      ];
+
+      const res = await fetch(GROQ_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: apiMessages,
+          temperature: 0.7,
+          max_tokens: 1024,
+        }),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.text();
+        lastError = new Error(`Groq ${res.status}: ${errBody.substring(0, 200)}`);
+        continue;
+      }
+
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || "";
+    } catch (err: any) {
+      lastError = err;
+      continue;
+    }
+  }
+
+  throw lastError || new Error("All AI models failed");
+}
+
 export async function POST(req: NextRequest) {
   const user = await requireAuth(req);
   if (!user) return unauthorized();
@@ -37,25 +85,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "messages array required" }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return NextResponse.json({ error: "AI service not configured" }, { status: 500 });
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      systemInstruction: SYSTEM_INSTRUCTION + (profileContext ? `\n\nUser profile context:\n${profileContext}` : ""),
-    });
-
-    const chat = model.startChat({
-      history: messages.slice(0, -1).map((m: { role: string; content: string }) => ({
-        role: m.role === "user" ? "user" : "model",
-        parts: [{ text: m.content }],
-      })),
-    });
-
-    const lastMessage = messages[messages.length - 1];
-    const result = await chat.sendMessage(lastMessage.content);
-    const response = result.response.text();
+    const systemPrompt = SYSTEM_INSTRUCTION + (profileContext ? `\n\nUser profile context:\n${profileContext}` : "");
+    const response = await chatWithGroq(messages, systemPrompt);
 
     return NextResponse.json(
       { response },
