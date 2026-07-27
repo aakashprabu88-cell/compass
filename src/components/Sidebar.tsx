@@ -14,7 +14,7 @@ const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/paths", label: "Career Paths", icon: Route },
   { href: "/jobs", label: "Jobs", icon: Briefcase },
-  { href: "/co-pilot", label: "AI Co-pilot", icon: Sparkles },
+  { href: "/agent", label: "AI Co-pilot", icon: Sparkles },
   { href: "/panel-interview", label: "Panel Interview", icon: UsersRound, badge: "AI" },
   { href: "/digital-twin", label: "Digital Twin", icon: Layers },
   { href: "/resume-builder", label: "Resume Builder", icon: FileText },
