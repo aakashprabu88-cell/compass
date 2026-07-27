@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { matchJobs } from "@/lib/jobs";
 import { parseJsonArray } from "@/lib/careers";
 import { generateCoverLetter, generateEmailDraft } from "@/lib/cover-letters";
-import { verifyEmail } from "@/lib/verify";
+
 
 export async function GET() {
   try {
@@ -126,17 +126,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Already applied to this job" }, { status: 400 });
       }
 
-      // Email verification for single job applications
-      let emailVerification = null;
-      if (applicantEmail && typeof applicantEmail === "string") {
-        emailVerification = await verifyEmail(applicantEmail);
-        if (emailVerification.trustScore === "suspicious") {
-          return NextResponse.json({
-            error: "Email verification failed",
-            verification: emailVerification,
-          }, { status: 400 });
-        }
-      }
+
 
       // Get job details from database
       const { JOB_DATABASE } = await import("@/lib/jobs");
@@ -171,19 +161,13 @@ export async function POST(request: Request) {
           coverLetter,
           emailDraft: finalEmailDraft,
           matchScore: job ? (job as any).matchScore || 0 : 0,
-          notes: emailVerification
-            ? `Email verification: trust=${emailVerification.trustScore} | ${emailVerification.message}`
-            : "",
+          notes: "",
         },
       });
 
       return NextResponse.json({
         success: true,
         application,
-        emailVerification: emailVerification || undefined,
-        warning: emailVerification && ["low", "medium"].includes(emailVerification.trustScore)
-          ? emailVerification.message
-          : undefined,
       });
     }
   } catch {
