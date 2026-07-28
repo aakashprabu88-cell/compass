@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getUser } from "@/lib/auth";
+import { getUserProfile, generateInternshipMatchAI } from "@/lib/ai";
 
 export async function POST(request: Request) {
   try {
@@ -13,91 +14,86 @@ export async function POST(request: Request) {
     const internship = await prisma.internship.findUnique({ where: { id: internshipId } });
     if (!internship) return NextResponse.json({ error: "Internship not found" }, { status: 404 });
 
-    const assessment = await prisma.assessment.findFirst({
-      where: { userId: user.id },
-      orderBy: { createdAt: "desc" },
+    // Get full user profile for AI analysis
+    const profile = await getUserProfile(user.id);
+
+    if (!profile) {
+      // Fallback: basic algorithmic match if no profile
+      const assessment = await prisma.assessment.findFirst({
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
+      });
+
+      const userSkills = assessment ? JSON.parse(assessment.skills || "[]") : [];
+      const requiredSkills = JSON.parse(internship.skillsRequired || "[]");
+      const matched = userSkills.filter((s: string) =>
+        requiredSkills.some((r: string) => s.toLowerCase() === r.toLowerCase() || s.toLowerCase().includes(r.toLowerCase()) || r.toLowerCase().includes(s.toLowerCase()))
+      );
+      const missing = requiredSkills.filter((r: string) => !matched.some((m: string) => m.toLowerCase() === r.toLowerCase() || m.toLowerCase().includes(r.toLowerCase()) || r.toLowerCase().includes(m.toLowerCase())));
+      const skillMatch = requiredSkills.length > 0 ? matched.length / requiredSkills.length : 0.5;
+
+      return NextResponse.json({
+        matchScore: Math.round(Math.min(0.95, skillMatch * 0.7 + 0.3) * 100),
+        skillMatch: Math.round(skillMatch * 100),
+        domainMatch: 50,
+        selectionProbability: Math.round(Math.min(0.85, skillMatch * 0.6) * 100),
+        resumeReadiness: 50,
+        matchedSkills: matched,
+        missingSkills: missing,
+        totalLearningDays: missing.length * 7,
+        roadmap: missing.map((skill: string, i: number) => ({
+          skill,
+          week: i + 1,
+          hours: 20,
+          resources: [`Learn ${skill} on freeCodeCamp`, `Practice ${skill} projects on GitHub`],
+        })),
+        aiAnalysis: "Complete your career assessment for a personalized AI analysis.",
+        internship: {
+          id: internship.id, title: internship.title, company: internship.company,
+          companyLogo: internship.companyLogo, stipend: internship.stipend,
+          workMode: internship.workMode, duration: internship.duration,
+          difficulty: internship.difficulty, competitionLevel: internship.competitionLevel,
+          acceptanceRate: internship.acceptanceRate, isPPO: internship.isPPO,
+          openings: internship.openings, deadline: internship.deadline,
+        },
+      });
+    }
+
+    // Use AI for semantic matching
+    const requiredSkills = JSON.parse(internship.skillsRequired || "[]");
+    const aiResult = await generateInternshipMatchAI(profile, {
+      title: internship.title,
+      company: internship.company,
+      domain: internship.domain,
+      skillsRequired: requiredSkills,
+      description: internship.description,
+      difficulty: internship.difficulty,
+      workMode: internship.workMode,
+      stipend: internship.stipend,
+      duration: internship.duration,
     });
 
-    const userSkills = assessment ? JSON.parse(assessment.skills || "[]") : [];
-    const userInterests = assessment ? JSON.parse(assessment.interests || "[]") : [];
-    const requiredSkills = JSON.parse(internship.skillsRequired || "[]");
-
-    // Calculate skill match
-    const matchedSkills = userSkills.filter((s: string) =>
-      requiredSkills.some((r: string) => r.toLowerCase() === s.toLowerCase() || s.toLowerCase().includes(r.toLowerCase()) || r.toLowerCase().includes(s.toLowerCase()))
-    );
-    const missingSkills = requiredSkills.filter((r: string) =>
-      !userSkills.some((s: string) => s.toLowerCase() === r.toLowerCase() || s.toLowerCase().includes(r.toLowerCase()) || r.toLowerCase().includes(s.toLowerCase()))
-    );
-
-    const skillMatch = requiredSkills.length > 0 ? matchedSkills.length / requiredSkills.length : 0.5;
-
-    // Domain interest match
-    const domainMatch = userInterests.some((i: string) =>
-      internship.domain.toLowerCase().includes(i.toLowerCase()) || i.toLowerCase().includes(internship.domain.toLowerCase())
-    ) ? 0.9 : 0.4;
-
-    // Overall match (weighted)
-    const matchScore = Math.min(0.99, skillMatch * 0.6 + domainMatch * 0.2 + 0.2);
-
-    // Selection probability (conservative estimate)
-    const difficultyMod = internship.difficulty === "easy" ? 1.2 : internship.difficulty === "hard" ? 0.7 : 1.0;
-    const selectionProbability = Math.min(0.95, matchScore * difficultyMod * 0.8);
-
-    // Estimate learning time for missing skills
-    const learningTimeMap: Record<string, number> = {
-      "docker": 40, "kubernetes": 60, "aws": 50, "terraform": 45, "redis": 20,
-      "kafka": 40, "solidity": 50, "flutter": 35, "swift": 40, "kotlin": 35,
-      "go": 30, "rust": 50, "machine learning": 80, "deep learning": 100,
-      "nlp": 60, "computer vision": 70, "pytorch": 40, "tensorflow": 40,
-      "system design": 60, "penetration testing": 50, "siem": 30,
-    };
-    const totalLearningDays = missingSkills.reduce((sum: number, skill: string) => {
-      const hours = learningTimeMap[skill.toLowerCase()] || 30;
-      return sum + Math.ceil(hours / 2);
-    }, 0);
-
-    // Generate roadmap for missing skills
-    const roadmap = missingSkills.map((skill: string, i: number) => ({
-      skill,
-      week: i + 1,
-      hours: learningTimeMap[skill.toLowerCase()] || 30,
-      resources: [
-        `Learn ${skill} fundamentals on freeCodeCamp`,
-        `Practice ${skill} projects on GitHub`,
-        `Complete ${skill} challenges on HackerRank`,
-      ],
-    }));
-
-    const matchResult = {
-      matchScore: Math.round(matchScore * 100),
-      skillMatch: Math.round(skillMatch * 100),
-      domainMatch: Math.round(domainMatch * 100),
-      selectionProbability: Math.round(selectionProbability * 100),
-      resumeReadiness: assessment ? 78 : 50,
-      matchedSkills,
-      missingSkills,
-      totalLearningDays,
-      roadmap,
+    return NextResponse.json({
+      matchScore: aiResult.matchScore,
+      skillMatch: aiResult.skillMatch,
+      domainMatch: aiResult.domainMatch,
+      selectionProbability: aiResult.selectionProbability,
+      resumeReadiness: profile.resumeCount > 0 ? 82 : 55,
+      matchedSkills: aiResult.matchedSkills,
+      missingSkills: aiResult.missingSkills,
+      totalLearningDays: aiResult.totalLearningDays,
+      roadmap: aiResult.roadmap,
+      aiAnalysis: aiResult.aiAnalysis,
       internship: {
-        id: internship.id,
-        title: internship.title,
-        company: internship.company,
-        companyLogo: internship.companyLogo,
-        stipend: internship.stipend,
-        workMode: internship.workMode,
-        duration: internship.duration,
-        difficulty: internship.difficulty,
-        competitionLevel: internship.competitionLevel,
-        acceptanceRate: internship.acceptanceRate,
-        isPPO: internship.isPPO,
-        openings: internship.openings,
-        deadline: internship.deadline,
+        id: internship.id, title: internship.title, company: internship.company,
+        companyLogo: internship.companyLogo, stipend: internship.stipend,
+        workMode: internship.workMode, duration: internship.duration,
+        difficulty: internship.difficulty, competitionLevel: internship.competitionLevel,
+        acceptanceRate: internship.acceptanceRate, isPPO: internship.isPPO,
+        openings: internship.openings, deadline: internship.deadline,
       },
-    };
-
-    return NextResponse.json(matchResult);
-  } catch {
+    });
+  } catch (err: any) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

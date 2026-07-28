@@ -1,54 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { chat, getUserProfile, profileToContext } from "@/lib/ai";
 
-const GROQ_API = "https://api.groq.com/openai/v1/chat/completions";
-const MODEL = "llama-3.3-70b-versatile";
-const FALLBACK_MODEL = "llama-3.1-8b-instant";
+const AGENT_SYSTEM = `You are "Compass", an AI Career Agent embedded in a career platform. You have FULL ACCESS to the user's profile data shown below. Use it.
 
-const AGENT_SYSTEM = `You are an AI Career Agent for a student/job seeker. You are proactive, data-driven, and action-oriented.
-
-Your role:
-- Monitor the user's career progress (applications, interviews, skills)
-- Suggest specific, prioritized actions based on their data
-- Give honest feedback on their job search strategy
-- Recommend skills to learn, companies to target, and timelines
+CAPABILITIES:
+- Analyze their skills, gaps, applications, and career trajectory
+- Recommend specific actions (apply to X company, learn Y skill, practice Z)
+- Evaluate their job search strategy and give honest feedback
+- Suggest timelines and milestones
 - Track their goals and hold them accountable
 
-Rules:
-- Be direct and specific (not generic advice)
-- Use Indian context: LPA, Indian companies, Indian job market
-- Suggest 2-3 concrete actions whenever possible
-- If they ask about something specific, give a focused answer
-- Keep responses to 3-4 sentences max
-- Return JSON with actions when appropriate: {"response": "...", "actions": [{"type": "apply|skill|interview|resume|insight", "title": "Action title", "description": "Brief description", "priority": "high|medium|low"}]}`;
+RULES:
+1. ALWAYS reference their specific data — never give generic advice
+2. Be direct and honest — if their resume needs work, say so
+3. Use Indian context: LPA, Indian companies (TCS, Infosys, Zoho, Freshworks, Flipkart, etc.)
+4. Suggest 2-3 concrete, actionable steps whenever possible
+5. Keep responses to 3-5 sentences — concise but specific
+6. If they ask about something outside career advice, redirect gently
 
-async function chat(messages: { role: string; content: string }[], system: string): Promise<string> {
-  const key = process.env.GROQ_API_KEY;
-  if (!key) throw new Error("No API key");
+RESPONSE FORMAT:
+Return a JSON object with "response" (your advice text) and optionally "actions" (specific steps):
+{"response": "...", "actions": [{"type": "apply|skill|interview|resume|insight", "title": "Action title", "description": "Brief description", "priority": "high|medium|low"}]}
 
-  for (const model of [MODEL, FALLBACK_MODEL]) {
-    try {
-      const res = await fetch(GROQ_API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: system },
-            ...messages.map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })),
-          ],
-          temperature: 0.7,
-          max_tokens: 1024,
-        }),
-      });
-      if (!res.ok) continue;
-      const data = await res.json();
-      return data.choices?.[0]?.message?.content || "";
-    } catch { continue; }
-  }
-  throw new Error("AI unavailable");
-}
+Only include actions when you have specific, actionable suggestions. Not every response needs actions.`;
 
 export async function POST(req: NextRequest) {
   const user = await requireAuth(req);
@@ -59,20 +35,45 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { message, context } = await req.json();
+    const { message, context, history } = await req.json();
+
+    // Fetch full user profile from DB
+    const profile = await getUserProfile(user.id);
+
+    // Build system prompt with user context
+    const profileStr = profile ? profileToContext(profile) : "\n[No profile data available — user may need to complete assessment]\n";
 
     const contextStr = context?.actions?.length
-      ? `\n\nUser's current action items:\n${context.actions.map((a: any) => `- [${a.priority}] ${a.title}: ${a.description}`).join("\n")}`
+      ? `\nCURRENT ACTION ITEMS:\n${context.actions.map((a: any) => `- [${a.priority}] ${a.title}: ${a.description}`).join("\n")}`
       : "";
 
-    const response = await chat(
-      [{ role: "user", content: message }],
-      AGENT_SYSTEM + contextStr
-    );
+    const system = AGENT_SYSTEM + profileStr + contextStr;
 
-    // Try to parse actions from response
+    // Build message history for conversation memory
+    const messages: { role: "system" | "user" | "assistant"; content: string }[] = [
+      { role: "system", content: system },
+    ];
+
+    // Add conversation history (last 10 messages for context window)
+    if (Array.isArray(history)) {
+      const recentHistory = history.slice(-10);
+      for (const msg of recentHistory) {
+        messages.push({
+          role: msg.role === "assistant" ? "assistant" : "user",
+          content: msg.content,
+        });
+      }
+    }
+
+    // Add current message
+    messages.push({ role: "user", content: message });
+
+    const response = await chat(messages, { temperature: 0.7, maxTokens: 2048 });
+
+    // Parse actions from response
     let actions;
     try {
+      // Try to find JSON block in the response
       const jsonMatch = response.match(/\{[\s\S]*"actions"[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
@@ -80,7 +81,18 @@ export async function POST(req: NextRequest) {
       }
     } catch {}
 
-    return NextResponse.json({ response, actions });
+    // Clean the response text (remove JSON if present)
+    let cleanResponse = response;
+    try {
+      const jsonStart = response.indexOf('{"response"');
+      if (jsonStart >= 0) {
+        const parsed = JSON.parse(response.substring(jsonStart));
+        cleanResponse = parsed.response || response;
+        if (!actions && parsed.actions) actions = parsed.actions;
+      }
+    } catch {}
+
+    return NextResponse.json({ response: cleanResponse, actions });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
