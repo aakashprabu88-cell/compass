@@ -14,15 +14,18 @@ interface CommandItem {
 
 const COMMANDS: CommandItem[] = [
   { id: "dashboard", label: "Dashboard", href: "/dashboard", category: "Navigation" },
+  { id: "aptitude-test", label: "Aptitude Test", href: "/aptitude-test", category: "Assessment" },
   { id: "paths", label: "Career Paths", href: "/paths", category: "Navigation" },
   { id: "jobs", label: "Jobs", href: "/jobs", category: "Navigation" },
   { id: "skills", label: "Skill Gaps", href: "/skills", category: "Navigation" },
-  { id: "courses", label: "Courses", href: "/courses", category: "Navigation" },
+  { id: "automation-shield", label: "AI Automation Shield", href: "/automation-shield", category: "Impact" },
+  { id: "govt-schemes", label: "Government Schemes", href: "/govt-schemes", category: "Impact" },
+  { id: "college", label: "College Dashboard", href: "/college", category: "Impact" },
   { id: "resume-builder", label: "Resume Builder", href: "/resume-builder", category: "AI Tools" },
-  { id: "co-pilot", label: "AI Co-pilot", href: "/co-pilot", category: "AI Tools" },
   { id: "agent", label: "AI Career Agent", href: "/agent", category: "AI Tools" },
   { id: "panel-interview", label: "Panel Interview", href: "/panel-interview", category: "AI Tools" },
   { id: "digital-twin", label: "Digital Twin", href: "/digital-twin", category: "AI Tools" },
+  { id: "internships", label: "Internships", href: "/internships", category: "AI Tools" },
 ];
 
 export function CommandPalette() {

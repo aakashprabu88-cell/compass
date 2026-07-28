@@ -6,20 +6,26 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Compass, LogOut, LayoutDashboard, Route, Sparkles, UsersRound,
-  Layers, FileText, Briefcase, TrendingUp, Mic, Menu, X, GraduationCap
+  Layers, FileText, Briefcase, TrendingUp, Mic, Menu, X, GraduationCap,
+  Shield, BookOpen, Brain, School
 } from "lucide-react";
 import { CommandPalette } from "./CommandPalette";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useLanguage } from "./LanguageProvider";
 
 const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/paths", label: "Career Paths", icon: Route },
-  { href: "/jobs", label: "Jobs", icon: Briefcase },
-  { href: "/internships", label: "Internships", icon: GraduationCap, badge: "AI" },
-  { href: "/agent", label: "AI Co-pilot", icon: Sparkles },
-  { href: "/panel-interview", label: "Panel Interview", icon: UsersRound, badge: "AI" },
-  { href: "/digital-twin", label: "Digital Twin", icon: Layers },
-  { href: "/resume-builder", label: "Resume Builder", icon: FileText },
-  { href: "/skills", label: "Skills", icon: TrendingUp },
+  { href: "/dashboard", label: "dashboard.dashboard", icon: LayoutDashboard },
+  { href: "/aptitude-test", label: "nav.aptitudeTest", icon: Brain },
+  { href: "/paths", label: "nav.careerPaths", icon: Route },
+  { href: "/jobs", label: "nav.jobs", icon: Briefcase },
+  { href: "/internships", label: "nav.internships", icon: GraduationCap, badge: "AI" },
+  { href: "/panel-interview", label: "nav.panelInterview", icon: UsersRound, badge: "AI" },
+  { href: "/automation-shield", label: "nav.automationShield", icon: Shield },
+  { href: "/govt-schemes", label: "nav.govtSchemes", icon: BookOpen },
+  { href: "/college", label: "nav.collegeDashboard", icon: School },
+  { href: "/digital-twin", label: "nav.digitalTwin", icon: Layers },
+  { href: "/resume-builder", label: "nav.resumeBuilder", icon: FileText },
+  { href: "/skills", label: "nav.skills", icon: TrendingUp },
 ];
 
 interface SidebarProps {
@@ -30,6 +36,16 @@ interface SidebarProps {
 export default function Sidebar({ user, onLogout }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useLanguage();
+
+  const getLabel = (key: string) => {
+    const keys = key.split(".");
+    let val: any = t;
+    for (const k of keys) {
+      val = val?.[k];
+    }
+    return typeof val === "string" ? val : key;
+  };
 
   const navContent = (
     <>
@@ -40,9 +56,12 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
           </div>
           <span className="font-bold text-lg">Compass</span>
         </Link>
-        <button onClick={() => setMobileOpen(false)} className="lg:hidden text-slate-400 hover:text-white">
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          <button onClick={() => setMobileOpen(false)} className="lg:hidden text-slate-400 hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       <div className="mb-4">
@@ -64,7 +83,7 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
               }`}
             >
               <item.icon className="w-4 h-4 shrink-0" />
-              <span className="truncate">{item.label}</span>
+              <span className="truncate">{getLabel(item.label)}</span>
               {item.badge && (
                 <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400">
                   {item.badge}

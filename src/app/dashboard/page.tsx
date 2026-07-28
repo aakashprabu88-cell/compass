@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Target, Shield, AlertTriangle, Sparkles, ArrowRight, FileText, Zap, ChevronRight, TrendingUp, UsersRound, Layers } from "lucide-react";
 import { motion } from "framer-motion";
 import Sidebar from "@/components/Sidebar";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface UserData { id: string; name: string; email: string; onboarded: boolean; }
 interface PathData { id: string; matchScore: number; careerPath: any; }
@@ -13,11 +14,21 @@ interface SkillGapData { id: string; skillName: string; currentLevel: number; re
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { t, locale } = useLanguage();
   const [user, setUser] = useState<UserData | null>(null);
   const [paths, setPaths] = useState<PathData[]>([]);
   const [gaps, setGaps] = useState<SkillGapData[]>([]);
   const [aiAdvice, setAiAdvice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  const getVal = (key: string) => {
+    const keys = key.split(".");
+    let val: any = t;
+    for (const k of keys) {
+      val = val?.[k];
+    }
+    return typeof val === "string" ? val : key;
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -62,17 +73,17 @@ export default function DashboardPage() {
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="text-2xl font-bold mb-1">Welcome back, {user?.name?.split(" ")[0]}</h1>
-            <p className="text-slate-400 text-sm mb-8">Here&apos;s your career overview</p>
+            <h1 className="text-2xl font-bold mb-1">{getVal("dashboard.welcome")}, {user?.name?.split(" ")[0]}</h1>
+            <p className="text-slate-400 text-sm mb-8">{getVal("dashboard.overview")}</p>
           </motion.div>
 
           {/* Quick Actions */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
             {[
-              { href: "/panel-interview", label: "Panel Interview", icon: UsersRound, color: "from-indigo-500 to-purple-500" },
-              { href: "/digital-twin", label: "Digital Twin", icon: Layers, color: "from-cyan-500 to-blue-500" },
-              { href: "/resume-builder", label: "Build Resume", icon: FileText, color: "from-emerald-500 to-teal-500" },
-              { href: "/jobs", label: "Find Jobs", icon: Zap, color: "from-amber-500 to-orange-500" },
+              { href: "/panel-interview", label: getVal("dashboard.panelInterview"), icon: UsersRound, color: "from-indigo-500 to-purple-500" },
+              { href: "/digital-twin", label: getVal("dashboard.digitalTwin"), icon: Layers, color: "from-cyan-500 to-blue-500" },
+              { href: "/resume-builder", label: getVal("dashboard.buildResume"), icon: FileText, color: "from-emerald-500 to-teal-500" },
+              { href: "/jobs", label: getVal("dashboard.findJobs"), icon: Zap, color: "from-amber-500 to-orange-500" },
             ].map((action, i) => (
               <Link key={i} href={action.href}
                 className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all group">
@@ -93,7 +104,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h2 className="font-semibold">AI Career Analysis</h2>
+                    <h2 className="font-semibold">{getVal("dashboard.aiAnalysis")}</h2>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 font-medium">AI POWERED</span>
                   </div>
                   <p className="text-sm text-slate-400 mb-4">{aiAdvice.summary}</p>
@@ -114,10 +125,10 @@ export default function DashboardPage() {
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
             {[
-              { label: "Top Match", value: topPath?.careerPath?.title?.split(" ").slice(0, 2).join(" ") || aiAdvice?.recommendedPaths?.[0]?.title?.split(" ").slice(0, 2).join(" ") || "—", icon: Sparkles },
-              { label: "Avg Match", value: `${avgMatch || (aiAdvice?.recommendedPaths?.length ? Math.round(aiAdvice.recommendedPaths.reduce((s: number, p: any) => s + p.matchScore, 0) / aiAdvice.recommendedPaths.length) : 0)}%`, icon: Target },
-              { label: "Skill Gaps", value: `${gaps.filter(g => g.priority === "high").length || aiAdvice?.skillGaps?.filter((g: any) => g.priority === "High").length || 0}`, icon: AlertTriangle },
-              { label: "Paths Found", value: `${paths.length || aiAdvice?.recommendedPaths?.length || 0}`, icon: TrendingUp },
+              { label: getVal("dashboard.topMatch"), value: topPath?.careerPath?.title?.split(" ").slice(0, 2).join(" ") || aiAdvice?.recommendedPaths?.[0]?.title?.split(" ").slice(0, 2).join(" ") || "—", icon: Sparkles },
+              { label: getVal("dashboard.avgMatch"), value: `${avgMatch || (aiAdvice?.recommendedPaths?.length ? Math.round(aiAdvice.recommendedPaths.reduce((s: number, p: any) => s + p.matchScore, 0) / aiAdvice.recommendedPaths.length) : 0)}%`, icon: Target },
+              { label: getVal("dashboard.skillGaps"), value: `${gaps.filter(g => g.priority === "high").length || aiAdvice?.skillGaps?.filter((g: any) => g.priority === "High").length || 0}`, icon: AlertTriangle },
+              { label: getVal("dashboard.pathsFound"), value: `${paths.length || aiAdvice?.recommendedPaths?.length || 0}`, icon: TrendingUp },
             ].map((stat, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
                 className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
@@ -134,8 +145,8 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2 p-5 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-sm">Your Top Career Paths</h2>
-                <Link href="/paths" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
+                <h2 className="font-semibold text-sm">{getVal("dashboard.topCareerPaths")}</h2>
+                <Link href="/paths" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">{getVal("dashboard.viewAll")} <ChevronRight className="w-3 h-3" /></Link>
               </div>
               <div className="space-y-2">
                 {(paths.length > 0 ? paths.slice(0, 5) : aiAdvice?.recommendedPaths?.slice(0, 5)?.map((p: any, i: number) => ({ id: String(i), matchScore: p.matchScore / 100, careerPath: { title: p.title, salaryMin: 0, salaryMax: 0, aiRisk: "Low", growthOutlook: p.growthOutlook } })) || []).map((p: any) => (
@@ -149,14 +160,14 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 ))}
-                {paths.length === 0 && !aiAdvice && <p className="text-sm text-slate-500 text-center py-4">Complete your assessment to see paths</p>}
+                {paths.length === 0 && !aiAdvice && <p className="text-sm text-slate-500 text-center py-4">{getVal("dashboard.noPaths")}</p>}
               </div>
             </div>
 
             <div className="p-5 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-sm">Skill Gaps</h2>
-                <Link href="/skills" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Fix <ChevronRight className="w-3 h-3" /></Link>
+                <h2 className="font-semibold text-sm">{getVal("dashboard.skillGapsTitle")}</h2>
+                <Link href="/skills" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">{getVal("dashboard.fix")} <ChevronRight className="w-3 h-3" /></Link>
               </div>
               <div className="space-y-3">
                 {gaps.slice(0, 5).map(gap => (
@@ -179,7 +190,7 @@ export default function DashboardPage() {
                     <p className="text-[10px] text-slate-600">{g.howToLearn}</p>
                   </div>
                 ))}
-                {gaps.length === 0 && !aiAdvice && <p className="text-sm text-slate-500 text-center py-4">No gaps identified</p>}
+                {gaps.length === 0 && !aiAdvice && <p className="text-sm text-slate-500 text-center py-4">{getVal("dashboard.noGaps")}</p>}
               </div>
             </div>
           </div>
