@@ -14,7 +14,7 @@ import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useLanguage } from "./LanguageProvider";
 
 const NAV = [
-  { href: "/dashboard", label: "dashboard.dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "nav.dashboard", icon: LayoutDashboard },
   { href: "/aptitude-test", label: "nav.aptitudeTest", icon: Brain },
   { href: "/paths", label: "nav.careerPaths", icon: Route },
   { href: "/jobs", label: "nav.jobs", icon: Briefcase },
