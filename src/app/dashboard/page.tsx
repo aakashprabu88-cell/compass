@@ -27,7 +27,7 @@ export default function DashboardPage() {
         if (!authRes || !authRes.ok) { router.push("/"); return; }
         const userData = await authRes.json();
         if (!userData || userData.error) { router.push("/"); return; }
-        if (!userData.onboarded) { router.push("/dashboard"); return; }
+        if (!userData.onboarded) { router.push("/"); return; }
         if (cancelled) return;
         setUser(userData);
 
@@ -115,7 +115,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
             {[
               { label: "Top Match", value: topPath?.careerPath?.title?.split(" ").slice(0, 2).join(" ") || aiAdvice?.recommendedPaths?.[0]?.title?.split(" ").slice(0, 2).join(" ") || "—", icon: Sparkles },
-              { label: "Avg Match", value: `${avgMatch || (aiAdvice ? Math.round(aiAdvice.recommendedPaths.reduce((s: number, p: any) => s + p.matchScore, 0) / aiAdvice.recommendedPaths.length) : 0)}%`, icon: Target },
+              { label: "Avg Match", value: `${avgMatch || (aiAdvice?.recommendedPaths?.length ? Math.round(aiAdvice.recommendedPaths.reduce((s: number, p: any) => s + p.matchScore, 0) / aiAdvice.recommendedPaths.length) : 0)}%`, icon: Target },
               { label: "Skill Gaps", value: `${gaps.filter(g => g.priority === "high").length || aiAdvice?.skillGaps?.filter((g: any) => g.priority === "High").length || 0}`, icon: AlertTriangle },
               { label: "Paths Found", value: `${paths.length || aiAdvice?.recommendedPaths?.length || 0}`, icon: TrendingUp },
             ].map((stat, i) => (

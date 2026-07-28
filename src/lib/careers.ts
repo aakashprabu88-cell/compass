@@ -496,8 +496,8 @@ export function calculateSkillGaps(
       us.toLowerCase().includes(skill.toLowerCase()) ||
       skill.toLowerCase().includes(us.toLowerCase())
     );
-    const current = userHas ? 7 : Math.floor(Math.random() * 3);
-    const required = 6 + Math.floor(Math.random() * 3);
+    const current = userHas ? 7 : Math.min(3, Math.max(1, userSkills.length > 0 ? 2 : 1));
+    const required = 7;
     return {
       skill,
       current,

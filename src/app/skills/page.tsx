@@ -73,13 +73,13 @@ export default function SkillsPage() {
             {/* Summary */}
             <div className="grid grid-cols-3 gap-4 mb-8">
               {[
-                { label: "High Priority", count: highGaps.length, color: "red", desc: "Critical skills to build now" },
-                { label: "Medium Priority", count: medGaps.length, color: "yellow", desc: "Important for advancement" },
-                { label: "Low Priority", count: lowGaps.length, color: "green", desc: "Nice-to-have skills" },
+                { label: "High Priority", count: highGaps.length, colorClass: "text-red-400", desc: "Critical skills to build now" },
+                { label: "Medium Priority", count: medGaps.length, colorClass: "text-yellow-400", desc: "Important for advancement" },
+                { label: "Low Priority", count: lowGaps.length, colorClass: "text-green-400", desc: "Nice-to-have skills" },
               ].map(s => (
                 <div key={s.label} className="glass p-4">
                   <div className="text-xs text-slate-500 uppercase tracking-wider mb-2">{s.label}</div>
-                  <div className={`text-3xl font-bold text-${s.color}-400 mb-1`}>{s.count}</div>
+                  <div className={`text-3xl font-bold ${s.colorClass} mb-1`}>{s.count}</div>
                   <div className="text-xs text-slate-500">{s.desc}</div>
                 </div>
               ))}

@@ -116,16 +116,16 @@ export default function PathsPage() {
                     {/* Scores */}
                     <div className="grid grid-cols-3 gap-4 mb-6">
                       {[
-                        { label: "Skill Match", value: Math.round(selected.skillMatch * 100), color: "indigo" },
-                        { label: "Interest Match", value: Math.round(selected.interestMatch * 100), color: "purple" },
-                        { label: "AI Safety", value: Math.round(selected.aiSafetyScore * 100), color: "emerald" },
+                        { label: "Skill Match", value: Math.round(selected.skillMatch * 100), textClass: "text-indigo-400", barClass: "bg-indigo-500" },
+                        { label: "Interest Match", value: Math.round(selected.interestMatch * 100), textClass: "text-purple-400", barClass: "bg-purple-500" },
+                        { label: "AI Safety", value: Math.round(selected.aiSafetyScore * 100), textClass: "text-emerald-400", barClass: "bg-emerald-500" },
                       ].map(s => (
                         <div key={s.label} className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
                           <div className="text-xs text-slate-500 mb-1">{s.label}</div>
                           <div className="flex items-end gap-2">
-                            <span className={`text-xl font-bold text-${s.color}-400`}>{s.value}%</span>
+                            <span className={`text-xl font-bold ${s.textClass}`}>{s.value}%</span>
                             <div className="flex-1 h-1.5 rounded-full bg-white/5 mb-1.5">
-                              <div className={`h-full rounded-full bg-${s.color}-500`} style={{ width: `${s.value}%` }} />
+                              <div className={`h-full rounded-full ${s.barClass}`} style={{ width: `${s.value}%` }} />
                             </div>
                           </div>
                         </div>
@@ -150,7 +150,7 @@ export default function PathsPage() {
                     <div className="mb-6">
                       <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Required Skills</h3>
                       <div className="flex flex-wrap gap-2">
-                        {JSON.parse(selected.careerPath.requiredSkills || "[]").map((skill: string) => (
+                        {(typeof selected.careerPath.requiredSkills === "string" ? JSON.parse(selected.careerPath.requiredSkills || "[]") : selected.careerPath.requiredSkills || []).map((skill: string) => (
                           <span key={skill} className="px-3 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 text-xs border border-indigo-500/20">{skill}</span>
                         ))}
                       </div>
@@ -160,7 +160,7 @@ export default function PathsPage() {
                     <div className="mb-6">
                       <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Industries</h3>
                       <div className="flex flex-wrap gap-2">
-                        {JSON.parse(selected.careerPath.industries || "[]").map((ind: string) => (
+                        {(typeof selected.careerPath.industries === "string" ? JSON.parse(selected.careerPath.industries || "[]") : selected.careerPath.industries || []).map((ind: string) => (
                           <span key={ind} className="px-3 py-1 rounded-lg bg-white/5 text-slate-300 text-xs border border-white/5">{ind}</span>
                         ))}
                       </div>
@@ -170,7 +170,7 @@ export default function PathsPage() {
                     <div className="mb-6">
                       <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">What You&apos;d Do</h3>
                       <div className="space-y-2">
-                        {JSON.parse(selected.careerPath.keyTasks || "[]").map((task: string, i: number) => (
+                        {(typeof selected.careerPath.keyTasks === "string" ? JSON.parse(selected.careerPath.keyTasks || "[]") : selected.careerPath.keyTasks || []).map((task: string, i: number) => (
                           <div key={i} className="flex items-center gap-2 text-sm text-slate-300">
                             <CheckCircle className="w-4 h-4 text-indigo-400 shrink-0" />
                             {task}
