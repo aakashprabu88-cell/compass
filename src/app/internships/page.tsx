@@ -10,6 +10,7 @@ import {
   Award, Shield, Eye, Calendar, Building2, GraduationCap, Sparkles,
   ChevronLeft, BarChart3, AlertTriangle, FileText
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { toast } from "@/components/Toast";
@@ -46,7 +47,7 @@ const COMPANIES = ["All", "Google", "Microsoft", "Amazon", "Apple", "NVIDIA", "M
 
 export default function InternshipsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const { user, loading: authLoading, logout } = useAuth();
   const [internships, setInternships] = useState<Internship[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -69,15 +70,10 @@ export default function InternshipsPage() {
   const [trackerData, setTrackerData] = useState<any>(null);
 
   useEffect(() => {
+    if (authLoading) return;
     let cancelled = false;
     async function load() {
       try {
-        const authRes = await fetch("/api/auth/me");
-        if (!authRes.ok) { router.push("/"); return; }
-        const userData = await authRes.json();
-        if (!userData || userData.error) { router.push("/"); return; }
-        if (!cancelled) setUser(userData);
-
         const params = new URLSearchParams();
         if (searchQuery) params.set("q", searchQuery);
         if (domainFilter !== "All") params.set("domain", domainFilter);
@@ -88,19 +84,17 @@ export default function InternshipsPage() {
         if (companyFilter !== "All") params.set("company", companyFilter);
         params.set("sort", sortBy);
 
-        const res = await fetch(`/api/internships?${params}`);
+        const res = await fetch(`/api/internships?${params.toString()}`);
         if (res.ok) {
           const data = await res.json();
           if (!cancelled) setInternships(Array.isArray(data) ? data : []);
         }
-      } catch {}
+      } catch (e) { console.error("internships load", e); }
       if (!cancelled) setLoading(false);
     }
     load();
     return () => { cancelled = true; };
-  }, [router, searchQuery, domainFilter, workModeFilter, typeFilter, difficultyFilter, categoryFilter, companyFilter, sortBy]);
-
-  const logout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); };
+  }, [authLoading, searchQuery, domainFilter, workModeFilter, typeFilter, difficultyFilter, categoryFilter, companyFilter, sortBy]);
 
   const analyzeMatch = async (internship: Internship) => {
     setSelectedInternship(internship);

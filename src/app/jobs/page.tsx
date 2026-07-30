@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Briefcase, ExternalLink, MapPin, Clock, DollarSign, Mail, Send, CheckCircle, Zap, Users, Search } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import ApplyModal from "@/components/ApplyModal";
 import { toast } from "@/components/Toast";
@@ -23,6 +24,7 @@ const TYPES = ["all", "full-time", "part-time", "internship", "remote", "contrac
 
 export default function JobsPage() {
   const router = useRouter();
+  const { user, loading: authLoading, logout } = useAuth({ requireOnboarded: true });
   const [jobs, setJobs] = useState<Job[]>([]);
   const [allJobs, setAllJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,16 +38,13 @@ export default function JobsPage() {
   const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set());
   const [hasRealData, setHasRealData] = useState(false);
   const [realJobCount, setRealJobCount] = useState(0);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [applyModalJob, setApplyModalJob] = useState<Job | null>(null);
 
   useEffect(() => {
-    fetch("/api/auth/me").then(r => r.json()).then(d => {
-      if (d.error) { router.push("/"); return; }
-      if (!d.onboarded) { router.push("/dashboard"); return; }
-      setEmail(d.email || "");
-      setUser({ name: d.name || "Applicant", email: d.email || "" });
-    });
+    if (authLoading) return;
+    if (user) {
+      setEmail((user as any).email || "");
+    }
     Promise.all([
       fetch("/api/jobs").then(r => r.json()),
       fetch("/api/apply").then(r => r.json()),
@@ -63,250 +62,157 @@ export default function JobsPage() {
       }
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [router]);
+  }, [authLoading, user]);
 
   useEffect(() => {
     let filtered = allJobs;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(j =>
-        `${j.title} ${j.company} ${j.description} ${j.requiredSkills.join(" ")}`.toLowerCase().includes(q)
-      );
+      filtered = filtered.filter(j => j.title.toLowerCase().includes(q) || j.company.toLowerCase().includes(q) || j.description.toLowerCase().includes(q) || j.requiredSkills?.some(s => s.toLowerCase().includes(q)));
     }
     if (cityFilter !== "all") filtered = filtered.filter(j => j.city === cityFilter);
     if (typeFilter !== "all") filtered = filtered.filter(j => j.type === typeFilter);
     setJobs(filtered);
   }, [searchQuery, cityFilter, typeFilter, allJobs]);
 
-  const logout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); };
-
   const subscribe = async () => {
-    if (!email) return;
+    if (!email.trim()) return;
     setSubscribing(true);
-    await fetch("/api/jobs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
-    setSubscribed(true);
+    try {
+      const res = await fetch("/api/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
+      if (res.ok) { setSubscribed(true); toast.success("Subscribed! You'\''ll get job alerts."); }
+      else { toast.error("Subscription failed"); }
+    } catch { toast.error("Network error"); }
     setSubscribing(false);
   };
 
-  const applyToJob = async (job: Job, emailContent?: string) => {
-    setApplying(job.id);
+  const quickApply = async (jobId: string) => {
+    setApplying(jobId);
     try {
-      const res = await fetch("/api/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobId: job.id, applicantEmail: email, emailContent }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setAppliedJobs(prev => new Set([...prev, job.id]));
-        toast.success(`Applied to ${job.title} at ${job.company}`);
-        if (job.applyUrl && job.applyUrl !== "#") window.open(job.applyUrl, "_blank");
-      } else if (data.warning) {
-        toast.warning(data.warning);
-        setAppliedJobs(prev => new Set([...prev, job.id]));
-        if (job.applyUrl && job.applyUrl !== "#") window.open(job.applyUrl, "_blank");
-      }
-    } catch {
-      toast.error("Failed to submit application. Please try again.");
-    }
+      const res = await fetch("/api/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jobId }) });
+      if (res.ok) { setAppliedJobs(prev => new Set(prev).add(jobId)); toast.success("Application submitted!"); }
+      else { const err = await res.json(); toast.error(err.error || "Application failed"); }
+    } catch { toast.error("Network error"); }
     setApplying(null);
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
+  if (authLoading || loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
-  const tamilNaduJobs = allJobs.filter(j => j.city !== "Remote");
-  const remoteJobs = allJobs.filter(j => j.city === "Remote");
-  const liveJobs = allJobs.filter(j => j._isReal);
+  const realJobs = jobs.filter(j => j._isReal);
+  const hasData = hasRealData || allJobs.length > 0;
 
   return (
     <ErrorBoundary>
       <div className="h-screen flex overflow-hidden">
         <Sidebar user={user} onLogout={logout} />
-
-      <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
-        <div className="max-w-5xl mx-auto">
-          <h1 className="text-2xl font-bold mb-1">Job Search — Tamil Nadu</h1>
-          <p className="text-slate-400 text-sm mb-6">
-            {hasRealData ? (
-              <>🔗 <span className="text-green-400 font-medium">{realJobCount} live jobs</span> from Adzuna + {allJobs.length - liveJobs.length} cached matches. Search, filter, and apply instantly.</>
-            ) : (
-              <>{allJobs.length} jobs across {CITIES.length - 1} cities. Search, filter, and apply instantly.</>
-            )}
-          </p>
-
-          {/* Stats Row */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            {[
-              { label: "Tamil Nadu Jobs", value: tamilNaduJobs.length, icon: MapPin, color: "indigo" },
-              { label: "Remote Jobs", value: remoteJobs.length, icon: ExternalLink, color: "purple" },
-              { label: "Urgent Hiring", value: allJobs.filter(j => j.urgent).length, icon: Zap, color: "red" },
-              { label: "Applied", value: appliedJobs.size, icon: CheckCircle, color: "green" },
-            ].map(s => (
-              <div key={s.label} className="glass p-4 flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-lg bg-${s.color}-500/10 flex items-center justify-center`}>
-                  <s.icon className={`w-4 h-4 text-${s.color}-400`} />
-                </div>
-                <div>
-                  <div className="text-lg font-bold">{s.value}</div>
-                  <div className="text-[10px] text-slate-500 uppercase">{s.label}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Email Alert Banner */}
-          <div className="glass p-4 mb-6 flex items-center gap-4">
-            <Mail className="w-5 h-5 text-indigo-400 shrink-0" />
-            <div className="flex-1">
-              <h3 className="font-semibold text-sm">Get Email Alerts for New Jobs</h3>
-              <p className="text-xs text-slate-400">We&apos;ll notify you when new matching positions are posted in Tamil Nadu.</p>
-            </div>
-            {subscribed ? (
-              <div className="flex items-center gap-2 text-green-400 text-sm"><CheckCircle className="w-4 h-4" /> Subscribed!</div>
-            ) : (
-              <div className="flex gap-2">
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="!w-56 !py-2 !text-sm" />
-                <button onClick={subscribe} disabled={subscribing || !email}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-medium hover:bg-indigo-400 transition-all disabled:opacity-50">
-                  <Send className="w-3.5 h-3.5" /> {subscribing ? "..." : "Subscribe"}
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Search + Filters */}
-          <div className="glass p-4 mb-6">
-            <div className="flex gap-3 mb-3">
-              <div className="flex-1 relative">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search jobs, skills, companies..."
-                  className="!pl-10 !py-2.5 !text-sm" />
-              </div>
-            </div>
-            <div className="flex gap-4">
+        <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-6">
               <div>
-                <label className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Location</label>
-                <div className="flex gap-1.5 flex-wrap">
-                  {CITIES.map(c => (
-                    <button key={c} onClick={() => setCityFilter(c)}
-                      className={`px-2.5 py-1 rounded-lg text-xs transition-all ${cityFilter === c ? "bg-indigo-500 text-white" : "bg-white/5 text-slate-400 hover:bg-white/10"}`}>
-                      {c === "all" ? "All Cities" : c}
-                    </button>
-                  ))}
-                </div>
+                <h1 className="text-2xl font-bold mb-1">
+                  {hasRealData ? `Jobs (${realJobCount} real)` : "Job Listings"}
+                </h1>
+                <p className="text-sm text-slate-400">{hasRealData ? "Live jobs scraped from company career pages" : "AI-curated openings matching your profile"}</p>
               </div>
-              <div>
-                <label className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Type</label>
-                <div className="flex gap-1.5 flex-wrap">
-                  {TYPES.map(t => (
-                    <button key={t} onClick={() => setTypeFilter(t)}
-                      className={`px-2.5 py-1 rounded-lg text-xs transition-all ${typeFilter === t ? "bg-indigo-500 text-white" : "bg-white/5 text-slate-400 hover:bg-white/10"}`}>
-                      {t === "all" ? "All Types" : t.charAt(0).toUpperCase() + t.slice(1)}
-                    </button>
-                  ))}
-                </div>
+              <div className="flex items-center gap-2 text-xs">
+                {hasRealData && <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-500/10 text-green-400"><CheckCircle className="w-3 h-3" /> Live Data</span>}
+                <span className="text-slate-500">{jobs.length} jobs</span>
               </div>
             </div>
-          </div>
 
-          {/* Results Count */}
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-slate-400">Showing <strong className="text-white">{jobs.length}</strong> jobs</p>
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <Users className="w-3 h-3" /> Tamil Nadu + Remote
+            {/* Filters */}
+            <div className="flex flex-wrap gap-3 mb-6">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Search jobs, companies, skills..."
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-indigo-500/30 transition-colors placeholder:text-slate-600"
+                />
+              </div>
+              <select value={cityFilter} onChange={e => setCityFilter(e.target.value)}
+                className="bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-indigo-500/30 transition-colors">
+                {CITIES.map(c => <option key={c} value={c}>{c === "all" ? "All Cities" : c}</option>)}
+              </select>
+              <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+                className="bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-indigo-500/30 transition-colors">
+                {TYPES.map(t => <option key={t} value={t}>{t === "all" ? "All Types" : t}</option>)}
+              </select>
             </div>
-          </div>
 
-          {/* Job Listings */}
-          {jobs.length === 0 ? (
-            <div className="glass p-12 text-center">
-              <Briefcase className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-              <h3 className="font-semibold mb-1">No jobs match your filters</h3>
-              <p className="text-sm text-slate-500">Try adjusting your search or filters</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {jobs.map((job, idx) => {
-                const isApplied = appliedJobs.has(job.id);
-                return (
-                  <motion.div
-                    key={job.id}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: Math.min(idx * 0.05, 0.3) }}
-                    className="glass p-5 glass-hover transition-all"
-                  >
+            {/* Job Cards */}
+            {jobs.length === 0 ? (
+              <div className="text-center py-16">
+                <Briefcase className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                <h3 className="font-semibold mb-1">No jobs found</h3>
+                <p className="text-sm text-slate-500">Try adjusting your filters or check back later</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {jobs.map((job, i) => (
+                  <motion.div key={job.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
+                    className="p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-all flex flex-col" style={{ background: "rgba(17,17,24,0.5)" }}>
                     <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold">{job.title}</h3>
-                          {job._isReal && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20">LIVE</span>}
-                          {job.urgent && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse">URGENT</span>}
-                        </div>
-                        <p className="text-xs text-indigo-400">{job.company}</p>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm truncate">{job.title}</h3>
+                        <p className="text-xs text-indigo-400 truncate">{job.company}</p>
                       </div>
-                      {job.matchScore !== undefined && (
-                        <div className="text-right shrink-0 ml-4">
-                          <div className="text-lg font-bold text-indigo-400">{Math.round(job.matchScore * 10)}%</div>
-                          <div className="text-[10px] text-slate-500 uppercase">match</div>
-                        </div>
-                      )}
+                      {job.urgent && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 shrink-0 ml-2">Urgent</span>}
+                      {job._isReal && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 shrink-0 ml-2">Live</span>}
                     </div>
-                    <p className="text-xs text-slate-400 mb-3">{job.description}</p>
-                    <div className="flex items-center gap-3 mb-3 text-xs text-slate-500 flex-wrap">
-                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{job.location}</span>
+
+                    <div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
+                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{job.city || job.location}</span>
                       <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{job.salary}</span>
-                      {job._isReal ? (
-                        <span className="flex items-center gap-1 text-green-400"><Clock className="w-3 h-3" />Live listing</span>
-                      ) : (
-                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{job.postedDaysAgo}d ago</span>
-                      )}
-                      <span className="px-2 py-0.5 rounded bg-white/5 text-slate-300">{job.type}</span>
-                      <span className="text-slate-600">Exp: {job.experience}</span>
-                      {job._isReal && job.companyLogo && <img src={job.companyLogo} alt="" className="w-5 h-5 rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{job.type}</span>
                     </div>
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {job.requiredSkills.map(s => (
-                        <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">{s}</span>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {isApplied ? (
-                        <span className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/10 text-green-400 text-sm">
-                          <CheckCircle className="w-3.5 h-3.5" /> Applied
-                        </span>
-                      ) : (
-                        <button onClick={() => setApplyModalJob(job)} disabled={applying === job.id}
-                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-medium hover:bg-indigo-400 transition-all disabled:opacity-50">
-                          {applying === job.id ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" />}
-                          {applying === job.id ? "Applying..." : "Apply Now"}
-                        </button>
-                      )}
-                      <a href={job.url} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-slate-400 hover:text-white text-sm transition-all">
-                        <ExternalLink className="w-3.5 h-3.5" /> Company Page
+
+                    <p className="text-xs text-slate-400 mb-3 flex-1 line-clamp-2">{job.description}</p>
+
+                    {job.requiredSkills?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {job.requiredSkills.slice(0, 3).map(s => (
+                          <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-slate-400">{s}</span>
+                        ))}
+                        {job.requiredSkills.length > 3 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-slate-500">+{job.requiredSkills.length - 3}</span>}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2 mt-auto">
+                      <button onClick={() => setApplyModalJob(job)}
+                        className="flex-1 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-xl text-xs font-medium transition-all">
+                        Quick Apply
+                      </button>
+                      <a href={job.applyUrl || job.url} target="_blank" rel="noopener noreferrer"
+                        className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all">
+                        <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                       </a>
                     </div>
                   </motion.div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </main>
-
-      {applyModalJob && user && (
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+      {applyModalJob && (
         <ApplyModal
           job={applyModalJob}
-          userEmail={user.email}
-          userName={user.name}
-          onConfirm={(emailContent) => { applyToJob(applyModalJob, emailContent); setApplyModalJob(null); }}
+          userEmail={user?.email || ""}
+          userName={user?.name || ""}
+          onConfirm={async (emailContent) => {
+            try {
+              setApplying(applyModalJob.id);
+              const res = await fetch("/api/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jobId: applyModalJob.id, emailContent }) });
+              if (res.ok) { setAppliedJobs(prev => new Set(prev).add(applyModalJob.id)); toast.success("Application sent!"); }
+              else toast.error("Application failed");
+            } catch { toast.error("Network error"); }
+            setApplying(null);
+            setApplyModalJob(null);
+          }}
           onCancel={() => setApplyModalJob(null)}
           loading={applying === applyModalJob.id}
         />
       )}
-    </div>
     </ErrorBoundary>
   );
 }

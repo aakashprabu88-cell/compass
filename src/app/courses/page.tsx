@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GraduationCap, ExternalLink, Star, Clock, Users, CheckCircle } from "lucide-react";
+import { GraduationCap, ExternalLink, Star, CheckCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -14,41 +15,32 @@ interface Course {
 
 export default function CoursesPage() {
   const router = useRouter();
+  const { user, loading: authLoading, logout } = useAuth({ requireOnboarded: true });
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
     let cancelled = false;
     async function load() {
       try {
-        const authRes = await fetch("/api/auth/me");
-        if (!authRes.ok) { router.push("/"); return; }
-        const userData = await authRes.json();
-        if (!userData || userData.error) { router.push("/"); return; }
-        if (!userData.onboarded) { router.push("/dashboard"); return; }
-        if (cancelled) return;
-        setUser(userData);
-
         const coursesRes = await fetch("/api/courses");
         if (coursesRes.ok) {
           const d = await coursesRes.json();
           if (!cancelled) setCourses(Array.isArray(d) ? d : []);
         }
-      } catch { if (!cancelled) router.push("/"); }
+      } catch (e) { console.error("courses load", e); }
       if (!cancelled) setLoading(false);
     }
     load();
     return () => { cancelled = true; };
-  }, [router]);
+  }, [authLoading]);
 
-  const logout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); };
+  if (authLoading || loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   const categories = ["all", ...Array.from(new Set(courses.map(c => c.category)))];
   const filtered = filter === "all" ? courses : courses.filter(c => c.category === filter);
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <ErrorBoundary>
@@ -71,7 +63,7 @@ export default function CoursesPage() {
             </div>
 
             {filtered.length === 0 ? (
-              <div className="glass p-12 text-center">
+              <div className="rounded-xl border border-white/5 p-12 text-center" style={{ background: "rgba(17,17,24,0.5)" }}>
                 <GraduationCap className="w-12 h-12 text-slate-600 mx-auto mb-4" />
                 <h3 className="font-semibold mb-1">No courses available</h3>
                 <p className="text-sm text-slate-500">Complete your assessment to get personalized recommendations</p>
@@ -79,7 +71,7 @@ export default function CoursesPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filtered.map(course => (
-                  <div key={course.id} className="glass p-5 glass-hover transition-all flex flex-col">
+                  <div key={course.id} className="rounded-xl border border-white/5 p-5 hover:border-white/10 transition-all flex flex-col" style={{ background: "rgba(17,17,24,0.5)" }}>
                     <div className="flex items-start justify-between mb-3">
                       <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">{course.category}</span>
                       <div className="flex items-center gap-1">
@@ -91,9 +83,9 @@ export default function CoursesPage() {
                     <p className="text-xs text-indigo-400 mb-2">{course.provider}</p>
                     <p className="text-xs text-slate-400 mb-3 flex-1">{course.description}</p>
                     <div className="flex items-center gap-4 mb-3 text-xs text-slate-500">
-                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{course.duration}</span>
+                      <span>{course.duration}</span>
                       <span className="flex items-center gap-1"><Star className="w-3 h-3 text-yellow-400" />{course.rating}</span>
-                      <span className="flex items-center gap-1"><Users className="w-3 h-3" />{course.enrolled}</span>
+                      <span>{course.enrolled}</span>
                     </div>
                     <div className="flex flex-wrap gap-1 mb-3">
                       {course.skills.slice(0, 4).map(s => (

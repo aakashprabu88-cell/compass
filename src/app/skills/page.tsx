@@ -1,60 +1,39 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Target, BookOpen } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { SKILL_RESOURCES } from "@/data/skill-resources";
 
 interface SkillGap { id: string; skillName: string; currentLevel: number; requiredLevel: number; gap: number; priority: string; }
 
-const SKILL_RESOURCES: Record<string, { free: string[]; paid: string[] }> = {
-  "Python": { free: ["Python.org Tutorial", "freeCodeCamp Python"], paid: ["Udemy: 100 Days of Code"] },
-  "Machine Learning": { free: ["Andrew Ng's ML Course", "Kaggle Learn"], paid: ["Coursera ML Specialization"] },
-  "Deep Learning": { free: ["fast.ai", "deeplearning.ai"], paid: ["Udacity Nanodegree"] },
-  "Data Analysis": { free: ["Kaggle Courses", "Google Data Analytics Certificate"], paid: ["DataCamp"] },
-  "SQL": { free: ["SQLBolt", "Mode Analytics Tutorial"], paid: ["Coursera: SQL for Data Science"] },
-  "Statistics": { free: ["Khan Academy", "StatQuest YouTube"], paid: ["edX Statistics Course"] },
-  "Communication": { free: ["Toastmasters", "Coursera: Communication Skills"], paid: ["MasterClass"] },
-  "Leadership": { free: ["Harvard Business Review", "TED Talks on Leadership"], paid: ["LinkedIn Learning"] },
-  "Design Thinking": { free: ["IDEO Design Kit", "Stanford d.school"], paid: ["Coursera: Design Thinking"] },
-  "Figma": { free: ["Figma Academy", "YouTube Tutorials"], paid: ["Udemy Figma Course"] },
-  default: { free: ["Coursera", "edX", "Khan Academy", "YouTube"], paid: ["Udemy", "LinkedIn Learning"] },
-};
-
 export default function SkillsPage() {
   const router = useRouter();
+  const { user, loading: authLoading, logout } = useAuth({ requireOnboarded: true });
   const [gaps, setGaps] = useState<SkillGap[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
     let cancelled = false;
     async function load() {
       try {
-        const authRes = await fetch("/api/auth/me");
-        if (!authRes.ok) { router.push("/"); return; }
-        const userData = await authRes.json();
-        if (!userData || userData.error) { router.push("/"); return; }
-        if (!userData.onboarded) { router.push("/dashboard"); return; }
-        if (cancelled) return;
-        setUser(userData);
-
         const skillsRes = await fetch("/api/skills");
         if (skillsRes.ok) {
           const d = await skillsRes.json();
           if (!cancelled) setGaps(Array.isArray(d) ? d : []);
         }
-      } catch { if (!cancelled) router.push("/"); }
+      } catch (e) { console.error("skills load", e); }
       if (!cancelled) setLoading(false);
     }
     load();
     return () => { cancelled = true; };
-  }, [router]);
+  }, [authLoading]);
 
-  const logout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); };
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
+  if (authLoading || loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   const highGaps = gaps.filter(g => g.priority === "high");
   const medGaps = gaps.filter(g => g.priority === "medium");
@@ -77,7 +56,7 @@ export default function SkillsPage() {
                 { label: "Medium Priority", count: medGaps.length, colorClass: "text-yellow-400", desc: "Important for advancement" },
                 { label: "Low Priority", count: lowGaps.length, colorClass: "text-green-400", desc: "Nice-to-have skills" },
               ].map(s => (
-                <div key={s.label} className="glass p-4">
+                <div key={s.label} className="rounded-xl border border-white/5 p-4" style={{ background: "rgba(17,17,24,0.5)" }}>
                   <div className="text-xs text-slate-500 uppercase tracking-wider mb-2">{s.label}</div>
                   <div className={`text-3xl font-bold ${s.colorClass} mb-1`}>{s.count}</div>
                   <div className="text-xs text-slate-500">{s.desc}</div>
@@ -87,7 +66,7 @@ export default function SkillsPage() {
 
             {/* Skill Gaps List */}
             {gaps.length === 0 ? (
-              <div className="glass p-12 text-center">
+              <div className="rounded-xl border border-white/5 p-12 text-center" style={{ background: "rgba(17,17,24,0.5)" }}>
                 <Target className="w-12 h-12 text-slate-600 mx-auto mb-4" />
                 <h3 className="font-semibold mb-1">No skill gaps identified</h3>
                 <p className="text-sm text-slate-500">Complete your assessment to see skill gaps</p>
@@ -97,7 +76,7 @@ export default function SkillsPage() {
                 {gaps.map(gap => {
                   const resources = SKILL_RESOURCES[gap.skillName] || SKILL_RESOURCES.default;
                   return (
-                    <div key={gap.id} className="glass p-5 glass-hover transition-all">
+                    <div key={gap.id} className="rounded-xl border border-white/5 p-5 hover:border-white/10 transition-all" style={{ background: "rgba(17,17,24,0.5)" }}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <h3 className="font-semibold">{gap.skillName}</h3>

@@ -14,7 +14,8 @@ export async function GET() {
     });
 
     return NextResponse.json(paths);
-  } catch {
+  } catch (e) {
+    console.error("GET /api/paths", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

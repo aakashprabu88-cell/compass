@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Route, CheckCircle, TrendingUp } from "lucide-react";
 import { formatSalary, getRiskBg, getGrowthBg } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -12,41 +13,29 @@ interface PathData { id: string; matchScore: number; skillMatch: number; interes
 
 export default function PathsPage() {
   const router = useRouter();
+  const { user, loading: authLoading, logout } = useAuth({ requireOnboarded: true });
   const [paths, setPaths] = useState<PathData[]>([]);
   const [selected, setSelected] = useState<PathData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
     let cancelled = false;
     async function load() {
       try {
-        const authRes = await fetch("/api/auth/me");
-        if (!authRes.ok) { router.push("/"); return; }
-        const userData = await authRes.json();
-        if (!userData || userData.error) { router.push("/"); return; }
-        if (!userData.onboarded) { router.push("/dashboard"); return; }
-        if (cancelled) return;
-        setUser(userData);
-
         const pathsRes = await fetch("/api/paths");
         if (pathsRes.ok) {
           const d = await pathsRes.json();
           if (!cancelled) setPaths(Array.isArray(d) ? d : []);
         }
-      } catch { if (!cancelled) router.push("/"); }
+      } catch (e) { console.error("paths load", e); }
       if (!cancelled) setLoading(false);
     }
     load();
     return () => { cancelled = true; };
-  }, [router]);
+  }, [authLoading]);
 
-  const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/");
-  };
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
+  if (authLoading || loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <ErrorBoundary>
@@ -85,7 +74,7 @@ export default function PathsPage() {
                   </motion.button>
                 ))}
                 {paths.length === 0 && (
-                  <div className="glass p-8 text-center">
+                  <div className="rounded-xl border border-white/5 p-8 text-center" style={{ background: "rgba(17,17,24,0.5)" }}>
                     <Route className="w-8 h-8 text-slate-600 mx-auto mb-3" />
                     <p className="text-sm text-slate-500">Complete your assessment to see paths</p>
                   </div>
@@ -100,7 +89,7 @@ export default function PathsPage() {
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="glass p-8"
+                    className="rounded-xl border border-white/5 p-8" style={{ background: "rgba(17,17,24,0.5)" }}
                   >
                     <div className="flex items-start justify-between mb-6">
                       <div>
@@ -191,7 +180,7 @@ export default function PathsPage() {
                     )}
                   </motion.div>
                 ) : (
-                  <div className="glass p-12 text-center">
+                  <div className="rounded-xl border border-white/5 p-12 text-center" style={{ background: "rgba(17,17,24,0.5)" }}>
                     <Route className="w-12 h-12 text-slate-600 mx-auto mb-4" />
                     <h3 className="font-semibold mb-1">Select a career path</h3>
                     <p className="text-sm text-slate-500">Click any path on the left to see detailed AI analysis</p>

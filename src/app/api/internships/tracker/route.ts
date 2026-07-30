@@ -32,7 +32,8 @@ export async function GET() {
     };
 
     return NextResponse.json({ pipeline, stats });
-  } catch {
+  } catch (e) {
+    console.error("GET /api/internships/tracker", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

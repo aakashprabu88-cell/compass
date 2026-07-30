@@ -81,24 +81,24 @@ export async function generateText(
 
 function extractJSON(text: string): any {
   // Try direct parse first
-  try { return JSON.parse(text.trim()); } catch {}
+  try { return JSON.parse(text.trim()); } catch (e) { console.error("extractJSON direct parse failed", e); }
 
   // Extract from markdown code fences
   const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
   if (fenceMatch) {
-    try { return JSON.parse(fenceMatch[1].trim()); } catch {}
+    try { return JSON.parse(fenceMatch[1].trim()); } catch (e) { console.error("extractJSON fence parse failed", e); }
   }
 
   // Find first { ... } block (non-greedy)
   const braceMatch = text.match(/\{[\s\S]*?\}/);
   if (braceMatch) {
-    try { return JSON.parse(braceMatch[0]); } catch {}
+    try { return JSON.parse(braceMatch[0]); } catch (e) { console.error("extractJSON brace parse failed", e); }
   }
 
   // Find first [ ... ] block
   const bracketMatch = text.match(/\[[\s\S]*?\]/);
   if (bracketMatch) {
-    try { return JSON.parse(bracketMatch[0]); } catch {}
+    try { return JSON.parse(bracketMatch[0]); } catch (e) { console.error("extractJSON bracket parse failed", e); }
   }
 
   return null;

@@ -56,7 +56,8 @@ export async function GET(request: Request) {
     }));
 
     return NextResponse.json(enriched);
-  } catch {
+  } catch (e) {
+    console.error("GET /api/internships", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -91,7 +92,8 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(created);
-  } catch {
+  } catch (e) {
+    console.error("POST /api/internships", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

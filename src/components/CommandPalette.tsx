@@ -14,7 +14,8 @@ interface CommandItem {
 
 const COMMANDS: CommandItem[] = [
   { id: "dashboard", label: "Dashboard", href: "/dashboard", category: "Navigation" },
-  { id: "aptitude-test", label: "Aptitude Test", href: "/aptitude-test", category: "Assessment" },
+
+  { id: "interview-prep", label: "Interview Preparation", href: "/interview-preparation", category: "Assessment" },
   { id: "paths", label: "Career Paths", href: "/paths", category: "Navigation" },
   { id: "jobs", label: "Jobs", href: "/jobs", category: "Navigation" },
   { id: "skills", label: "Skill Gaps", href: "/skills", category: "Navigation" },

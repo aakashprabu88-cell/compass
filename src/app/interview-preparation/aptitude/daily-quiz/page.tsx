@@ -1,0 +1,138 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { ArrowLeft, Zap, CheckCircle2, AlertTriangle, Clock, RefreshCw, TrendingUp } from "lucide-react";
+import Sidebar from "@/components/Sidebar";
+
+const QUESTIONS = [
+  { q: "What is 15% of 300?", options: ["35", "40", "45", "50"], correct: 2, topic: "Percentage" },
+  { q: "If a shirt costs ₹800 after a 20% discount, what was the original price?", options: ["₹960", "₹1000", "₹900", "₹850"], correct: 1, topic: "Profit & Loss" },
+  { q: "A train 150m long passes a pole in 15 seconds. Find its speed in km/h.", options: ["36", "40", "45", "54"], correct: 0, topic: "Time Speed Distance" },
+  { q: "If 15 workers can build a wall in 12 days, how many days will 20 workers take?", options: ["8", "9", "10", "16"], correct: 1, topic: "Time & Work" },
+  { q: "What is the probability of getting an even number when rolling a fair die?", options: ["1/6", "1/3", "1/2", "2/3"], correct: 2, topic: "Probability" },
+  { q: "Find the average of first 10 natural numbers.", options: ["5", "5.5", "6", "4.5"], correct: 1, topic: "Average" },
+  { q: "If A:B = 2:3 and B:C = 4:5, find A:C.", options: ["8:15", "2:5", "8:12", "6:15"], correct: 0, topic: "Ratio" },
+  { q: "Simplify: 25 + 5 × 3 - 4", options: ["76", "36", "86", "26"], correct: 1, topic: "Simplification" },
+  { q: "What is the LCM of 12, 15, and 20?", options: ["30", "60", "120", "90"], correct: 1, topic: "Number System" },
+  { q: "A sum doubles itself in 5 years at simple interest. Find the rate of interest.", options: ["10%", "15%", "20%", "25%"], correct: 2, topic: "Arithmetic" },
+];
+
+export default function DailyQuizPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (!res.ok) { router.push("/"); return; }
+        const data = await res.json();
+        if (!data || data.error) { router.push("/"); return; }
+        if (!cancelled) setUser(data);
+      } catch (e) { console.error("daily quiz load", e); if (!cancelled) router.push("/"); }
+      if (!cancelled) setLoading(false);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [router]);
+
+  const logout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); };
+
+  const score = submitted ? QUESTIONS.reduce((s, q, i) => s + (answers[i] === q.correct ? 1 : 0), 0) : 0;
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
+
+  return (
+    <div className="h-screen flex overflow-hidden">
+      <Sidebar user={user} onLogout={logout} />
+      <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+        <div className="max-w-3xl mx-auto">
+          <Link href="/interview-preparation/aptitude" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-white transition-colors mb-4">
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Aptitude
+          </Link>
+
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">Daily Quiz</h1>
+                <p className="text-xs text-slate-400">10 questions · New every day</p>
+              </div>
+            </div>
+            {submitted && (
+              <div className={`text-xl font-bold ${score >= 7 ? "text-green-400" : "text-amber-400"}`}>
+                {score}/10
+              </div>
+            )}
+          </motion.div>
+
+          <div className="space-y-4">
+            {QUESTIONS.map((q, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
+                className="p-4 rounded-xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] text-slate-500">Q{i + 1}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400">{q.topic}</span>
+                </div>
+                <p className="text-sm font-medium mb-3">{q.q}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {q.options.map((opt, oi) => {
+                    let border = "border-white/5 hover:border-white/10";
+                    if (submitted) {
+                      if (oi === q.correct) border = "border-green-500 bg-green-500/10";
+                      else if (oi === answers[i] && oi !== q.correct) border = "border-red-500 bg-red-500/10";
+                    } else if (answers[i] === oi) {
+                      border = "border-indigo-500 bg-indigo-500/10";
+                    }
+                    return (
+                      <button key={oi} onClick={() => !submitted && setAnswers(prev => ({ ...prev, [i]: oi }))}
+                        disabled={submitted}
+                        className={`p-2.5 rounded-lg text-xs text-left transition-all border ${border} ${submitted ? "cursor-default" : ""}`}>
+                        {String.fromCharCode(65 + oi)}. {opt}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {!submitted ? (
+            <motion.button onClick={() => setSubmitted(true)}
+              className="mt-6 w-full py-3 rounded-xl bg-indigo-500 hover:bg-indigo-400 font-semibold text-sm transition-all">
+              Submit Quiz
+            </motion.button>
+          ) : (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <div className="mt-6 p-5 rounded-2xl border border-white/5 text-center" style={{ background: "rgba(17,17,24,0.5)" }}>
+                <div className={`text-3xl font-bold mb-2 ${score >= 7 ? "text-green-400" : "text-amber-400"}`}>
+                  {score >= 7 ? "Great Job! 🎯" : "Keep Practicing! 💪"}
+                </div>
+                <p className="text-sm text-slate-400 mb-4">You scored {score} out of {QUESTIONS.length}</p>
+                <div className="flex gap-2 justify-center">
+                  <button onClick={() => { setAnswers({}); setSubmitted(false); }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm transition-all">
+                    <RefreshCw className="w-3.5 h-3.5" /> Retry
+                  </button>
+                  <Link href="/interview-preparation/aptitude/performance"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold transition-all">
+                    <TrendingUp className="w-3.5 h-3.5" /> View Analytics
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}

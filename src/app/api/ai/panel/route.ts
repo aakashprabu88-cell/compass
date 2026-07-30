@@ -220,13 +220,14 @@ Decision must be one of: "strong_hire", "hire", "maybe", "no_hire"`;
         const cleaned = response.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
         const parsed = JSON.parse(cleaned);
         return NextResponse.json(parsed);
-      } catch {
+      } catch (e) {
+        console.error("panel evaluation JSON parse failed", e);
         // Try brace extraction
         const braceMatch = response.match(/\{[\s\S]*\}/);
         if (braceMatch) {
           try {
             return NextResponse.json(JSON.parse(braceMatch[0]));
-          } catch {}
+          } catch (e2) { console.error("panel evaluation brace fallback failed", e2); }
         }
 
         // Personalized fallback

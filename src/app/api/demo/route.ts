@@ -34,10 +34,8 @@ export async function POST() {
     if (!user) {
       const hashed = await bcrypt.hash(DEMO_PASSWORD, 10);
       user = await prisma.user.create({
-        data: { email: DEMO_EMAIL, password: hashed, name: "Demo User", onboarded: true },
+        data: { email: DEMO_EMAIL, password: hashed, name: "Demo User", onboarded: false },
       });
-    } else if (!user.onboarded) {
-      user = await prisma.user.update({ where: { id: user.id }, data: { onboarded: true } });
     }
 
     // Seed assessment if missing

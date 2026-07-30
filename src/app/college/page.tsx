@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Users, AlertTriangle, CheckCircle2, TrendingUp, School, BarChart3, Shield, ArrowRight } from "lucide-react";
+import { Users, AlertTriangle, CheckCircle2, TrendingUp, School, Shield, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/components/LanguageProvider";
 import Sidebar from "@/components/Sidebar";
 
@@ -22,42 +23,17 @@ interface StudentData {
 
 export default function CollegeDashboardPage() {
   const { t, locale } = useLanguage();
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading, logout } = useAuth();
   const [students, setStudents] = useState<StudentData[]>([]);
   const router = useRouter();
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const res = await fetch("/api/auth/me");
-        if (!res.ok) { router.push("/"); return; }
-        const data = await res.json();
-        if (!data || data.error) { router.push("/"); return; }
-        if (!cancelled) { setUser(data); }
-
-        // Simulate college data (in real app, this would be an API call)
-        // For demo, we generate mock data based on the seed
-        const mockStudents: StudentData[] = [
-          { id: "1", name: "Priya Sharma", assessment: { skills: ["Python", "Machine Learning"], interests: ["AI", "Data Science"], personality: { analytical: "high", creative: "low" } }, paths: [{ matchScore: 0.85, careerPath: { title: "AI/ML Engineer", aiRisk: "none" } }], skillGaps: [{ skillName: "Deep Learning", gap: 3, priority: "high" }] },
-          { id: "2", name: "Rahul Verma", assessment: { skills: ["JavaScript", "React"], interests: ["Web Dev", "Design"], personality: { creative: "high", analytical: "medium" } }, paths: [{ matchScore: 0.78, careerPath: { title: "UX/UI Designer", aiRisk: "low" } }], skillGaps: [{ skillName: "Figma", gap: 2, priority: "medium" }] },
-          { id: "3", name: "Anjali Patel", assessment: { skills: ["Communication", "Leadership"], interests: ["Business", "Management"], personality: { social: "high", leadership: "high" } }, paths: [{ matchScore: 0.72, careerPath: { title: "Product Manager", aiRisk: "low" } }], skillGaps: [{ skillName: "Data Analysis", gap: 4, priority: "high" }] },
-          { id: "4", name: "Vikram Singh", assessment: { skills: ["Java", "SQL"], interests: ["Finance", "Technology"], personality: { analytical: "high" } }, paths: [{ matchScore: 0.68, careerPath: { title: "Financial Analyst", aiRisk: "high" } }], skillGaps: [{ skillName: "Python", gap: 3, priority: "high" }] },
-          { id: "5", name: "Sneha Reddy", assessment: null, paths: [], skillGaps: [] },
-          { id: "6", name: "Arjun Nair", assessment: { skills: ["Python", "Statistics"], interests: ["Research", "Healthcare"], personality: { investigative: "high" } }, paths: [{ matchScore: 0.81, careerPath: { title: "Data Scientist", aiRisk: "medium" } }], skillGaps: [{ skillName: "SQL", gap: 2, priority: "medium" }] },
-          { id: "7", name: "Meera Iyer", assessment: { skills: ["Writing", "Research"], interests: ["Media", "Content"], personality: { artistic: "high" } }, paths: [{ matchScore: 0.65, careerPath: { title: "Journalist", aiRisk: "high" } }], skillGaps: [{ skillName: "Digital Marketing", gap: 3, priority: "high" }] },
-          { id: "8", name: "Karthik Menon", assessment: { skills: ["CAD", "Physics"], interests: ["Engineering", "Manufacturing"], personality: { realistic: "high" } }, paths: [{ matchScore: 0.76, careerPath: { title: "Mechanical Engineer", aiRisk: "low" } }], skillGaps: [{ skillName: "3D Modeling", gap: 2, priority: "medium" }] },
-        ];
-        if (!cancelled) { setStudents(mockStudents); setLoading(false); }
-      } catch { if (!cancelled) router.push("/"); }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, [router]);
-
-  const logout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); };
   const isHi = locale === "hi";
+
+  useEffect(() => {
+    if (authLoading) return;
+    // In production, fetch from a real college API endpoint
+    setStudents([]);
+  }, [authLoading]);
 
   const assessed = students.filter(s => s.assessment);
   const atRisk = assessed.filter(s => s.skillGaps.some(g => g.priority === "high"));
@@ -90,7 +66,7 @@ export default function CollegeDashboardPage() {
     });
   });
 
-  if (loading) return (
+  if (authLoading) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
     </div>
@@ -102,17 +78,17 @@ export default function CollegeDashboardPage() {
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="text-2xl font-bold mb-1">{t.college.title}</h1>
-            <p className="text-slate-400 text-sm mb-6">{t.college.subtitle}</p>
+            <h1 className="text-2xl font-bold mb-1">{(t as any).college?.title || "College Dashboard"}</h1>
+            <p className="text-slate-400 text-sm mb-6">{(t as any).college?.subtitle || "Student career readiness overview"}</p>
           </motion.div>
 
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
             {[
-              { label: t.college.totalStudents, value: students.length, icon: Users, color: "text-indigo-400" },
-              { label: t.college.assessed, value: assessed.length, icon: CheckCircle2, color: "text-green-400" },
-              { label: t.college.atRisk, value: atRisk.length, icon: AlertTriangle, color: "text-red-400" },
-              { label: t.college.ready, value: careerReady.length, icon: TrendingUp, color: "text-emerald-400" },
+              { label: (t as any).college?.totalStudents || "Total Students", value: students.length, icon: Users, color: "text-indigo-400" },
+              { label: (t as any).college?.assessed || "Assessed", value: assessed.length, icon: CheckCircle2, color: "text-green-400" },
+              { label: (t as any).college?.atRisk || "At Risk", value: atRisk.length, icon: AlertTriangle, color: "text-red-400" },
+              { label: (t as any).college?.ready || "Ready", value: careerReady.length, icon: TrendingUp, color: "text-emerald-400" },
             ].map((stat, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
@@ -130,7 +106,7 @@ export default function CollegeDashboardPage() {
             <div className="p-5 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
               <div className="flex items-center gap-2 mb-4">
                 <AlertTriangle className="w-4 h-4 text-amber-400" />
-                <h2 className="font-semibold text-sm">{t.college.skillGaps}</h2>
+                <h2 className="font-semibold text-sm">{(t as any).college?.skillGaps || "Common Skill Gaps"}</h2>
               </div>
               <div className="space-y-3">
                 {topSkillGaps.map(([skill, count]) => (
@@ -141,11 +117,11 @@ export default function CollegeDashboardPage() {
                     </div>
                     <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
                       <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500"
-                        style={{ width: `${(count / assessed.length) * 100}%` }} />
+                        style={{ width: `${(count / Math.max(assessed.length, 1)) * 100}%` }} />
                     </div>
                   </div>
                 ))}
-                {topSkillGaps.length === 0 && <p className="text-sm text-slate-500 text-center py-4">{t.college.noData}</p>}
+                {topSkillGaps.length === 0 && <p className="text-sm text-slate-500 text-center py-4">{(t as any).college?.noData || "No data available"}</p>}
               </div>
             </div>
 
@@ -153,7 +129,7 @@ export default function CollegeDashboardPage() {
             <div className="p-5 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4 text-indigo-400" />
-                <h2 className="font-semibold text-sm">{t.college.careerDistribution}</h2>
+                <h2 className="font-semibold text-sm">{(t as any).college?.careerDistribution || "Career Distribution"}</h2>
               </div>
               <div className="space-y-3">
                 {Object.entries(careerDist).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([career, count]) => (
@@ -164,7 +140,7 @@ export default function CollegeDashboardPage() {
                     </div>
                     <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
                       <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"
-                        style={{ width: `${(count / assessed.length) * 100}%` }} />
+                        style={{ width: `${(count / Math.max(assessed.length, 1)) * 100}%` }} />
                     </div>
                   </div>
                 ))}
@@ -175,12 +151,12 @@ export default function CollegeDashboardPage() {
             <div className="p-5 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="w-4 h-4 text-emerald-400" />
-                <h2 className="font-semibold text-sm">{t.college.aiRisk}</h2>
+                <h2 className="font-semibold text-sm">{(t as any).college?.aiRisk || "AI Risk Distribution"}</h2>
               </div>
               <div className="space-y-3">
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-green-400">{t.shield.safe}</span>
+                    <span className="text-green-400">{(t as any).shield?.safe || "AI-Safe"}</span>
                     <span>{aiRiskDist.safe}</span>
                   </div>
                   <div className="h-2 rounded-full bg-white/5 overflow-hidden">
@@ -189,7 +165,7 @@ export default function CollegeDashboardPage() {
                 </div>
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-amber-400">{t.shield.risky}</span>
+                    <span className="text-amber-400">{(t as any).shield?.risky || "AI-Risky"}</span>
                     <span>{aiRiskDist.risky}</span>
                   </div>
                   <div className="h-2 rounded-full bg-white/5 overflow-hidden">
@@ -198,7 +174,7 @@ export default function CollegeDashboardPage() {
                 </div>
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-red-400">{t.shield.critical}</span>
+                    <span className="text-red-400">{(t as any).shield?.critical || "Critical"}</span>
                     <span>{aiRiskDist.critical}</span>
                   </div>
                   <div className="h-2 rounded-full bg-white/5 overflow-hidden">
@@ -212,7 +188,7 @@ export default function CollegeDashboardPage() {
             <div className="p-5 rounded-2xl border border-red-500/20" style={{ background: "rgba(239,68,68,0.05)" }}>
               <div className="flex items-center gap-2 mb-4">
                 <AlertTriangle className="w-4 h-4 text-red-400" />
-                <h2 className="font-semibold text-sm">{t.college.studentsAtRisk}</h2>
+                <h2 className="font-semibold text-sm">{(t as any).college?.studentsAtRisk || "Students At Risk"}</h2>
               </div>
               <div className="space-y-2">
                 {atRisk.map(s => (
@@ -241,8 +217,8 @@ export default function CollegeDashboardPage() {
             <School className="w-8 h-8 mx-auto mb-3 text-indigo-400" />
             <h3 className="font-semibold mb-2">{isHi ? "अपने कॉलेज में Compass लाएं" : "Bring Compass to Your College"}</h3>
             <p className="text-sm text-slate-400 mb-4">{isHi ? "हर छात्र को करियर काउंसलर मिलना चाहिए।" : "Every student deserves a career counselor."}</p>
-            <Link href="/aptitude-test" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 transition-all font-semibold text-sm">
-              {isHi ? "छात्रों को असेसमेंट दिलाएं" : "Have Students Take Assessment"} <ArrowRight className="w-4 h-4" />
+            <Link href="/dashboard" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 transition-all font-semibold text-sm">
+              {isHi ? "डैशबोर्ड देखें" : "Go to Dashboard"} <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>

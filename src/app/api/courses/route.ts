@@ -26,7 +26,8 @@ export async function GET() {
 
     const courses = matchCourses(userSkills, userInterests, gaps);
     return NextResponse.json(courses);
-  } catch {
+  } catch (e) {
+    console.error("GET /api/courses", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

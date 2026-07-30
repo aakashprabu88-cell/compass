@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Compass, LogOut, LayoutDashboard, Route, Sparkles, UsersRound,
   Layers, FileText, Briefcase, TrendingUp, Mic, Menu, X, GraduationCap,
-  Shield, BookOpen, Brain, School
+  Shield, BookOpen, School
 } from "lucide-react";
 import { CommandPalette } from "./CommandPalette";
 import { LanguageSwitcher } from "./LanguageSwitcher";
@@ -15,7 +15,8 @@ import { useLanguage } from "./LanguageProvider";
 
 const NAV = [
   { href: "/dashboard", label: "nav.dashboard", icon: LayoutDashboard },
-  { href: "/aptitude-test", label: "nav.aptitudeTest", icon: Brain },
+  { href: "/interview-preparation", label: "nav.interviewPrep", icon: GraduationCap, badge: "AI" },
+
   { href: "/paths", label: "nav.careerPaths", icon: Route },
   { href: "/jobs", label: "nav.jobs", icon: Briefcase },
   { href: "/internships", label: "nav.internships", icon: GraduationCap, badge: "AI" },

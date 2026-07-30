@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Compass, ArrowRight, Check, Brain, Shield, BookOpen, Users, School, Loader2, Zap, ChevronRight, TrendingUp, Globe } from "lucide-react";
+import { Compass, ArrowRight, Brain, Shield, BookOpen, School, Loader2, Zap, TrendingUp, Globe, LogIn, UserPlus } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 
 const FEATURES = [
@@ -42,9 +42,9 @@ export default function LandingPage() {
     try {
       const res = await fetch("/api/demo", { method: "POST" });
       if (res.ok) {
-        router.push("/dashboard");
+        router.push("/assessment");
       }
-    } catch {
+    } catch (e) { console.error("startDemo", e);
     } finally {
       setDemoLoading(false);
     }
@@ -75,8 +75,9 @@ export default function LandingPage() {
               {demoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5 text-amber-400" />}
               {getVal("landing.demo")}
             </button>
-            <Link href="/dashboard" className="px-4 py-2 text-sm bg-indigo-500 hover:bg-indigo-400 rounded-lg font-medium transition-colors">
-              {getVal("landing.cta")}
+            <Link href="/login"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg font-medium transition-colors">
+              <LogIn className="w-3.5 h-3.5" /> Sign In
             </Link>
           </div>
         </div>
@@ -111,8 +112,9 @@ export default function LandingPage() {
               {demoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
               {demoLoading ? (locale === "hi" ? "डेमो सेटअप हो रहा है..." : "Setting up demo...") : getVal("landing.ctaButton")}
             </button>
-            <Link href="/aptitude-test" className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-semibold transition-all group">
-              {getVal("landing.cta")} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <Link href="/register"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-semibold transition-all group">
+              <UserPlus className="w-4 h-4" /> {locale === "hi" ? "खाता बनाएं" : "Create Account"} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </motion.div>
 

@@ -30,7 +30,7 @@ export async function GET() {
     const topTitles = userPaths.map(up => up.careerPath.title);
     const rawQuery = topTitles.length > 0 ? topTitles[0] : userInterests[0] || "software developer";
     const query = rawQuery.replace(/\//g, " ").replace(/\b(Professional|Specialist|Engineer|Analyst)\b/g, "").trim() || "software developer";
-    const city = (assessment as any).preferredCity || "Chennai";
+    const city = (assessment as typeof assessment & { preferredCity?: string }).preferredCity || "Chennai";
 
     const realResult = await fetchRealJobs({ query, location: city, country: "in", resultsPerPage: 20 });
 
@@ -45,7 +45,8 @@ export async function GET() {
       hasRealData: realResult.jobs.length > 0,
       totalRealJobs: realResult.totalCount,
     });
-  } catch {
+  } catch (e) {
+    console.error("GET /api/jobs", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -61,7 +62,8 @@ export async function POST(request: Request) {
       success: true,
       message: `Job alerts enabled for ${email}. You'll receive notifications for matching positions.`,
     });
-  } catch {
+  } catch (e) {
+    console.error("POST /api/jobs", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

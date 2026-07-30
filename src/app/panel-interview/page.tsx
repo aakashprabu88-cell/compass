@@ -1,6 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useAuth } from "@/hooks/useAuth";
+
+interface SpeechRecognitionAPI {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onresult: ((event: any) => void) | null;
+  onerror: ((event: any) => void) | null;
+  onend: (() => void) | null;
+}
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -70,7 +83,7 @@ type Phase = "setup" | "interview" | "results";
 
 export default function PanelInterviewPage() {
   const router = useRouter();
-  const [authed, setAuthed] = useState(false);
+  const { user, loading: authLoading, logout } = useAuth({ requireOnboarded: true });
   const [phase, setPhase] = useState<Phase>("setup");
   const [role, setRole] = useState("Software Engineer");
   const [company, setCompany] = useState("Google");
@@ -83,14 +96,7 @@ export default function PanelInterviewPage() {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
-
-  useEffect(() => {
-    fetch("/api/auth/me").then(r => r.json()).then(d => {
-      if (d.error || !d.onboarded) { router.push("/"); return; }
-      setAuthed(true);
-    }).catch(() => router.push("/"));
-  }, [router]);
+  const recognitionRef = useRef<SpeechRecognitionAPI | null>(null);
 
   const MAX_QUESTIONS = 9; // 3 per interviewer
 
@@ -137,7 +143,8 @@ export default function PanelInterviewPage() {
         question: data.question || "Tell me about yourself.",
         timestamp: new Date(),
       }]);
-    } catch {
+    } catch (e) {
+      console.error("panel interview startQuestion", e);
       setMessages(prev => [...prev, {
         interviewerId: interviewer.id,
         question: "Tell me about yourself and why you're interested in this role.",
@@ -184,7 +191,8 @@ export default function PanelInterviewPage() {
         const data = await res.json();
         setResult(data);
         setPhase("results");
-      } catch {
+      } catch (e) {
+        console.error("panel interview evaluate", e);
         setResult({
           overallScore: 72,
           decision: "hire",
@@ -234,7 +242,8 @@ export default function PanelInterviewPage() {
         question: data.question || "Can you tell me more about that?",
         timestamp: new Date(),
       }]);
-    } catch {
+    } catch (e) {
+      console.error("panel interview followup", e);
       const interviewer = INTERVIEWERS[nextInterviewer];
       setMessages(prev => [...prev, {
         interviewerId: interviewer.id,
@@ -258,8 +267,9 @@ export default function PanelInterviewPage() {
       return;
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
+    const SR = window as { SpeechRecognition?: new () => SpeechRecognitionAPI; webkitSpeechRecognition?: new () => SpeechRecognitionAPI };
+    const SpeechRecognitionCtor = SR.SpeechRecognition ?? SR.webkitSpeechRecognition;
+    const recognition = new SpeechRecognitionCtor!();
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = "en-US";
@@ -285,7 +295,7 @@ export default function PanelInterviewPage() {
 
   const getInterviewer = (id: string) => INTERVIEWERS.find(i => i.id === id) || INTERVIEWERS[0];
 
-  if (!authed) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
+  if (authLoading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   // Setup Phase
   if (phase === "setup") {

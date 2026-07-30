@@ -17,7 +17,8 @@ export async function GET() {
     });
 
     return NextResponse.json(applications);
-  } catch {
+  } catch (e) {
+    console.error("GET /api/apply", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -160,7 +161,7 @@ export async function POST(request: Request) {
           autoApplied: false,
           coverLetter,
           emailDraft: finalEmailDraft,
-          matchScore: job ? (job as any).matchScore || 0 : 0,
+          matchScore: 0,
           notes: "",
         },
       });
@@ -170,7 +171,8 @@ export async function POST(request: Request) {
         application,
       });
     }
-  } catch {
+  } catch (e) {
+    console.error("POST /api/apply", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -193,7 +195,8 @@ export async function PATCH(request: Request) {
     });
 
     return NextResponse.json(updated);
-  } catch {
+  } catch (e) {
+    console.error("PATCH /api/apply", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -211,7 +214,8 @@ export async function DELETE(request: Request) {
     });
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (e) {
+    console.error("DELETE /api/apply", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

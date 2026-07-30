@@ -13,7 +13,8 @@ export async function GET() {
     });
 
     return NextResponse.json(gaps);
-  } catch {
+  } catch (e) {
+    console.error("GET /api/skills", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

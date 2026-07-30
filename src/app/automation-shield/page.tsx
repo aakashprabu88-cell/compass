@@ -1,37 +1,20 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Shield, AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Zap, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/components/LanguageProvider";
 import Sidebar from "@/components/Sidebar";
 import { CAREER_DATABASE } from "@/lib/careers";
 
 export default function AutomationShieldPage() {
   const { t, locale } = useLanguage();
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading, logout } = useAuth();
   const [filter, setFilter] = useState<"all" | "safe" | "risky" | "critical">("all");
-  const router = useRouter();
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const res = await fetch("/api/auth/me");
-        if (!res.ok) { router.push("/"); return; }
-        const data = await res.json();
-        if (!data || data.error) { router.push("/"); return; }
-        if (!cancelled) { setUser(data); setLoading(false); }
-      } catch { if (!cancelled) router.push("/"); }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, [router]);
-
-  const logout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); };
   const isHi = locale === "hi";
 
   const careers = CAREER_DATABASE.map(c => ({
@@ -91,23 +74,23 @@ export default function AutomationShieldPage() {
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="text-2xl font-bold mb-1">{t.shield.title}</h1>
-            <p className="text-slate-400 text-sm mb-6">{t.shield.subtitle}</p>
+            <h1 className="text-2xl font-bold mb-1">{(t as any).shield?.title || "Automation Shield"}</h1>
+            <p className="text-slate-400 text-sm mb-6">{(t as any).shield?.subtitle || "Career automation risk analysis"}</p>
           </motion.div>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3 mb-6">
             <div className="p-4 rounded-xl bg-green-500/5 border border-green-500/20 text-center">
               <div className="text-2xl font-bold text-green-400">{safeCount}</div>
-              <div className="text-xs text-green-400/70">{t.shield.safe}</div>
+              <div className="text-xs text-green-400/70">{(t as any).shield?.safe || "AI-Safe"}</div>
             </div>
             <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 text-center">
               <div className="text-2xl font-bold text-amber-400">{riskyCount}</div>
-              <div className="text-xs text-amber-400/70">{t.shield.risky}</div>
+              <div className="text-xs text-amber-400/70">{(t as any).shield?.risky || "AI-Risky"}</div>
             </div>
             <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20 text-center">
               <div className="text-2xl font-bold text-red-400">{criticalCount}</div>
-              <div className="text-xs text-red-400/70">{t.shield.critical}</div>
+              <div className="text-xs text-red-400/70">{(t as any).shield?.critical || "Critical"}</div>
             </div>
           </div>
 
@@ -136,7 +119,7 @@ export default function AutomationShieldPage() {
                 {/* Risk Score Bar */}
                 <div className="mb-3">
                   <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-slate-500">{t.shield.riskScore}</span>
+                    <span className="text-slate-500">{(t as any).shield?.riskScore || "Risk Score"}</span>
                     <span className={`font-bold ${career.aiRiskScore <= 0.15 ? "text-green-400" : career.aiRiskScore <= 0.4 ? "text-amber-400" : "text-red-400"}`}>
                       {Math.round(career.aiRiskScore * 100)}%
                     </span>
@@ -164,9 +147,9 @@ export default function AutomationShieldPage() {
           <div className="mt-8 p-6 rounded-2xl border border-indigo-500/20 text-center" style={{ background: "rgba(99,102,241,0.05)" }}>
             <Shield className="w-8 h-8 mx-auto mb-3 text-indigo-400" />
             <h3 className="font-semibold mb-2">{isHi ? "अपने करियर की AI जोखिम जांचें" : "Check Your Career's AI Risk"}</h3>
-            <p className="text-sm text-slate-400 mb-4">{isHi ? "अप्टीट्यूड टेस्ट पूरा करें और जानें आपका चुना हुआ करियर AI सुरक्षित है या नहीं।" : "Complete the aptitude test and find out if your chosen career is AI-safe."}</p>
-            <Link href="/aptitude-test" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 transition-all font-semibold text-sm">
-              {isHi ? "अप्टीट्यूड टेस्ट दें" : "Take Aptitude Test"} <ArrowRight className="w-4 h-4" />
+            <p className="text-sm text-slate-400 mb-4">{isHi ? "जानें आपका चुना हुआ करियर AI सुरक्षित है या नहीं।" : "Find out if your chosen career is AI-safe."}</p>
+            <Link href="/paths" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 transition-all font-semibold text-sm">
+              {isHi ? "करियर पाथ देखें" : "View Career Paths"} <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>

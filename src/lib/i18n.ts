@@ -2,6 +2,7 @@ const translations = {
   en: {
     nav: {
       dashboard: "Dashboard",
+      interviewPrep: "Interview Prep",
       careerPaths: "Career Paths",
       jobs: "Jobs",
       internships: "Internships",
@@ -10,7 +11,6 @@ const translations = {
       digitalTwin: "Digital Twin",
       resumeBuilder: "Resume Builder",
       skills: "Skills",
-      aptitudeTest: "Aptitude Test",
       govtSchemes: "Govt Schemes",
       automationShield: "Automation Shield",
       collegeDashboard: "College",
@@ -83,25 +83,6 @@ const translations = {
       noPaths: "Complete your assessment to see paths",
       noGaps: "No gaps identified",
     },
-    aptitude: {
-      title: "Aptitude Test",
-      subtitle: "Discover your career personality. 15 minutes. No wrong answers.",
-      startBtn: "Start Assessment",
-      nextBtn: "Next Question",
-      prevBtn: "Previous",
-      submitBtn: "Get My Results",
-      progress: "Question",
-      of: "of",
-      results: {
-        title: "Your Career Profile",
-        personality: "Your Personality Type",
-        topCareers: "Best Career Matches",
-        strengths: "Your Strengths",
-        avoid: "Careers to Avoid",
-        retake: "Retake Test",
-        viewPaths: "View Career Paths",
-      },
-    },
     govt: {
       title: "Government Schemes & Scholarships",
       subtitle: "Financial support for your education and career. Most students don't know these exist.",
@@ -166,6 +147,7 @@ const translations = {
   hi: {
     nav: {
       dashboard: "डैशबोर्ड",
+      interviewPrep: "इंटरव्यू तैयारी",
       careerPaths: "करियर पाथ",
       jobs: "नौकरियाँ",
       internships: "इंटर्नशिप",
@@ -174,7 +156,6 @@ const translations = {
       digitalTwin: "डिजिटल ट्विन",
       resumeBuilder: "रिज्यूमे बिल्डर",
       skills: "कौशल",
-      aptitudeTest: "अप्टीट्यूड टेस्ट",
       govtSchemes: "सरकारी योजनाएँ",
       automationShield: "ऑटोमेशन शील्ड",
       collegeDashboard: "कॉलेज",
@@ -246,25 +227,6 @@ const translations = {
       fix: "ठीक करें",
       noPaths: "पाथ देखने के लिए असेसमेंट पूरा करें",
       noGaps: "कोई अंतर पहचाना नहीं गया",
-    },
-    aptitude: {
-      title: "अप्टीट्यूड टेस्ट",
-      subtitle: "अपनी करियर पर्सनालिटी खोजें। 15 मिनट। कोई गलत उत्तर नहीं।",
-      startBtn: "असेसमेंट शुरू करें",
-      nextBtn: "अगला प्रश्न",
-      prevBtn: "पिछला",
-      submitBtn: "मेरे परिणाम देखें",
-      progress: "प्रश्न",
-      of: "में से",
-      results: {
-        title: "आपकी करियर प्रोफाइल",
-        personality: "आपकी पर्सनालिटी टाइप",
-        topCareers: "सर्वश्रेष्ठ करियर मैच",
-        strengths: "आपकी ताकत",
-        avoid: "बचने के लिए करियर",
-        retake: "टेस्ट दोबारा दें",
-        viewPaths: "करियर पाथ देखें",
-      },
     },
     govt: {
       title: "सरकारी योजनाएँ और छात्रवृत्ति",

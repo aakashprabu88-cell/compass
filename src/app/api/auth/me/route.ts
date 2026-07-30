@@ -13,7 +13,8 @@ export async function GET() {
     });
 
     return NextResponse.json(dbUser);
-  } catch {
+  } catch (e) {
+    console.error("GET /api/auth/me", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -31,7 +32,8 @@ export async function PUT(req: Request) {
     });
 
     return NextResponse.json(updated);
-  } catch {
+  } catch (e) {
+    console.error("PUT /api/auth/me", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

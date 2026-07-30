@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
         const parsed = JSON.parse(jsonMatch[0]);
         actions = parsed.actions;
       }
-    } catch {}
+    } catch (e) { console.error("agent parse actions failed", e); }
 
     // Clean the response text (remove JSON if present)
     let cleanResponse = response;
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
         cleanResponse = parsed.response || response;
         if (!actions && parsed.actions) actions = parsed.actions;
       }
-    } catch {}
+    } catch (e) { console.error("agent clean response failed", e); }
 
     return NextResponse.json({ response: cleanResponse, actions });
   } catch (err: any) {

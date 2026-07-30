@@ -1,12 +1,14 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Target, Shield, AlertTriangle, Sparkles, ArrowRight, FileText, Zap, ChevronRight, TrendingUp, UsersRound, Layers } from "lucide-react";
+import { Target, Shield, AlertTriangle, ArrowRight, FileText, TrendingUp, UsersRound, Layers, Zap } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/components/LanguageProvider";
+import { Sparkles, ChevronRight } from "lucide-react";
 
 interface UserData { id: string; name: string; email: string; onboarded: boolean; }
 interface PathData { id: string; matchScore: number; careerPath: any; }
@@ -15,7 +17,7 @@ interface SkillGapData { id: string; skillName: string; currentLevel: number; re
 export default function DashboardPage() {
   const router = useRouter();
   const { t, locale } = useLanguage();
-  const [user, setUser] = useState<UserData | null>(null);
+  const { user, loading: authLoading, logout } = useAuth({ requireOnboarded: true });
   const [paths, setPaths] = useState<PathData[]>([]);
   const [gaps, setGaps] = useState<SkillGapData[]>([]);
   const [aiAdvice, setAiAdvice] = useState<any>(null);
@@ -31,34 +33,25 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
+    if (authLoading || !user) return;
     let cancelled = false;
     async function load() {
       try {
-        const authRes = await fetch("/api/auth/me").catch(() => null);
-        if (!authRes || !authRes.ok) { router.push("/"); return; }
-        const userData = await authRes.json();
-        if (!userData || userData.error) { router.push("/"); return; }
-        if (!userData.onboarded) { router.push("/"); return; }
-        if (cancelled) return;
-        setUser(userData);
-
         const safeFetch = (url: string) => fetch(url).then(r => r.ok ? r.json() : null).catch(() => null);
         const [pathsData, gapsData] = await Promise.all([safeFetch("/api/paths"), safeFetch("/api/skills")]);
         if (cancelled) return;
         setPaths(Array.isArray(pathsData) ? pathsData : []);
         setGaps(Array.isArray(gapsData) ? gapsData : []);
 
-        try { const c = localStorage.getItem("compass_career_advice"); if (c) setAiAdvice(JSON.parse(c)); } catch {}
+        try { const c = localStorage.getItem("compass_career_advice"); if (c) setAiAdvice(JSON.parse(c)); } catch (e) { console.error("parse cached advice", e); }
         setLoading(false);
-      } catch { if (!cancelled) router.push("/"); }
+      } catch (e) { console.error("dashboard load", e); if (!cancelled) setLoading(false); }
     }
     load();
     return () => { cancelled = true; };
-  }, [router]);
+  }, [authLoading, user]);
 
-  const logout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); };
-
-  if (loading) return (
+  if (authLoading || loading) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
     </div>
@@ -73,7 +66,7 @@ export default function DashboardPage() {
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="text-2xl font-bold mb-1">{getVal("dashboard.welcome")}, {user?.name?.split(" ")[0]}</h1>
+            <h1 className="text-2xl font-bold mb-1">{getVal("dashboard.welcome")}, {(user as any)?.name?.split(" ")[0] || "there"}</h1>
             <p className="text-slate-400 text-sm mb-8">{getVal("dashboard.overview")}</p>
           </motion.div>
 
