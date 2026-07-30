@@ -85,7 +85,7 @@ export default function AssessmentPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ skills, interests, education, experience, workStyle }),
       });
-      if (res.ok) router.push("/dashboard");
+      if (res.ok) router.push("/assessment/results");
       else { const err = await res.json(); alert(err.error || "Failed to save"); }
     } catch { alert("Network error"); }
     setSaving(false);
