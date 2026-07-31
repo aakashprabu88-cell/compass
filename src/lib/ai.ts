@@ -452,6 +452,79 @@ Output ONLY the question text. No preamble, no explanation.`;
   return question.replace(/^["']|["']$/g, "").trim();
 }
 
+// ─── Interview Session Generation ──────────────────────────────────
+
+export interface InterviewSessionQuestion {
+  id: string;
+  type: string;
+  text: string;
+  tips: string;
+  followUps: string[];
+}
+
+export interface InterviewSession {
+  role: string;
+  company: string;
+  roundType: string;
+  durationMinutes: number;
+  overview: string;
+  questions: InterviewSessionQuestion[];
+}
+
+export async function generateInterviewSession(
+  roundType: "technical" | "hr" | "behavioral" | "managerial" | "panel" | "coding",
+  role: string,
+  company: string,
+  userProfile?: UserProfileContext | null
+): Promise<InterviewSession | null> {
+  const profileContext = userProfile ? `\n\nCANDIDATE BACKGROUND:\n${profileToContext(userProfile)}` : "";
+
+  const roundSpecific = {
+    technical: "Deep technical questions on their skills: data structures, system design, domain fundamentals, and a real-world scenario. Ask follow-up questions that probe depth.",
+    hr: "Motivation, company fit, salary expectations, career goals, strengths/weaknesses, and questions about their resume. Indian fresher interview style.",
+    behavioral: "Behavioral questions using the STAR method: teamwork, conflict, failure, leadership, pressure situations.",
+    managerial: "Case-based and people questions: delegation, conflict between reports, resource constraints, 1:1s, performance management.",
+    panel: "A realistic mix of technical + behavioral + HR asked by a panel — 3 technical, 3 behavioral, 2 HR.",
+    coding: "Problem-solving questions with a coding focus: algorithms, complexity analysis, edge cases, and code-quality follow-ups.",
+  };
+
+  const prompt = `Generate a complete mock interview session.
+
+Target role: ${role}
+Company: ${company}
+Round: ${roundType.toUpperCase()} round${profileContext}
+
+REQUIREMENTS:
+- Generate EXACTLY 8 questions for this ${roundType} round.
+- Questions must be SPECIFIC to the ${role} role and reference the candidate's actual skills where possible.
+- Mix: 2 opener/easy, 4 medium, 2 hard/probing.
+- Each question must include concrete tips on what a strong answer covers (specific points, not generic advice).
+- Each question needs 2 realistic follow-up questions an interviewer would ask.
+- Overview: 1-2 sentences describing what this round evaluates.
+- Duration: realistic for this round type (minutes).
+
+${roundSpecific[roundType]}
+
+Return ONLY valid JSON (no markdown):
+{
+  "role": "${role}",
+  "company": "${company}",
+  "roundType": "${roundType}",
+  "durationMinutes": 45,
+  "overview": "What this round evaluates",
+  "questions": [
+    { "id": "q1", "type": "technical", "text": "Specific question for this role", "tips": "Concrete points a strong answer covers", "followUps": ["Follow-up 1", "Follow-up 2"] }
+  ]
+}`;
+
+  const text = await generateText(prompt, undefined, { temperature: 0.7, maxTokens: 3500 });
+  const parsed = extractJSON(text);
+  if (parsed?.questions && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+    return parsed as InterviewSession;
+  }
+  return null;
+}
+
 // ─── ATS Scoring ───────────────────────────────────────────────────
 
 export async function getATSScore(resumeText: string, jobDescription: string): Promise<{

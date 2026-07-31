@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     const user = await getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { jobId, autoApply, applicantEmail, emailContent } = await request.json();
+    const { jobId, autoApply, applicantEmail, emailContent, jobTitle, company, location } = await request.json();
 
     // Get user's resume
     const resume = await prisma.resume.findFirst({
@@ -154,9 +154,9 @@ export async function POST(request: Request) {
           userId: user.id,
           resumeId: resume?.id || null,
           jobId,
-          jobTitle: job?.title || "Custom Job",
-          company: job?.company || "Company",
-          location: job?.location || "Tamil Nadu",
+          jobTitle: job?.title || jobTitle || "Custom Job",
+          company: job?.company || company || "Company",
+          location: job?.location || location || "Tamil Nadu",
           status: "applied",
           autoApplied: false,
           coverLetter,

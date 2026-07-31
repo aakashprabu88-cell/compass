@@ -96,6 +96,21 @@ export default function JobsPage() {
     setApplying(null);
   };
 
+  const applyToJob = (job: Job) => {
+    if (job._isReal && job.applyUrl) {
+      window.open(job.applyUrl, "_blank", "noopener,noreferrer");
+      setAppliedJobs(prev => new Set(prev).add(job.id));
+      toast.success("Opening the original posting to apply");
+      fetch("/api/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: job.id, autoApply: false, jobTitle: job.title, company: job.company, location: job.location, emailContent: "" }),
+      }).catch(() => {});
+    } else {
+      setApplyModalJob(job);
+    }
+  };
+
   if (authLoading || loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   const realJobs = jobs.filter(j => j._isReal);
@@ -178,14 +193,17 @@ export default function JobsPage() {
                     )}
 
                     <div className="flex items-center gap-2 mt-auto">
-                      <button onClick={() => setApplyModalJob(job)}
-                        className="flex-1 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-xl text-xs font-medium transition-all">
-                        Quick Apply
-                      </button>
-                      <a href={job.applyUrl || job.url} target="_blank" rel="noopener noreferrer"
-                        className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all">
-                        <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                      </a>
+                      {job._isReal ? (
+                        <button onClick={() => applyToJob(job)}
+                          className="flex-1 py-2 bg-indigo-500 text-white hover:bg-indigo-400 rounded-xl text-xs font-medium transition-all flex items-center justify-center gap-1.5">
+                          <ExternalLink className="w-3 h-3" /> Apply Now
+                        </button>
+                      ) : (
+                        <button onClick={() => setApplyModalJob(job)}
+                          className="flex-1 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-xl text-xs font-medium transition-all">
+                          Quick Apply
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 ))}

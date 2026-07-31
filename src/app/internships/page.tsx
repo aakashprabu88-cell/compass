@@ -27,6 +27,7 @@ interface Internship {
   mentorAvailable: boolean; lorAvailable: boolean; category: string;
   hiringSpeed: string; techStack: string; interviewRounds: number;
   userStatus: string | null; userMatchScore: number | null;
+  _isLive?: boolean;
 }
 
 interface MatchResult {
@@ -85,10 +86,24 @@ export default function InternshipsPage() {
         params.set("sort", sortBy);
 
         const res = await fetch(`/api/internships?${params.toString()}`);
+        let seeded: Internship[] = [];
         if (res.ok) {
           const data = await res.json();
-          if (!cancelled) setInternships(Array.isArray(data) ? data : []);
+          seeded = Array.isArray(data) ? data : [];
         }
+
+        let live: Internship[] = [];
+        try {
+          const liveRes = await fetch("/api/internships/live");
+          if (liveRes.ok) {
+            const liveData = await liveRes.json();
+            live = (Array.isArray(liveData.internships) ? liveData.internships : []).map((i: any) => ({
+              ...i, _isLive: true,
+            }));
+          }
+        } catch {}
+
+        if (!cancelled) setInternships([...live, ...seeded]);
       } catch (e) { console.error("internships load", e); }
       if (!cancelled) setLoading(false);
     }
@@ -111,16 +126,21 @@ export default function InternshipsPage() {
     setMatching(false);
   };
 
-  const applyToInternship = async (internshipId: string) => {
+  const applyToInternship = async (internship: Internship) => {
+    if (internship._isLive) {
+      if (internship.applyUrl) window.open(internship.applyUrl, "_blank", "noopener,noreferrer");
+      toast.success("Opening the live internship posting to apply");
+      return;
+    }
     try {
       const res = await fetch("/api/internships", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ internshipId, status: "applied" }),
+        body: JSON.stringify({ internshipId: internship.id, status: "applied" }),
       });
       if (res.ok) {
         toast.success("Application tracked! Good luck!");
-        setInternships(prev => prev.map(i => i.id === internshipId ? { ...i, userStatus: "applied" } : i));
+        setInternships(prev => prev.map(i => i.id === internship.id ? { ...i, userStatus: "applied" } : i));
       }
     } catch { toast.error("Failed to track application"); }
   };
@@ -190,7 +210,7 @@ export default function InternshipsPage() {
                     </div>
                     Internship Intelligence
                   </h1>
-                  <p className="text-slate-400 text-sm mt-1">AI-powered matching across {internships.length} curated opportunities from FAANG, startups, and research labs</p>
+                  <p className="text-slate-400 text-sm mt-1">Live internships from across Tamil Nadu, plus curated opportunities from FAANG, startups, and research labs — all matched to your skills</p>
                 </div>
                 <button onClick={loadTracker}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-slate-400 hover:text-white transition-colors">
@@ -283,7 +303,7 @@ export default function InternshipsPage() {
                     internship={internship}
                     index={idx}
                     onAnalyze={() => analyzeMatch(internship)}
-                    onApply={() => applyToInternship(internship.id)}
+                    onApply={() => applyToInternship(internship)}
                     onSave={() => saveInternship(internship.id)}
                     onSelect={() => setSelectedInternship(internship)}
                     getDaysUntilDeadline={getDaysUntilDeadline}
@@ -304,7 +324,7 @@ export default function InternshipsPage() {
               matchResult={matchResult}
               matching={matching}
               onClose={() => { setSelectedInternship(null); setMatchResult(null); }}
-              onApply={() => { applyToInternship(selectedInternship.id); setSelectedInternship(null); }}
+              onApply={() => { applyToInternship(selectedInternship); setSelectedInternship(null); }}
               onAnalyze={() => analyzeMatch(selectedInternship)}
               getDaysUntilDeadline={getDaysUntilDeadline}
               getDifficultyColor={getDifficultyColor}
@@ -372,6 +392,11 @@ function InternshipCard({ internship, index, onAnalyze, onApply, onSave, onSelec
       onClick={onSelect}
     >
       {/* Urgency badge */}
+      {internship._isLive && (
+        <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Live
+        </div>
+      )}
       {daysLeft !== null && daysLeft <= 7 && daysLeft > 0 && (
         <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold animate-pulse">
           {daysLeft}d left
@@ -433,21 +458,25 @@ function InternshipCard({ internship, index, onAnalyze, onApply, onSave, onSelec
           <span>{internship.openings} slots</span>
         </div>
         <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-          <button onClick={onSave} className={`p-1.5 rounded-lg transition-colors ${isSaved ? "bg-amber-500/10 text-amber-400" : "text-slate-500 hover:text-amber-400 hover:bg-amber-500/5"}`}>
-            <Bookmark className="w-3.5 h-3.5" fill={isSaved ? "currentColor" : "none"} />
-          </button>
-          <button onClick={onAnalyze}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/5 transition-colors">
-            <Brain className="w-3.5 h-3.5" />
-          </button>
+          {!internship._isLive && (
+            <>
+              <button onClick={onSave} className={`p-1.5 rounded-lg transition-colors ${isSaved ? "bg-amber-500/10 text-amber-400" : "text-slate-500 hover:text-amber-400 hover:bg-amber-500/5"}`}>
+                <Bookmark className="w-3.5 h-3.5" fill={isSaved ? "currentColor" : "none"} />
+              </button>
+              <button onClick={onAnalyze}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/5 transition-colors">
+                <Brain className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
           {isApplied ? (
             <span className="px-2.5 py-1 rounded-lg bg-green-500/10 text-green-400 text-xs flex items-center gap-1">
               <CheckCircle className="w-3 h-3" /> Applied
             </span>
           ) : (
             <button onClick={onApply}
-              className="px-3 py-1 rounded-lg bg-indigo-500 text-white text-xs font-medium hover:bg-indigo-400 transition-colors">
-              Apply
+              className="px-3 py-1 rounded-lg bg-indigo-500 text-white text-xs font-medium hover:bg-indigo-400 transition-colors flex items-center gap-1">
+              {internship._isLive ? <><ExternalLink className="w-3 h-3" /> Apply Now</> : "Apply"}
             </button>
           )}
         </div>
@@ -496,7 +525,7 @@ function DetailModal({ internship, matchResult, matching, onClose, onApply, onAn
 
         {/* Tabs */}
         <div className="flex border-b border-white/5">
-          {(["overview", "match", "prepare"] as const).map(tab => (
+          {(internship._isLive ? (["overview", "prepare"] as const) : (["overview", "match", "prepare"] as const)).map(tab => (
             <button key={tab} onClick={() => { setActiveTab(tab); if (tab === "match" && !matchResult && !matching) onAnalyze(); }}
               className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === tab ? "text-indigo-400 border-b-2 border-indigo-400" : "text-slate-500 hover:text-white"}`}>
               {tab === "overview" ? "Overview" : tab === "match" ? "AI Match Analysis" : "Interview Prep"}
@@ -576,12 +605,14 @@ function DetailModal({ internship, matchResult, matching, onClose, onApply, onAn
                 <div className="flex gap-2">
                   <a href={internship.applyUrl} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-500 text-white text-sm font-medium hover:bg-indigo-400 transition-colors">
-                    <ExternalLink className="w-4 h-4" /> Apply on Company Site
+                    <ExternalLink className="w-4 h-4" /> {internship._isLive ? "Apply on Original Posting" : "Apply on Company Site"}
                   </a>
-                  <button onClick={onApply}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-slate-400 hover:text-white transition-colors">
-                    <Send className="w-4 h-4" /> Track Application
-                  </button>
+                  {!internship._isLive && (
+                    <button onClick={onApply}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-slate-400 hover:text-white transition-colors">
+                      <Send className="w-4 h-4" /> Track Application
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

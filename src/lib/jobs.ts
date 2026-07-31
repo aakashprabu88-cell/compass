@@ -414,11 +414,12 @@ function isTamilNaduLocation(location: string): boolean {
   return TN_CITY_NAMES.some(c => l.includes(c));
 }
 
-export async function fetchTNJobs(queries: string[], resultsPerPage = 20): Promise<{ jobs: RealJob[]; totalCount: number }> {
+export async function fetchTNJobs(queries: string[], resultsPerPage = 50): Promise<{ jobs: RealJob[]; totalCount: number }> {
   const unique = [...new Set(queries.map(q => q.trim()).filter(q => q.length > 1))].slice(0, 4);
   if (unique.length === 0) return { jobs: [], totalCount: 0 };
 
-  const results = await Promise.all(unique.map(q => fetchRealJobs({ query: q, location: "Tamil Nadu", country: "in", resultsPerPage })));
+  const calls = unique.flatMap(q => [1, 2].map(page => fetchRealJobs({ query: q, location: "Tamil Nadu", country: "in", resultsPerPage, page })));
+  const results = await Promise.all(calls);
 
   const seen = new Set<string>();
   const jobs: RealJob[] = [];
@@ -433,6 +434,88 @@ export async function fetchTNJobs(queries: string[], resultsPerPage = 20): Promi
     }
   }
   return { jobs, totalCount };
+}
+
+// === Tamil Nadu real internships (Adzuna) ===
+
+export async function fetchTNInternJobs(queries: string[], resultsPerPage = 20): Promise<{ jobs: RealJob[]; totalCount: number }> {
+  const unique = [...new Set(queries.map(q => q.trim()).filter(q => q.length > 1))].slice(0, 4);
+  if (unique.length === 0) return { jobs: [], totalCount: 0 };
+
+  const results = await Promise.all(unique.map(q => fetchRealJobs({ query: q, location: "Tamil Nadu", country: "in", resultsPerPage })));
+
+  const seen = new Set<string>();
+  const jobs: RealJob[] = [];
+  let totalCount = 0;
+  for (const r of results) {
+    totalCount += r.totalCount;
+    for (const j of r.jobs) {
+      if (seen.has(j.id)) continue;
+      seen.add(j.id);
+      if (!isTamilNaduLocation(j.location)) continue;
+      const text = `${j.title} ${j.description}`;
+      const isIntern = /\binterns?hips?\b/i.test(j.title) || /\bintern\b/i.test(text);
+      if (!isIntern) continue;
+      jobs.push(j);
+    }
+  }
+  return { jobs, totalCount };
+}
+
+export interface RealInternship {
+  id: string; title: string; company: string; companyLogo: string;
+  location: string; city: string; country: string; type: string;
+  stipend: string; stipendMin: number; stipendMax: number; currency: string;
+  duration: string; durationWeeks: number; workMode: string; domain: string;
+  description: string; skillsRequired: string; applyUrl: string;
+  deadline: string | null; startDate: string | null; openings: number;
+  isPPO: boolean; isCertified: boolean; difficulty: string;
+  acceptanceRate: number; competitionLevel: string; companyRating: number;
+  internshipRating: number; mentorAvailable: boolean; lorAvailable: boolean;
+  category: string; hiringSpeed: string; techStack: string; interviewRounds: number;
+}
+
+export function mapToInternship(j: RealJob): RealInternship {
+  const text = `${j.title} ${j.description}`;
+  const workMode = /remote|work from home|wfh/i.test(text) ? "remote" : /hybrid/i.test(text) ? "hybrid" : "onsite";
+  const durationMatch = text.match(/(\d+)\s*(?:to|-|–)\s*(\d+)\s*months?/i);
+  return {
+    id: j.id,
+    title: j.title,
+    company: j.company,
+    companyLogo: j.companyLogo || "",
+    location: j.location,
+    city: j.city,
+    country: "India",
+    type: "stipend",
+    stipend: j.salaryMin > 0 ? `₹${Math.round(j.salaryMin / 1000)}–${Math.round(j.salaryMax / 1000)}K` : "Not specified",
+    stipendMin: j.salaryMin || 0,
+    stipendMax: j.salaryMax || 0,
+    currency: "INR",
+    duration: durationMatch ? `${durationMatch[1]}–${durationMatch[2]} months` : "Flexible",
+    durationWeeks: 12,
+    workMode,
+    domain: "tech",
+    description: j.description,
+    skillsRequired: JSON.stringify(j.requiredSkills),
+    applyUrl: j.applyUrl,
+    deadline: null,
+    startDate: null,
+    openings: 1,
+    isPPO: false,
+    isCertified: false,
+    difficulty: "easy",
+    acceptanceRate: 0.2,
+    competitionLevel: "medium",
+    companyRating: 0,
+    internshipRating: 0,
+    mentorAvailable: false,
+    lorAvailable: false,
+    category: "tech",
+    hiringSpeed: "Fast",
+    techStack: "[]",
+    interviewRounds: 1,
+  };
 }
 
 export function rankRealJobs(jobs: RealJob[], userSkills: string[], userInterests: string[], topTitles: string[]): (RealJob & { matchScore: number })[] {

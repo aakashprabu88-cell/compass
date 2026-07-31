@@ -54,11 +54,11 @@ export async function GET() {
     const topTitles = userPaths.map(up => up.careerPath.title);
 
     const queries = buildJobQueries(topTitles, userSkills, userInterests);
-    const realResult = await fetchTNJobs(queries, 20);
+    const realResult = await fetchTNJobs(queries, 50);
     const ranked = rankRealJobs(realResult.jobs, userSkills, userInterests, topTitles);
 
     return NextResponse.json({
-      realJobs: ranked.slice(0, 60),
+      realJobs: ranked.slice(0, 100),
       fallbackJobs: [],
       hasRealData: ranked.length > 0,
       totalRealJobs: realResult.totalCount,
