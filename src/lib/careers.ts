@@ -89,18 +89,6 @@ export const CAREER_DATABASE: CareerData[] = [
     futureOutlook: "Growing faster than any other field. AI creates new threats that need human defenders. Massive talent shortage."
   },
   {
-    title: "Healthcare Provider (Nurse/Doctor)",
-    slug: "healthcare-provider",
-    description: "Provide direct patient care in hospitals, clinics, or community settings. Diagnose, treat, and support patients.",
-    salaryMin: 65000, salaryMax: 250000,
-    growthOutlook: "booming", aiRisk: "none", aiRiskScore: 0.02,
-    requiredSkills: ["Medical Knowledge", "Empathy", "Communication", "Critical Thinking", "Physical Skills", "Teamwork"],
-    industries: ["Healthcare", "Government", "Education"],
-    educationLevel: "bachelors", timeToEntry: "4-12 years",
-    keyTasks: ["Diagnose conditions", "Provide treatment", "Support patients", "Collaborate with teams"],
-    futureOutlook: "Aging populations guarantee growing demand. AI assists diagnostics but cannot replace human care and judgment."
-  },
-  {
     title: "Digital Marketing Specialist",
     slug: "digital-marketing",
     description: "Drive brand awareness and customer acquisition through digital channels. Manage campaigns across social, search, and email.",
@@ -125,18 +113,6 @@ export const CAREER_DATABASE: CareerData[] = [
     futureOutlook: "AI handles routine analysis. Client relationships and strategic advice remain human strengths."
   },
   {
-    title: "Electrician/Trades Professional",
-    slug: "electrician",
-    description: "Install, maintain, and repair electrical systems in homes, businesses, and infrastructure.",
-    salaryMin: 50000, salaryMax: 95000,
-    growthOutlook: "growing", aiRisk: "none", aiRiskScore: 0.01,
-    requiredSkills: ["Electrical Systems", "Problem Solving", "Physical Dexterity", "Safety", "Blueprint Reading"],
-    industries: ["Construction", "Manufacturing", "Utilities", "Maintenance"],
-    educationLevel: "trade_school", timeToEntry: "2-4 years",
-    keyTasks: ["Install wiring", "Diagnose faults", "Maintain systems", "Ensure safety compliance"],
-    futureOutlook: "Physical labor cannot be automated. Green energy transition is creating massive new demand."
-  },
-  {
     title: "Content Creator/Influencer",
     slug: "content-creator",
     description: "Create engaging content across video, written, and audio platforms. Build audiences and monetize creativity.",
@@ -147,18 +123,6 @@ export const CAREER_DATABASE: CareerData[] = [
     educationLevel: "none", timeToEntry: "0 years",
     keyTasks: ["Create content", "Build audience", "Collaborate with brands", "Analyze performance"],
     futureOutlook: "AI generates content but authenticity and personal connection remain human. Competition is fierce."
-  },
-  {
-    title: "Lawyer",
-    slug: "lawyer",
-    description: "Advise clients on legal matters, represent them in court, and navigate complex legal systems.",
-    salaryMin: 80000, salaryMax: 200000,
-    growthOutlook: "stable", aiRisk: "medium", aiRiskScore: 0.35,
-    requiredSkills: ["Legal Knowledge", "Critical Thinking", "Writing", "Negotiation", "Research", "Ethics"],
-    industries: ["Legal", "Finance", "Technology", "Government"],
-    educationLevel: "doctorate", timeToEntry: "7+ years",
-    keyTasks: ["Research cases", "Draft documents", "Negotiate settlements", "Represent in court"],
-    futureOutlook: "AI handles document review and research. Client counsel, courtroom strategy, and ethics remain human."
   },
   {
     title: "Teacher/Educator",
@@ -197,18 +161,6 @@ export const CAREER_DATABASE: CareerData[] = [
     futureOutlook: "AI assists design but physical engineering and hands-on problem solving require human expertise."
   },
   {
-    title: "Social Worker",
-    slug: "social-worker",
-    description: "Help individuals and families navigate challenges like poverty, abuse, and mental health issues.",
-    salaryMin: 42000, salaryMax: 75000,
-    growthOutlook: "growing", aiRisk: "none", aiRiskScore: 0.02,
-    requiredSkills: ["Empathy", "Communication", "Advocacy", "Crisis Management", "Cultural Competence"],
-    industries: ["Healthcare", "Government", "Non-profit", "Education"],
-    educationLevel: "bachelors", timeToEntry: "4 years",
-    keyTasks: ["Assess needs", "Connect to resources", "Provide counseling", "Advocate for clients"],
-    futureOutlook: "Deeply human role that requires empathy, judgment, and cultural understanding. Growing demand."
-  },
-  {
     title: "Graphic Designer",
     slug: "graphic-designer",
     description: "Create visual concepts to communicate ideas through print and digital media.",
@@ -245,30 +197,6 @@ export const CAREER_DATABASE: CareerData[] = [
     futureOutlook: "AI generates routine news but investigative journalism and human storytelling remain essential."
   },
   {
-    title: "Chef/Culinary Professional",
-    slug: "chef",
-    description: "Create menus, prepare meals, and lead kitchen teams in restaurants, hotels, or catering.",
-    salaryMin: 35000, salaryMax: 85000,
-    growthOutlook: "stable", aiRisk: "none", aiRiskScore: 0.01,
-    requiredSkills: ["Culinary Skills", "Creativity", "Time Management", "Leadership", "Food Safety"],
-    industries: ["Food & Beverage", "Hospitality", "Entertainment"],
-    educationLevel: "trade_school", timeToEntry: "1-2 years",
-    keyTasks: ["Design menus", "Prepare dishes", "Manage kitchen", "Train staff"],
-    futureOutlook: "Physical, creative work that cannot be automated. Growing demand in food culture."
-  },
-  {
-    title: "Pharmacist",
-    slug: "pharmacist",
-    description: "Dispense medications, advise patients on drug use, and ensure safe pharmaceutical practices.",
-    salaryMin: 110000, salaryMax: 150000,
-    growthOutlook: "declining", aiRisk: "medium", aiRiskScore: 0.4,
-    requiredSkills: ["Pharmacology", "Attention to Detail", "Communication", "Patient Care", "Chemistry"],
-    industries: ["Healthcare", "Retail", "Pharmaceutical"],
-    educationLevel: "doctorate", timeToEntry: "8 years",
-    keyTasks: ["Dispense medications", "Advise patients", "Check interactions", "Manage inventory"],
-    futureOutlook: "Automation of dispensing is growing. Patient counseling and clinical services remain human."
-  },
-  {
     title: "Cybersecurity Engineer",
     slug: "cybersecurity-engineer",
     description: "Design and build secure systems. Develop security architecture and respond to sophisticated threats.",
@@ -291,18 +219,6 @@ export const CAREER_DATABASE: CareerData[] = [
     educationLevel: "bachelors", timeToEntry: "4+ years",
     keyTasks: ["Develop strategy", "Manage budgets", "Lead teams", "Drive growth"],
     futureOutlook: "AI handles execution. Strategy, brand vision, and team leadership remain human."
-  },
-  {
-    title: "Physical Therapist",
-    slug: "physical-therapist",
-    description: "Help patients recover from injuries and manage pain through exercise, manual therapy, and education.",
-    salaryMin: 75000, salaryMax: 110000,
-    growthOutlook: "booming", aiRisk: "none", aiRiskScore: 0.02,
-    requiredSkills: ["Anatomy", "Manual Therapy", "Empathy", "Exercise Design", "Communication"],
-    industries: ["Healthcare", "Sports", "Rehabilitation"],
-    educationLevel: "doctorate", timeToEntry: "7+ years",
-    keyTasks: ["Assess patients", "Design treatment plans", "Provide therapy", "Track progress"],
-    futureOutlook: "Aging population and sports medicine drive demand. Fully human, hands-on role."
   },
   {
     title: "Accountant",
@@ -339,30 +255,6 @@ export const CAREER_DATABASE: CareerData[] = [
     educationLevel: "none", timeToEntry: "0 years",
     keyTasks: ["Handle inquiries", "Resolve issues", "Document interactions", "Escalate problems"],
     futureOutlook: "AI chatbots and voice agents are rapidly replacing routine customer service. Complex cases still need humans."
-  },
-  {
-    title: "Paralegal",
-    slug: "paralegal",
-    description: "Assist lawyers with research, document preparation, and case management.",
-    salaryMin: 45000, salaryMax: 75000,
-    growthOutlook: "declining", aiRisk: "high", aiRiskScore: 0.6,
-    requiredSkills: ["Legal Research", "Writing", "Organization", "Attention to Detail", "Legal Software"],
-    industries: ["Legal", "Government", "Corporate"],
-    educationLevel: "associates", timeToEntry: "2 years",
-    keyTasks: ["Research cases", "Prepare documents", "Organize files", "Support lawyers"],
-    futureOutlook: "AI handles document review and research. Some roles shift to AI supervision."
-  },
-  {
-    title: "Radiologist",
-    slug: "radiologist",
-    description: "Interpret medical images like X-rays, CT scans, and MRIs to diagnose conditions.",
-    salaryMin: 250000, salaryMax: 500000,
-    growthOutlook: "stable", aiRisk: "medium", aiRiskScore: 0.4,
-    requiredSkills: ["Medical Imaging", "Diagnosis", "Attention to Detail", "Medical Knowledge"],
-    industries: ["Healthcare", "Research"],
-    educationLevel: "doctorate", timeToEntry: "13+ years",
-    keyTasks: ["Interpret scans", "Write reports", "Consult with clinicians", "Guide procedures"],
-    futureOutlook: "AI excels at image detection but complex cases, clinical context, and patient communication remain human."
   },
   {
     title: "Sustainability Consultant",
