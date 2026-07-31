@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { signToken } from "@/lib/auth";
+import { CAREER_DATABASE, calculateMatchScore, parseJsonArray } from "@/lib/careers";
 
 const DEMO_EMAIL = "demo@compass.app";
 const DEMO_PASSWORD = "demo123456";
@@ -52,23 +53,52 @@ export async function POST() {
       });
     }
 
-    // Seed career paths if missing
-    const existingPaths = await prisma.userPath.count({ where: { userId: user.id } });
-    if (existingPaths === 0) {
-      const careerPaths = await prisma.careerPath.findMany({ take: 5 });
-      if (careerPaths.length > 0) {
-        await prisma.userPath.createMany({
-          data: careerPaths.map((cp, i) => ({
-            userId: user.id,
-            careerPathId: cp.id,
-            matchScore: 0.92 - i * 0.08,
-            skillMatch: 0.88 - i * 0.06,
-            interestMatch: 0.85 - i * 0.07,
-            aiSafetyScore: 0.80 + i * 0.03,
-            rank: i + 1,
-          })),
-        });
-      }
+    // Always recompute skill-matched career paths for the demo account so the
+    // demo reflects the demo profile instead of stale pre-defined data.
+    const allCareerPaths = await prisma.careerPath.findMany();
+    const userProfile = {
+      skills: parseJsonArray(DEMO_ASSESSMENT.skills),
+      interests: parseJsonArray(DEMO_ASSESSMENT.interests),
+      personality: JSON.parse(DEMO_ASSESSMENT.personality || "{}"),
+      values: parseJsonArray(DEMO_ASSESSMENT.values),
+      workStyle: DEMO_ASSESSMENT.workStyle,
+    };
+
+    const scored = allCareerPaths.map(cp => {
+      const careerData = CAREER_DATABASE.find(c => c.slug === cp.slug) || {
+        title: cp.title,
+        slug: cp.slug,
+        description: cp.description,
+        salaryMin: cp.salaryMin,
+        salaryMax: cp.salaryMax,
+        growthOutlook: cp.growthOutlook,
+        aiRisk: cp.aiRisk,
+        aiRiskScore: cp.aiRiskScore,
+        requiredSkills: parseJsonArray(cp.requiredSkills),
+        industries: parseJsonArray(cp.industries),
+        educationLevel: cp.educationLevel,
+        timeToEntry: cp.timeToEntry,
+        keyTasks: parseJsonArray(cp.keyTasks),
+        futureOutlook: cp.futureOutlook,
+      };
+      const result = calculateMatchScore(userProfile, careerData);
+      return { careerPathId: cp.id, ...result };
+    });
+
+    const topPaths = scored.sort((a, b) => b.total - a.total).slice(0, 10);
+    await prisma.userPath.deleteMany({ where: { userId: user.id } });
+    if (topPaths.length > 0) {
+      await prisma.userPath.createMany({
+        data: topPaths.map((p, i) => ({
+          userId: user.id,
+          careerPathId: p.careerPathId,
+          matchScore: p.total,
+          skillMatch: p.skillMatch,
+          interestMatch: p.interestMatch,
+          aiSafetyScore: p.aiSafetyScore,
+          rank: i + 1,
+        })),
+      });
     }
 
     // Seed some job applications

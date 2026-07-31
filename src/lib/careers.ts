@@ -306,6 +306,36 @@ export const CAREER_DATABASE: CareerData[] = [
   },
 ];
 
+// Concrete tech/tool keywords users type, mapped to careers by slug.
+// `requiredSkills` above are generic competencies; these are the actual
+// technologies that make skill matching meaningful.
+export const TECH_ALIASES: Record<string, string[]> = {
+  "ai-ml-engineer": ["Python", "TensorFlow", "PyTorch", "Machine Learning", "Deep Learning", "NLP", "Computer Vision", "NumPy", "Pandas", "scikit-learn", "LLM", "GenAI"],
+  "software-engineer": ["JavaScript", "TypeScript", "React", "Node.js", "Python", "Java", "C++", "C#", "Go", "Rust", "Git", "SQL", "HTML", "CSS", "Full Stack", "Web Development", "AWS", "Docker", "Kubernetes", "REST API"],
+  "data-scientist": ["Python", "SQL", "Statistics", "Machine Learning", "Pandas", "NumPy", "R", "Tableau", "Power BI", "Data Visualization", "Excel", "scikit-learn"],
+  "ux-ui-designer": ["Figma", "UI/UX", "Wireframing", "Prototyping", "User Research", "Adobe XD", "Sketch", "HTML", "CSS", "Design"],
+  "product-manager": ["Product Management", "Agile", "Scrum", "Jira", "SQL", "Analytics", "Roadmapping", "A/B Testing"],
+  "cybersecurity-analyst": ["Network Security", "Kali Linux", "SIEM", "Wireshark", "Penetration Testing", "Linux", "Firewalls"],
+  "digital-marketing": ["SEO", "SEM", "Google Ads", "Facebook Ads", "Google Analytics", "Content Marketing", "Social Media", "Email Marketing"],
+  "financial-analyst": ["Excel", "Financial Modeling", "Accounting", "SQL", "Python", "Power BI", "Tableau", "Valuation"],
+  "content-creator": ["Video Editing", "Photoshop", "Premiere Pro", "After Effects", "YouTube", "Instagram", "Social Media"],
+  "teacher": ["Teaching", "Curriculum", "Lesson Planning", "Classroom Management"],
+  "project-manager": ["Agile", "Scrum", "Jira", "MS Project", "Risk Management", "Stakeholder Management"],
+  "mechanical-engineer": ["CAD", "AutoCAD", "SolidWorks", "MATLAB", "3D Modeling", "FEA", "Thermodynamics"],
+  "graphic-designer": ["Photoshop", "Illustrator", "InDesign", "Figma", "Canva", "Typography", "After Effects", "Branding"],
+  "civil-engineer": ["AutoCAD", "Revit", "STAAD", "Structural Analysis", "Surveying"],
+  "journalist": ["Writing", "Editing", "Research", "SEO", "Copywriting", "Journalism"],
+  "cybersecurity-engineer": ["Penetration Testing", "Ethical Hacking", "Network Security", "Cryptography", "Linux", "Kali", "Python", "Cloud Security", "AWS", "Azure"],
+  "marketing-manager": ["Marketing", "Branding", "Analytics", "SEO", "Campaign Management", "Google Analytics"],
+  "accountant": ["Accounting", "Excel", "Tally", "QuickBooks", "GAAP", "Tax"],
+  "research-scientist": ["Python", "R", "MATLAB", "Statistics", "Scientific Writing", "Data Analysis"],
+  "customer-service": ["CRM", "Customer Support", "Zendesk", "Communication"],
+  "sustainability-consultant": ["Data Analysis", "Excel", "ESG", "Environmental Science", "Sustainability"],
+  "data-entry": ["Typing", "Excel", "MS Office", "Data Entry"],
+  "ux-researcher": ["User Research", "Figma", "Usability Testing", "Surveys", "Statistics", "SPSS"],
+  "supply-chain-manager": ["ERP", "SAP", "Logistics", "Excel", "Forecasting", "Inventory Management"],
+};
+
 export function parseJsonArray(json: string): string[] {
   try { return JSON.parse(json); } catch { return []; }
 }
@@ -320,16 +350,27 @@ export function calculateMatchScore(
   },
   career: CareerData
 ): { total: number; skillMatch: number; interestMatch: number; aiSafetyScore: number } {
-  const userSkills = userProfile.skills.map(s => s.toLowerCase());
-  const careerSkills = career.requiredSkills.map(s => s.toLowerCase());
+  const userSkills = userProfile.skills.map(s => s.toLowerCase().trim());
+  const requiredSkills = career.requiredSkills.map(s => s.toLowerCase().trim());
+  const aliasSkills = (TECH_ALIASES[career.slug] || []).map(s => s.toLowerCase().trim());
 
-  // Skill match: what % of required skills does user have?
-  const matchedSkills = careerSkills.filter(s =>
-    userSkills.some(us => us.includes(s) || s.includes(us))
-  );
-  const skillMatch = careerSkills.length > 0
-    ? matchedSkills.length / careerSkills.length
+  // Skill match: what % of the career's skills does the user actually possess?
+  // A skill counts when it (or a fuzzy variant) appears in the user's list.
+  // Fuzzy-match only terms >= 4 chars to avoid false positives (e.g. "ml" vs "html").
+  const matchesUser = (s: string) =>
+    userSkills.some(us =>
+      us === s ||
+      (s.length >= 4 && us.includes(s)) ||
+      (us.length >= 4 && s.includes(us))
+    );
+  const requiredRatio = requiredSkills.length > 0
+    ? requiredSkills.filter(matchesUser).length / requiredSkills.length
     : 0.5;
+  // Aliases represent concrete tech; ~8 hits counts as a full match.
+  const aliasRatio = aliasSkills.length > 0
+    ? Math.min(aliasSkills.filter(matchesUser).length / Math.min(aliasSkills.length, 8), 1)
+    : 0;
+  const skillMatch = Math.min(requiredRatio * 0.3 + aliasRatio * 0.7, 1);
 
   // Interest match: keyword overlap between interests and career fields
   const interestKeywords = userProfile.interests.map(i => i.toLowerCase()).join(" ");
@@ -344,29 +385,30 @@ export function calculateMatchScore(
   // AI safety: inverse of AI risk score (higher = safer)
   const aiSafetyScore = 1 - career.aiRiskScore;
 
-  // Personality alignment (simplified)
+  // Personality alignment (simplified) — values may be numeric levels or "high"/"low" strings
   const personality = userProfile.personality;
+  const isHigh = (v?: string) => v === "high" || (v !== undefined && !isNaN(Number(v)) && Number(v) >= 6);
   let personalityBonus = 0;
-  if (personality.analytical === "high" && (career.title.includes("Engineer") || career.title.includes("Scientist") || career.title.includes("Analyst"))) {
-    personalityBonus += 0.1;
+  if (isHigh(personality.analytical) && (career.title.includes("Engineer") || career.title.includes("Scientist") || career.title.includes("Analyst"))) {
+    personalityBonus += 0.05;
   }
-  if (personality.creative === "high" && (career.title.includes("Designer") || career.title.includes("Content") || career.title.includes("Chef"))) {
-    personalityBonus += 0.1;
+  if (isHigh(personality.creative) && (career.title.includes("Designer") || career.title.includes("Content") || career.title.includes("Chef"))) {
+    personalityBonus += 0.05;
   }
-  if (personality.social === "high" && (career.title.includes("Teacher") || career.title.includes("Social Worker") || career.title.includes("Manager"))) {
-    personalityBonus += 0.1;
+  if (isHigh(personality.social) && (career.title.includes("Teacher") || career.title.includes("Social Worker") || career.title.includes("Manager"))) {
+    personalityBonus += 0.05;
   }
-  if (personality.leadership === "high" && (career.title.includes("Manager") || career.title.includes("Director"))) {
+  if (isHigh(personality.leadership) && (career.title.includes("Manager") || career.title.includes("Director"))) {
     personalityBonus += 0.05;
   }
 
-  // Weighted total
+  // Weighted total — skills dominate the match
   const total = Math.min(
-    skillMatch * 0.35 +
-    interestMatch * 0.25 +
-    aiSafetyScore * 0.25 +
+    skillMatch * 0.5 +
+    interestMatch * 0.2 +
+    aiSafetyScore * 0.15 +
     personalityBonus +
-    0.15, // base
+    0.1, // base
     1
   );
 
