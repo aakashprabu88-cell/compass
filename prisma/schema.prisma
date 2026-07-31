@@ -22,6 +22,7 @@ model User {
   resumes     Resume[]
   applications JobApplication[]
   internships   UserInternship[]
+  analysis    CareerAnalysis?
 }
 
 model Assessment {
@@ -92,6 +93,17 @@ model SkillGap {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, skillName])
+}
+
+// Cached AI-generated deep analysis for a user's career profile
+model CareerAnalysis {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  analysis  String   @default("{}") // JSON payload, see /api/analysis
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Resume {

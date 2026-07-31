@@ -79,7 +79,7 @@ export async function generateText(
 
 // ─── Robust JSON Extraction ────────────────────────────────────────
 
-function extractJSON(text: string): any {
+export function extractJSON(text: string): any {
   // Try direct parse first
   try { return JSON.parse(text.trim()); } catch (e) { console.error("extractJSON direct parse failed", e); }
 

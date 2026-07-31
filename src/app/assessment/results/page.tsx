@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Sparkles, Briefcase, Target, TrendingUp, AlertTriangle, ExternalLink, MapPin, Clock, DollarSign, CheckCircle, ArrowRight, Loader2, Compass, ChevronRight, GraduationCap, Zap, Users } from "lucide-react";
+import { Sparkles, Briefcase, Target, TrendingUp, AlertTriangle, ExternalLink, MapPin, Clock, DollarSign, CheckCircle, ArrowRight, Loader2, Compass, ChevronRight, GraduationCap, Zap, Users, Brain, ListChecks, Award } from "lucide-react";
 
 interface Job {
   id: string; title: string; company: string; location: string; city: string;
@@ -16,14 +16,27 @@ interface PathData { id: string; matchScore: number; careerPath: { title: string
 
 interface SkillGapData { id: string; skillName: string; currentLevel: number; requiredLevel: number; gap: number; priority: string; }
 
+interface Analysis {
+  summary?: string;
+  strengths?: string[];
+  gaps?: { skill: string; current: string; howToImprove: string; priority: string }[];
+  careerPaths?: { title: string; matchScore: number; reason: string; salaryRange: string; growthOutlook: string; aiRisk: string }[];
+  recommendedJobs?: { title: string; company: string; location: string; salary: string; reason: string }[];
+  actionPlan?: string[];
+  _ai?: boolean;
+}
+
 export default function AssessmentResultsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [analysisLoading, setAnalysisLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [assessment, setAssessment] = useState<any>(null);
   const [paths, setPaths] = useState<PathData[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [gaps, setGaps] = useState<SkillGapData[]>([]);
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"paths" | "jobs" | "skills">("paths");
 
   useEffect(() => {
@@ -59,6 +72,28 @@ export default function AssessmentResultsPage() {
     load();
     return () => { cancelled = true; };
   }, [router]);
+
+  // Deep personalized analysis (generated server-side from the user's real input)
+  useEffect(() => {
+    let cancelled = false;
+    async function loadAnalysis() {
+      try {
+        const res = await fetch("/api/analysis");
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled) setAnalysis(data);
+        } else {
+          const err = await res.json().catch(() => null);
+          if (!cancelled) setAnalysisError(err?.error || "Analysis unavailable");
+        }
+      } catch {
+        if (!cancelled) setAnalysisError("Analysis unavailable");
+      }
+      if (!cancelled) setAnalysisLoading(false);
+    }
+    if (!loading) loadAnalysis();
+    return () => { cancelled = true; };
+  }, [loading]);
 
   const parseSkills = () => {
     if (!assessment?.skills) return [];
@@ -118,6 +153,117 @@ export default function AssessmentResultsPage() {
               <div className="text-lg font-bold text-white">{stat.value}</div>
             </div>
           ))}
+        </div>
+
+        {/* Deep Personalized Analysis */}
+        <div className="mb-8 rounded-2xl border border-indigo-500/20 overflow-hidden" style={{ background: "rgba(15,15,30,0.6)" }}>
+          <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5 bg-white/[0.02]">
+            <Brain className="w-4 h-4 text-indigo-400" />
+            <h2 className="text-sm font-semibold text-white">Your Personalized Analysis</h2>
+            {analysis?._ai && <span className="text-[10px] text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded ml-auto">AI Deep Analysis</span>}
+          </div>
+
+          {analysisLoading ? (
+            <div className="flex items-center justify-center gap-3 py-10">
+              <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
+              <p className="text-xs text-slate-500">Analyzing your skills, education & experience...</p>
+            </div>
+          ) : analysisError ? (
+            <div className="px-5 py-6 text-center">
+              <p className="text-xs text-slate-500">{analysisError}</p>
+            </div>
+          ) : analysis ? (
+            <div className="p-5 space-y-5">
+              {analysis.summary && (
+                <p className="text-sm text-slate-300 leading-relaxed">{analysis.summary}</p>
+              )}
+
+              {analysis.strengths && analysis.strengths.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-2"><Award className="w-3.5 h-3.5 text-emerald-400" /> Your Strengths</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {analysis.strengths.map((s, i) => (
+                      <span key={i} className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 text-xs border border-emerald-500/20">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {analysis.careerPaths && analysis.careerPaths.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-2"><Target className="w-3.5 h-3.5 text-indigo-400" /> Why These Career Paths Fit You</div>
+                  <div className="space-y-2">
+                    {analysis.careerPaths.slice(0, 5).map((p, i) => (
+                      <div key={i} className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="text-sm font-medium text-white">{p.title}</span>
+                          <span className="text-xs font-semibold text-emerald-400 shrink-0">{p.matchScore}%</span>
+                        </div>
+                        <p className="text-xs text-slate-400">{p.reason}</p>
+                        <div className="flex flex-wrap gap-3 mt-1.5">
+                          {p.salaryRange && p.salaryRange !== "N/A" && <span className="text-[11px] text-slate-500 flex items-center gap-1"><DollarSign className="w-3 h-3" />{p.salaryRange}</span>}
+                          {p.growthOutlook && <span className="text-[11px] text-slate-500 capitalize">{p.growthOutlook}</span>}
+                          {p.aiRisk && <span className={`text-[11px] capitalize ${p.aiRisk === "low" ? "text-emerald-400" : p.aiRisk === "high" ? "text-rose-400" : "text-amber-400"}`}>AI Risk: {p.aiRisk}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {analysis.gaps && analysis.gaps.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-2"><AlertTriangle className="w-3.5 h-3.5 text-rose-400" /> Skills to Build</div>
+                  <div className="space-y-2">
+                    {analysis.gaps.slice(0, 4).map((g, i) => (
+                      <div key={i} className="p-3 rounded-xl bg-rose-500/[0.03] border border-rose-500/10">
+                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                          <span className="text-sm font-medium text-white">{g.skill}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase ${g.priority === "high" ? "bg-rose-500/15 text-rose-400" : "bg-amber-500/15 text-amber-400"}`}>{g.priority}</span>
+                        </div>
+                        {g.current && <p className="text-xs text-slate-500">{g.current}</p>}
+                        {g.howToImprove && <p className="text-xs text-slate-400 mt-0.5">→ {g.howToImprove}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {analysis.recommendedJobs && analysis.recommendedJobs.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-2"><Briefcase className="w-3.5 h-3.5 text-amber-400" /> Jobs That Fit You</div>
+                  <div className="space-y-2">
+                    {analysis.recommendedJobs.slice(0, 4).map((j, i) => (
+                      <div key={i} className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                          <span className="text-sm font-medium text-white">{j.title} <span className="text-slate-400 font-normal">@ {j.company}</span></span>
+                        </div>
+                        <div className="flex flex-wrap gap-3 text-[11px] text-slate-500">
+                          {j.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{j.location}</span>}
+                          {j.salary && <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{j.salary}</span>}
+                        </div>
+                        {j.reason && <p className="text-xs text-slate-400 mt-1">{j.reason}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {analysis.actionPlan && analysis.actionPlan.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-2"><ListChecks className="w-3.5 h-3.5 text-indigo-400" /> Your Action Plan</div>
+                  <ol className="space-y-1.5">
+                    {analysis.actionPlan.map((step, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
+                        <span className="w-5 h-5 rounded-full bg-indigo-500/15 text-indigo-400 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                        {step}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
 
         {/* Tabs */}
