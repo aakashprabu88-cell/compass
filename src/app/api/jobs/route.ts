@@ -1,9 +1,33 @@
 import { NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { matchJobs } from "@/lib/jobs";
 import { parseJsonArray } from "@/lib/careers";
-import { fetchRealJobs } from "@/lib/jobs";
+import { fetchTNJobs, rankRealJobs } from "@/lib/jobs";
+
+function buildJobQueries(topTitles: string[], userSkills: string[], userInterests: string[]): string[] {
+  const queries = new Set<string>();
+  const clean = (t: string) => t.replace(/\//g, " ").replace(/\b(Professional|Specialist)\b/g, "").replace(/\s+/g, " ").trim();
+
+  for (const t of topTitles.slice(0, 2)) {
+    const q = clean(t);
+    if (q && q.length > 2) queries.add(q);
+  }
+
+  for (const s of userSkills.slice(0, 2)) {
+    if (queries.size >= 4) break;
+    const q = s.trim();
+    if (q.length >= 3) queries.add(q);
+  }
+
+  if (queries.size === 0 && userInterests.length > 0) {
+    const q = clean(userInterests[0]);
+    if (q) queries.add(q);
+  }
+
+  if (queries.size === 0) queries.add("software developer");
+
+  return [...queries].slice(0, 4);
+}
 
 export async function GET() {
   try {
@@ -28,21 +52,15 @@ export async function GET() {
     });
 
     const topTitles = userPaths.map(up => up.careerPath.title);
-    const rawQuery = topTitles.length > 0 ? topTitles[0] : userInterests[0] || "software developer";
-    const query = rawQuery.replace(/\//g, " ").replace(/\b(Professional|Specialist|Engineer|Analyst)\b/g, "").trim() || "software developer";
-    const city = (assessment as typeof assessment & { preferredCity?: string }).preferredCity || "Chennai";
 
-    const realResult = await fetchRealJobs({ query, location: city, country: "in", resultsPerPage: 20 });
-
-    // Only show curated fallback jobs when Adzuna returns nothing
-    const fallbackJobs = realResult.jobs.length === 0
-      ? matchJobs(userSkills, userInterests, topTitles)
-      : [];
+    const queries = buildJobQueries(topTitles, userSkills, userInterests);
+    const realResult = await fetchTNJobs(queries, 20);
+    const ranked = rankRealJobs(realResult.jobs, userSkills, userInterests, topTitles);
 
     return NextResponse.json({
-      realJobs: realResult.jobs,
-      fallbackJobs,
-      hasRealData: realResult.jobs.length > 0,
+      realJobs: ranked.slice(0, 60),
+      fallbackJobs: [],
+      hasRealData: ranked.length > 0,
       totalRealJobs: realResult.totalCount,
     });
   } catch (e) {

@@ -63,8 +63,7 @@ export default function AssessmentResultsPage() {
 
         if (jobsData) {
           const real = Array.isArray(jobsData.realJobs) ? jobsData.realJobs.map((j: any) => ({ ...j, _isReal: true })) : [];
-          const fallback = Array.isArray(jobsData.fallbackJobs) ? jobsData.fallbackJobs : [];
-          setJobs([...real, ...fallback].slice(0, 6));
+          setJobs(real.slice(0, 9));
         }
       } catch (e) { console.error("load results", e); }
       if (!cancelled) setLoading(false);

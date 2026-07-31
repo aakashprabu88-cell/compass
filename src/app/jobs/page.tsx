@@ -110,9 +110,9 @@ export default function JobsPage() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h1 className="text-2xl font-bold mb-1">
-                  {hasRealData ? `Jobs (${realJobCount} real)` : "Job Listings"}
+                  {hasRealData ? `Jobs across Tamil Nadu (${realJobCount}+ live)` : "Job Listings"}
                 </h1>
-                <p className="text-sm text-slate-400">{hasRealData ? "Live jobs scraped from company career pages" : "AI-curated openings matching your profile"}</p>
+                <p className="text-sm text-slate-400">{hasRealData ? "Live jobs from across Tamil Nadu matched to your skills" : "No live openings found yet"}</p>
               </div>
               <div className="flex items-center gap-2 text-xs">
                 {hasRealData && <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-500/10 text-green-400"><CheckCircle className="w-3 h-3" /> Live Data</span>}
@@ -143,8 +143,8 @@ export default function JobsPage() {
             {jobs.length === 0 ? (
               <div className="text-center py-16">
                 <Briefcase className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                <h3 className="font-semibold mb-1">No jobs found</h3>
-                <p className="text-sm text-slate-500">Try adjusting your filters or check back later</p>
+                <h3 className="font-semibold mb-1">No matching live jobs in Tamil Nadu</h3>
+                <p className="text-sm text-slate-500">Try adjusting your filters or check back later — only live openings are shown</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
