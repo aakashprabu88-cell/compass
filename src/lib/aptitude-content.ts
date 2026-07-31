@@ -1,76 +1,480 @@
-export interface AptitudeTopic {
-  id: string;
-  title: string;
-  theory: string;
-  formulas: { name: string; formula: string }[];
-  shortcuts: string[];
-  commonMistakes: { mistake: string; correction: string }[];
-  practiceProblems: { difficulty: "easy" | "medium" | "hard"; question: string; answer: string; explanation: string }[];
-  companyQuestions: { company: string; question: string; answer: string; explanation?: string }[];
-  tips: string[];
-  videoUrls: string[];
+export interface AptitudeSection {
+  heading: string;
+  body: string;
+  example?: string;
 }
 
-export const APTITUDE_TOPICS: Record<string, AptitudeTopic> = {
+export interface AptitudeTheory {
+  theory: AptitudeSection[];
+  formulas: { name: string; formula: string }[];
+  tips: string[];
+}
+
+export const APTITUDE_CONTENT: Record<string, AptitudeTheory> = {
   percentage: {
-    id: "percentage",
-    title: "Percentage",
-    theory: `Percentage is a way of expressing a number as a fraction of 100. It is denoted using the percent sign "%". Percentages are used extensively in competitive exams for profit-loss, data interpretation, and comparison problems.
-
-Key Concepts:
-• A percentage is a ratio whose second term is 100.
-• x% means x per hundred or x/100.
-• To convert a fraction to a percentage, multiply by 100.
-• To convert a percentage to a fraction, divide by 100.
-
-Applications of Percentage:
-• Profit & Loss calculations
-• Discount calculations
-• Interest rates
-• Population growth/decline
-• Data Interpretation
-• Successive percentage changes`,
+    theory: [
+      { heading: "What is a Percentage?", body: "A percentage is a number or ratio expressed as a fraction of 100. The word comes from 'per centum', meaning 'per hundred'. The symbol % literally means ÷100, so 25% = 25/100 = 0.25.", example: "45% of 200 = (45/100) × 200 = 90" },
+      { heading: "Converting Fractions and Decimals to Percentages", body: "Multiply a fraction or decimal by 100 to get a percentage. Conversely, divide a percentage by 100 to get a decimal. Memorize the common conversions — they appear in nearly every exam.", example: "3/5 = (3/5) × 100 = 60%. A score of 48/60 = (48/60) × 100 = 80%." },
+      { heading: "Percentage Increase and Decrease", body: "Change is always measured relative to the original value. If a value goes from 80 to 100, the increase is 20 on a base of 80, which is a 25% increase — not 20%.", example: "Increase 60 by 25% → 60 × 1.25 = 75. Decrease 60 by 20% → 60 × 0.80 = 48." },
+      { heading: "Successive Percentage Change", body: "When a value changes by a% then b%, the net change is a + b + (a×b)/100. The product term matters when both changes apply to the same base value. Note the sign: +10% then -10% gives -1%, not 0.", example: "Price increases 10% then decreases 10% → 10 + (-10) + (10 × -10)/100 = -1%, i.e. a net 1% decrease." },
+      { heading: "Population and Depreciation", body: "A population growing at r% per year becomes P(1 + r/100)ⁿ after n years. Depreciation (falling value of machines, cars) uses the minus sign: P(1 - r/100)ⁿ.", example: "Population 10,000 growing 5% yearly → after 2 years = 10000 × 1.05² = 11,025." },
+      { heading: "Price × Quantity = Expenditure", body: "When price rises and expenditure stays fixed, the quantity consumed falls by p/(100+p) × 100 percent. This classic 'consumption' problem is solved fastest with ratio logic.", example: "Price up 25%, expenditure same → consumption falls by 25/125 × 100 = 20%." },
+    ],
     formulas: [
-      { name: "Percentage Formula", formula: "Percentage = (Value / Total Value) × 100" },
-      { name: "Value from Percentage", formula: "Value = (Percentage × Total Value) / 100" },
-      { name: "Percentage Change", formula: "Percentage Change = ((New Value - Old Value) / Old Value) × 100" },
-      { name: "Successive Increase", formula: "If a value increases by x% then by y%, net change = (x + y + xy/100)%" },
-      { name: "Successive Decrease", formula: "If a value decreases by x% then by y%, net change = (-x - y + xy/100)%" },
-      { name: "Population Formula", formula: "Population after n years = P(1 + r/100)^n" },
-    ],
-    shortcuts: [
-      "To find x% of y, calculate y% of x (commutative property)",
-      "For successive percentage changes, use the formula a + b + ab/100",
-      "10% = 1/10, 12.5% = 1/8, 20% = 1/5, 25% = 1/4, 33.33% = 1/3, 50% = 1/2 — memorize these fraction equivalents",
-      "For calculating discounts, use: Discount = MP × (Discount%/100)",
-    ],
-    commonMistakes: [
-      { mistake: "Adding percentages directly without considering base change", correction: "When successive percentage changes occur, use the net change formula, not simple addition" },
-      { mistake: "Confusing percentage increase with percentage point increase", correction: "A change from 10% to 15% is a 5 percentage point increase but a 50% increase" },
-      { mistake: "Applying discount on marked price instead of selling price", correction: "Discount is always calculated on the Marked Price (MP), not the Selling Price (SP)" },
-    ],
-    practiceProblems: [
-      { difficulty: "easy", question: "What is 20% of 450?", answer: "90", explanation: "20% of 450 = (20/100) × 450 = 0.2 × 450 = 90" },
-      { difficulty: "easy", question: "Convert 3/5 to percentage.", answer: "60%", explanation: "(3/5) × 100 = 300/5 = 60%" },
-      { difficulty: "medium", question: "If A's salary is 20% less than B's, then B's salary is what percent more than A's?", answer: "25%", explanation: "Let B = 100, A = 80. B is more by 20. (20/80) × 100 = 25%" },
-      { difficulty: "medium", question: "The population of a town increases by 10% annually. If the current population is 50,000, what will it be after 2 years?", answer: "60,500", explanation: "P = 50000(1 + 10/100)² = 50000 × 1.1 × 1.1 = 50000 × 1.21 = 60500" },
-      { difficulty: "hard", question: "A number is first increased by 10% and then decreased by 10%. Find the net percentage change.", answer: "1% decrease", explanation: "Net change = 10 + (-10) + (10 × -10)/100 = 0 - 1 = -1%. So 1% decrease." },
-      { difficulty: "hard", question: "In an examination, 80% of students passed in English, 85% passed in Mathematics, and 75% passed in both. What percentage failed in both subjects?", answer: "10%", explanation: "Passed in at least one = 80 + 85 - 75 = 90%. Failed in both = 100 - 90 = 10%" },
-    ],
-    companyQuestions: [
-      { company: "TCS", question: "If the price of an item is increased by 25%, by what percent must the consumption be reduced so that expenditure remains the same?", answer: "20%", explanation: "Let original price = 100, new price = 125. For same expenditure, consumption = 100/125 = 0.8 = 80%. Reduction = 20%" },
-      { company: "Infosys", question: "A student scored 80 marks out of 200 in a test. What percentage did he score?", answer: "40%", explanation: "(80/200) × 100 = 40%" },
-      { company: "Amazon", question: "If A is 40% of B and B is 30% of C, what percent of C is A?", answer: "12%", explanation: "A = 0.4B, B = 0.3C. So A = 0.4 × 0.3C = 0.12C = 12% of C" },
+      { name: "Percentage", formula: "Percentage = (Value / Total) × 100" },
+      { name: "Value of a percentage", formula: "x% of y = (x / 100) × y (x% of y = y% of x)" },
+      { name: "Percentage change", formula: "((New − Old) / Old) × 100" },
+      { name: "New value after increase", formula: "Original × (1 + r / 100)" },
+      { name: "New value after decrease", formula: "Original × (1 − r / 100)" },
+      { name: "Successive change (a%, b%)", formula: "a + b + (a × b) / 100" },
+      { name: "Growth over n years", formula: "P × (1 + r / 100)ⁿ" },
+      { name: "Consumption fall when price rises p%", formula: "p / (100 + p) × 100 %" },
     ],
     tips: [
-      "Start with fraction-to-percentage conversions — they save time",
-      "Practice successive change problems — they appear frequently",
-      "Use the 'assume 100' technique for easier calculations",
-      "Master percentage-to-fraction equivalents for quick mental math",
-    ],
-    videoUrls: [
-      "https://www.youtube.com/results?search_query=percentage+aptitude+tricks",
-      "https://www.youtube.com/results?search_query=percentage+problems+for+competitive+exams",
+      "Assume the total to be 100 — it converts every percentage problem into simple arithmetic",
+      "Memorize 1/2 = 50%, 1/3 = 33.33%, 1/4 = 25%, 1/5 = 20%, 1/8 = 12.5%, 1/6 = 16.67%",
+      "The denominator is always the base: 'A is what % more than B' uses B as base",
+      "For successive changes never add and subtract directly — always include the ab/100 term",
+      "On percentage questions that are hard to compute, substitute a convenient number (like 100 or 1000)",
+      "In 'price × quantity = expenditure' problems, changes in the two are inverse — use ratios",
     ],
   },
+  arithmetic: {
+    theory: [
+      { heading: "BODMAS — Order of Operations", body: "Simplification always follows the BODMAS order: Brackets, Of, Division, Multiplication, Addition, Subtraction. Division and multiplication have equal priority (do them left to right), as do addition and subtraction.", example: "12 + 6 ÷ 3 × 2 = 12 + 2 × 2 = 12 + 4 = 16 (division before multiplication, left to right)." },
+      { heading: "Fractions", body: "A fraction a/b means a parts out of b equal parts. To add or subtract fractions, first make the denominators equal using the LCM. To multiply, multiply numerators and denominators. To divide, flip the second fraction and multiply.", example: "1/3 + 1/4 = 4/12 + 3/12 = 7/12. (2/3) ÷ (4/5) = (2/3) × (5/4) = 10/12 = 5/6." },
+      { heading: "Decimals and Place Value", body: "A decimal is a fraction written with a denominator of a power of 10. When multiplying decimals, count the total decimal places in the factors. When converting a decimal to a fraction, write it over the appropriate power of 10 and simplify.", example: "0.625 = 625/1000 = 5/8. 0.2 × 0.3 = 0.06 (two decimal places total)." },
+      { heading: "Approximation", body: "Competitive exams rarely need exact answers — round sensibly and estimate. Round to the nearest convenient value, compute, then pick the closest option. Watch for rounding direction to avoid losing a mark.", example: "499 × 201 ≈ 500 × 200 = 100,000. (998)² ≈ 1000² = 1,000,000." },
+      { heading: "Surds and Square Roots", body: "A surd is an irrational root like √2 or √3. Simplify surds by extracting square factors: √72 = √(36 × 2) = 6√2. Rationalize denominators by multiplying top and bottom by the conjugate.", example: "1/√2 = √2/2. √48 = √(16 × 3) = 4√3." },
+    ],
+    formulas: [
+      { name: "BODMAS", formula: "Brackets → Of → Division → Multiplication → Addition → Subtraction" },
+      { name: "Fraction addition", formula: "a/b + c/d = (ad + bc) / bd (LCM denominators)" },
+      { name: "Fraction division", formula: "(a/b) ÷ (c/d) = (a/b) × (d/c) = ad / bc" },
+      { name: "Decimal to fraction", formula: "Remove point, write over 10ⁿ, simplify (0.625 = 625/1000 = 5/8)" },
+      { name: "Surd simplification", formula: "√(a²b) = a√b" },
+      { name: "Rationalizing", formula: "1/(a + √b) = (a − √b) / (a² − b)" },
+    ],
+    tips: [
+      "Write down every step — arithmetic errors usually come from mental jumps",
+      "Practice left-to-right evaluation of ÷ and ×, then + and −",
+      "Know squares up to 30 and cubes up to 15 by heart",
+      "For approximation questions, round to one significant digit and keep it consistent",
+      "Check divisibility of the answer (2, 3, 5, 9 rules) to eliminate options quickly",
+    ],
+  },
+  "profit-loss": {
+    theory: [
+      { heading: "Cost Price, Selling Price and Profit", body: "Cost Price (CP) is what you pay; Selling Price (SP) is what you receive. Profit = SP − CP when positive, Loss = CP − SP when negative. Percentages are always computed on CP (unless stated otherwise).", example: "CP ₹500, SP ₹600 → Profit = ₹100 = (100/500) × 100 = 20%." },
+      { heading: "Marked Price and Discount", body: "The marked price (list price) is set by the seller. Discount is given on the marked price, and the selling price is what remains. The discount is computed on MP, not on CP.", example: "MP ₹800, 15% discount → SP = 800 × 0.85 = ₹680." },
+      { heading: "Linking Discount and Profit", body: "A seller may give a discount yet still profit, because the profit is relative to CP while the discount is relative to MP. Work from SP backward: SP = MP(1 − d/100) and SP = CP(1 + p/100).", example: "SP ₹360 after 10% discount → MP = 360/0.9 = ₹400. If profit is 20%, CP = 360/1.2 = ₹300." },
+      { heading: "Successive Discounts", body: "Two discounts a% and b% in sequence equal a single discount of a + b − ab/100. The subtraction appears because the second discount applies to the already-reduced price.", example: "Discounts 10% then 20% → net = 10 + 20 − (10×20)/100 = 28%, so SP = MP × 0.72." },
+      { heading: "False Weight Problems", body: "When a seller uses false weights, profit is calculated on the actual cost of what they give. If the declared weight is larger than the real weight, the extra is pure profit.", example: "Selling 800g as 1kg gains profit = 200/800 × 100 = 25%." },
+    ],
+    formulas: [
+      { name: "Profit", formula: "Profit = SP − CP" },
+      { name: "Loss", formula: "Loss = CP − SP" },
+      { name: "Profit percent", formula: "(Profit / CP) × 100" },
+      { name: "Loss percent", formula: "(Loss / CP) × 100" },
+      { name: "SP at profit p%", formula: "CP × (1 + p/100)" },
+      { name: "SP at loss l%", formula: "CP × (1 − l/100)" },
+      { name: "SP after discount d%", formula: "MP × (1 − d/100)" },
+      { name: "Successive discounts a%, b%", formula: "a + b − (a × b)/100" },
+      { name: "Profit with false weight (gives less)", formula: "Extra given / Actual × 100" },
+    ],
+    tips: [
+      "Compute percentages on CP unless the question explicitly says otherwise",
+      "For 'shopkeeper gains X% after giving Y% discount' — equate SP from both routes",
+      "Assume CP = 100 to make profit/loss problems plug-and-play",
+      "In false-weight problems, if the seller gives less than declared, profit = shortfall / actual × 100",
+      "For two items sold — one at p% profit, one at p% loss — there is always a net loss of p²/100 %",
+    ],
+  },
+  "time-work": {
+    theory: [
+      { heading: "Work and Rate", body: "If a person completes a job in n days, their rate is 1/n of the job per day. Work = Rate × Time. The key skill is converting 'days to finish' into 'fraction of work per day'.", example: "A finishes in 10 days → rate 1/10 per day. In 3 days A completes 3/10 of the work." },
+      { heading: "Combined Work", body: "When people work together, their rates add. Time together = 1 / (sum of rates). If rates are 1/10 and 1/15, together they do 1/10 + 1/15 = 5/30 = 1/6 per day, so 6 days total.", example: "A (10 days) + B (15 days) → together 6 days." },
+      { heading: "Efficiency Ratios", body: "Efficiency is the inverse of time. If A is twice as efficient as B, A takes half the time B takes. With efficiency ratios, assign units per day and compute the total work in 'man-day' units.", example: "A twice as efficient as B, together finish in 12 days → A does 2 units/day, B 1 unit/day, total work = 12 × 3 = 36 units, A alone = 36/2 = 18 days." },
+      { heading: "Alternate Day Work", body: "When workers take turns daily, add their one-day contributions alternately. Find the number of full cycles, then handle the remainder day carefully — often only the faster worker works on the last day.", example: "A (1/10 per day) and B (1/15 per day) alternate starting with A: 2-day cycle = 1/10 + 1/15 = 1/6, so 5 cycles = 30 days to finish 5/6, remainder 1/6 done by A alone on day 31 → 31 days total." },
+      { heading: "Work and Wages", body: "Wages are distributed in proportion to the work each person does, i.e. in proportion to (rate × days worked). Compute each person's share of the total work first.", example: "A and B do work in ratio of rates 2:1 for the same days → wages split 2:1." },
+    ],
+    formulas: [
+      { name: "Rate", formula: "Rate = 1 / Time (fraction of work per day)" },
+      { name: "Combined rate", formula: "1/T₁ + 1/T₂ + ..." },
+      { name: "Combined time", formula: "1 / (1/T₁ + 1/T₂)" },
+      { name: "Efficiency", formula: "Efficiency ∝ 1 / Time" },
+      { name: "Work done", formula: "Work = Rate × Time" },
+      { name: "Wage share", formula: "Share ∝ Rate × Days worked" },
+    ],
+    tips: [
+      "Always convert time into work-per-day first — it avoids fractions later",
+      "For pipes/leaks, use +1/T for filling and −1/T for emptying",
+      "In efficiency problems, assign arbitrary units per day (like 1 and 2) to avoid fractions",
+      "For alternate-day work, compute the work per full cycle, then handle the tail separately",
+      "If someone leaves or joins mid-way, recompute the remaining work with the new rate",
+    ],
+  },
+  "time-speed": {
+    theory: [
+      { heading: "Speed, Distance, Time", body: "Speed = Distance / Time. Given any two, the third follows. This is the master relation — every question in this topic is a rearrangement of it, often combined with unit conversions.", example: "240 km in 4 h → 60 km/h. 60 km/h for 2.5 h → 150 km." },
+      { heading: "Unit Conversions", body: "km/h converts to m/s by multiplying by 5/18; m/s converts to km/h by multiplying by 18/5. Getting this wrong silently breaks train problems.", example: "72 km/h = 72 × 5/18 = 20 m/s." },
+      { heading: "Average Speed", body: "Average speed is total distance divided by total time — NOT the arithmetic mean of speeds. For two equal distances at speeds a and b, average speed = 2ab/(a+b).", example: "150 km at 50 km/h then 100 km at 40 km/h → time = 3 + 2.5 = 5.5 h, average = 250/5.4 ≈ 46.15 km/h (treat carefully with exact times)." },
+      { heading: "Relative Speed", body: "Two objects moving in the same direction have relative speed a − b; in opposite directions, a + b. Time to meet (or pass) = distance between them / relative speed.", example: "Trains of lengths 300 m and 200 m moving opposite at 20 m/s each → relative speed 40 m/s, time to pass = 500/40 = 12.5 s." },
+      { heading: "Trains and Platforms", body: "To pass a pole/person, a train covers only its own length. To pass a platform or another train, it covers its own length plus the other length.", example: "300 m train at 20 m/s passes a pole in 15 s, but a 500 m platform in (300+500)/20 = 40 s." },
+      { heading: "Boats and Streams", body: "Downstream speed = boat + stream; upstream speed = boat − stream. Boat speed = (down + up)/2 and stream speed = (down − up)/2.", example: "Downstream 12 km/h, upstream 8 km/h → boat = 10 km/h, stream = 2 km/h." },
+    ],
+    formulas: [
+      { name: "Speed", formula: "Speed = Distance / Time" },
+      { name: "km/h → m/s", formula: "× 5/18" },
+      { name: "m/s → km/h", formula: "× 18/5" },
+      { name: "Average speed (equal distances a, b)", formula: "2ab / (a + b)" },
+      { name: "Relative speed — same direction", formula: "a − b" },
+      { name: "Relative speed — opposite direction", formula: "a + b" },
+      { name: "Downstream speed", formula: "Boat + Stream" },
+      { name: "Upstream speed", formula: "Boat − Stream" },
+    ],
+    tips: [
+      "Convert all units to the same system (prefer m/s for train length problems)",
+      "When a train passes a platform, always add the lengths",
+      "For average speed, never average the speeds unless times are equal",
+      "In races, compare distances covered at the same time or time taken for the same distance",
+      "For boats, upstream and downstream speeds bracket the boat's still-water speed",
+    ],
+  },
+  probability: {
+    theory: [
+      { heading: "Sample Space and Events", body: "The sample space is the set of all possible outcomes. An event is a subset of outcomes you care about. Probability is the ratio of favorable outcomes to total outcomes, assuming all outcomes are equally likely.", example: "One die → sample space {1,2,3,4,5,6}. P(getting a number > 4) = 2/6 = 1/3." },
+      { heading: "Complementary Events", body: "P(not E) = 1 − P(E). When 'at least one' appears, it is almost always easier to compute the complement (none) and subtract from 1.", example: "P(no head in 3 tosses) = (1/2)³ = 1/8, so P(at least one head) = 7/8." },
+      { heading: "Addition Rule", body: "P(A or B) = P(A) + P(B) − P(A and B). Subtract the overlap so it isn't double counted. For mutually exclusive events the overlap is zero.", example: "P(multiple of 3 or 5 from 1–20) = 6/20 + 4/20 − 1/20 = 9/20 (15 counted once)." },
+      { heading: "Conditional and Independent Events", body: "P(A|B) = P(A∩B)/P(B). Independent events satisfy P(A∩B) = P(A)·P(B). Independence means the occurrence of one does not affect the other.", example: "Two fair coins — P(both heads) = 1/2 × 1/2 = 1/4 (independent)." },
+      { heading: "Dependent Events and Without Replacement", body: "When items are drawn without replacement, the probabilities change after each draw because the total and the composition shrink. Multiply along the path using conditional probabilities.", example: "2 red, 3 blue. P(two reds without replacement) = 2/5 × 1/4 = 2/20 = 1/10." },
+    ],
+    formulas: [
+      { name: "Probability", formula: "P(E) = Favorable outcomes / Total outcomes" },
+      { name: "Complement", formula: "P(E') = 1 − P(E)" },
+      { name: "Union of events", formula: "P(A ∪ B) = P(A) + P(B) − P(A ∩ B)" },
+      { name: "Conditional", formula: "P(A | B) = P(A ∩ B) / P(B)" },
+      { name: "Independent events", formula: "P(A ∩ B) = P(A) × P(B)" },
+      { name: "At least one", formula: "P(at least one) = 1 − P(none)" },
+    ],
+    tips: [
+      "List outcomes explicitly for small sample spaces — it prevents formula errors",
+      "For 'at least one', compute the complement (1 − P(none))",
+      "Withdrawals without replacement change probabilities; with replacement they don't",
+      "For two dice, make the 6×6 grid your mental model",
+      "Check that every probability is between 0 and 1, and that all events sum to 1",
+    ],
+  },
+  permutation: {
+    theory: [
+      { heading: "Factorial and the Counting Principle", body: "The factorial n! = n × (n−1) × ... × 1 counts arrangements. The fundamental counting principle: if one thing can happen in m ways and another in n ways, together they happen in m × n ways.", example: "4 books on a shelf → 4! = 24 ways. Choosing a shirt (3) and a pair of pants (2) → 6 outfits." },
+      { heading: "Permutations (Order Matters)", body: "A permutation arranges r objects chosen from n distinct objects, where order matters: nPr = n!/(n−r)!. Think of filling r ordered slots.", example: "3-letter words from 'TABLE' without repetition → 5P3 = 5×4×3 = 60." },
+      { heading: "Combinations (Order Doesn't Matter)", body: "A combination selects r objects from n where order is irrelevant: nCr = n!/[r!(n−r)!]. Dividing by r! removes the r! duplicate orderings.", example: "Choosing 3 people from 7 → 7C3 = 35. Same group in different order is the same selection." },
+      { heading: "Arrangements with Constraints", body: "When some items must stay together, treat them as one block and multiply by their internal arrangements. When items must not be together, subtract arrangements where they are together from the total.", example: "5 people, 2 always together → 4! × 2! = 48." },
+      { heading: "Circular Arrangements", body: "Seating n distinct objects around a circle gives (n−1)! arrangements, because rotations are identical — fix one person's seat first.", example: "5 people around a round table → 4! = 24 ways." },
+      { heading: "Indistinguishable Items", body: "When some items are identical, divide by the factorials of the identical groups: n!/(p! q! r!). This counts distinct arrangements of, e.g., word letters.", example: "Letters of 'LEVEL' (L×2, E×2, V×1) → 5!/(2!2!) = 30." },
+    ],
+    formulas: [
+      { name: "Factorial", formula: "n! = n × (n−1) × ... × 1" },
+      { name: "Permutation", formula: "ⁿPᵣ = n! / (n−r)!" },
+      { name: "Combination", formula: "ⁿCᵣ = n! / [r! (n−r)!]" },
+      { name: "Circular arrangement", formula: "(n−1)!" },
+      { name: "Identical items", formula: "n! / (p! × q! × r!)" },
+      { name: "Key identities", formula: "ⁿC₀ = ⁿCₙ = 1, ⁿCᵣ = ⁿC₍ₙ₋ᵣ₎, ⁿCᵣ₋₁ + ⁿCᵣ = ⁿ⁺¹Cᵣ" },
+    ],
+    tips: [
+      "Ask 'does order matter?' — permutations if yes, combinations if no",
+      "Treat 'must be together' items as a single block",
+      "For 'not together', compute total minus the together case",
+      "Fix one seat for circular arrangements before multiplying",
+      "When choosing teams or committees, that's a combination — order is irrelevant",
+    ],
+  },
+  "number-system": {
+    theory: [
+      { heading: "Types of Numbers", body: "Natural numbers (1,2,3...), whole numbers (+0), integers (…,−2,−1,0,1,2…), rational numbers (p/q form), irrational numbers (non-repeating, non-terminating like √2), real numbers (all of the above), and prime numbers (exactly two distinct factors).", example: "√2 is irrational; 22/7 is rational; 0 is whole but not natural." },
+      { heading: "Divisibility Rules", body: "A number is divisible by 2 if it ends in an even digit; by 3 if the digit sum is a multiple of 3; by 4 if the last two digits form a multiple of 4; by 5 if it ends in 0 or 5; by 8 if the last three digits are a multiple of 8; by 9 if the digit sum is a multiple of 9; by 11 if alternating digit sums differ by a multiple of 11.", example: "1749 → digit sum = 21, divisible by 3; not by 9 (21 not a multiple of 9)." },
+      { heading: "LCM and HCF", body: "LCM is the smallest common multiple; HCF (GCD) is the largest common divisor. For two numbers, LCM × HCF = product of the numbers. Use prime factorization to compute both at once.", example: "LCM(12,18) = 36, HCF(12,18) = 6; 36 × 6 = 216 = 12 × 18." },
+      { heading: "Remainders and Modulus", body: "The remainder of a division by n is the 'leftover' in 0..n−1. Use the rule that (a mod n) operations mirror arithmetic: compute the remainder of the base first, then raise and reduce.", example: "7³⁰ mod 5: 7 ≡ 2, so 2³⁰ = 2²⁸ × 4 ≡ 1 × 4 = 4 mod 5." },
+      { heading: "Base Systems", body: "Numbers can be written in any base. In base b, each digit is worth a power of b. Convert to decimal by expanding in powers of b; convert back by repeated division.", example: "101₁₀ → binary: 101₂ = 1×4 + 0×2 + 1 = 5₁₀." },
+    ],
+    formulas: [
+      { name: "LCM × HCF", formula: "LCM(a,b) × HCF(a,b) = a × b" },
+      { name: "HCF of fractions", formula: "HCF(numerators) / LCM(denominators)" },
+      { name: "LCM of fractions", formula: "LCM(numerators) / HCF(denominators)" },
+      { name: "Prime factorization", formula: "Express as product of primes, then LCM = max powers, HCF = min powers" },
+      { name: "Divisibility by 11", formula: "(Sum of digits at odd places) − (Sum at even places) is a multiple of 11" },
+      { name: "Base conversion", formula: "dₖ...d₁d₀ (base b) = dₖbᵏ + ... + d₁b + d₀" },
+    ],
+    tips: [
+      "Practice divisibility rules — they eliminate answer options in seconds",
+      "For 'greatest number dividing two numbers leaving same remainder', subtract the remainders first",
+      "For remainders with powers, reduce the base modulo n before computing",
+      "A number is a perfect square if all exponents in its prime factorization are even",
+      "The sum of the first n natural numbers = n(n+1)/2; of squares = n(n+1)(2n+1)/6",
+    ],
+  },
+  ratio: {
+    theory: [
+      { heading: "Ratios and Proportions", body: "A ratio a:b compares two quantities in reduced form. A proportion states that two ratios are equal: a/b = c/d, so ad = bc. Ratios have no units and should always be simplified.", example: "Divide 100 in ratio 2:3 → parts 2k and 3k with 5k = 100, so k = 20, giving 40:60." },
+      { heading: "Combining Ratios", body: "To combine a:b and b:c into a:b:c, scale both ratios so the common term (b) matches. This is the standard 'A:B and B:C' problem.", example: "A:B = 2:3 and B:C = 4:5 → scale to A:B = 8:12 and B:C = 12:15 → A:B:C = 8:12:15." },
+      { heading: "Partnership", body: "Profit is shared in proportion to (capital × time invested). Compute the investment-months for each partner and split profit accordingly.", example: "A invests ₹50,000 for 12 months, B ₹60,000 for 6 months → ratio 50×12 : 60×6 = 600:360 = 5:3." },
+      { heading: "Mixtures and Allegation", body: "To find how much of two ingredients to mix for a target ratio or average, use the allegation rule: the ratio is (costlier − mean) : (mean − cheaper), i.e., the deviations from the mean are inversely proportional to the quantities.", example: "Milk at ₹20/L and ₹30/L to make ₹24/L → ratio 30−24 : 24−20 = 6:4 = 3:2." },
+      { heading: "Direct and Inverse Variation", body: "Direct variation: y = kx (both rise together). Inverse variation: y = k/x (one rises, other falls). Spot which type from the context — cost rises with quantity (direct), time falls as speed rises (inverse).", example: "More workers, fewer days — inverse variation: w₁d₁ = w₂d₂." },
+    ],
+    formulas: [
+      { name: "Proportion", formula: "a/b = c/d ⟺ ad = bc" },
+      { name: "Combined ratio", formula: "a:b and b:c → a:b:c = ab : b² : bc (scale common term)" },
+      { name: "Partnership share", formula: "Share ∝ Capital × Time" },
+      { name: "Allegation", formula: "Quantity of cheaper / Quantity of dearer = (Dearer − Mean) / (Mean − Cheaper)" },
+      { name: "Direct variation", formula: "x₁/y₁ = x₂/y₂" },
+      { name: "Inverse variation", formula: "x₁y₁ = x₂y₂" },
+    ],
+    tips: [
+      "Introduce k (the common factor) whenever you see 'a:b'",
+      "Simplify ratios before computing — it reduces the arithmetic",
+      "In partnership, always convert investment and time into the same units",
+      "For allegations, write the mean in the middle and the two prices on the sides",
+      "When adding or removing from a mixture, only the added component changes — track one ingredient",
+    ],
+  },
+  average: {
+    theory: [
+      { heading: "Basic Average", body: "Average = Sum of all values / Number of values. It is the value that would replace every data point to give the same total. Reversing it, Sum = Average × Count.", example: "Average of 5,10,15,20,25 = 75/5 = 15." },
+      { heading: "Weighted Average", body: "When groups have different sizes, combine them using weights: Weighted average = Σ(wᵢxᵢ)/Σwᵢ. Each group's average is weighted by the number of items in it.", example: "Class A (30 students, avg 60) and B (20 students, avg 70) → (30×60 + 20×70)/50 = 3200/50 = 64." },
+      { heading: "Combined and Changed Averages", body: "When one item is removed or added, recompute the sum from the new average and compare. The removed item = old sum − new sum of the rest.", example: "Avg of 5 numbers is 27, removing one leaves avg 25 → removed = 135 − 100 = 35." },
+      { heading: "Average Speed", body: "Average speed is total distance / total time, which equals the weighted average of speeds weighted by time. For equal distances, it is the harmonic mean 2ab/(a+b).", example: "60 km/h for 2 h and 40 km/h for 3 h → (60×2 + 40×3)/5 = 240/5 = 48 km/h." },
+      { heading: "Age Problems", body: "Ages increase equally for everyone each year. The average age of a group rises by the same amount after a year. Use 'sum = average × count' as the workhorse.", example: "Average age of 10 people is 24; after 2 years it becomes 26 (each person +2)." },
+    ],
+    formulas: [
+      { name: "Average", formula: "Average = Sum / Count" },
+      { name: "Sum", formula: "Sum = Average × Count" },
+      { name: "Weighted average", formula: "Σ(wᵢ × xᵢ) / Σwᵢ" },
+      { name: "Average speed (equal distances)", formula: "2ab / (a + b)" },
+      { name: "Average speed (equal times)", formula: "(a + b) / 2" },
+      { name: "New value to raise average by d", formula: "New value = Old value + n × d (n = count)" },
+    ],
+    tips: [
+      "Always go through the SUM, never reason about averages directly for removals/additions",
+      "Use deviation tricks: pick a base value and track deviations from it",
+      "Weighted averages with unequal group sizes are the most commonly missed — always multiply by sizes",
+      "For average speed, compute total distance / total time — never average the speeds",
+      "Age problems: everyone ages together, so the average rises uniformly",
+    ],
+  },
+  algebra: {
+    theory: [
+      { heading: "Linear Equations", body: "A linear equation has the variable(s) to the first power. Solve by isolating the variable: apply the same operation to both sides. Two equations with two unknowns are solved by substitution or elimination.", example: "2x + 5 = 13 → 2x = 8 → x = 4. Solve x+y=10, x−y=4 → x=7, y=3." },
+      { heading: "Quadratic Equations", body: "A quadratic is ax² + bx + c = 0. Factor it to find roots, or use the formula x = [−b ± √(b²−4ac)]/2a. The discriminant b²−4ac tells you: positive → two real roots, zero → one, negative → none real.", example: "x² − 5x + 6 = 0 = (x−2)(x−3) → x = 2 or 3." },
+      { heading: "Algebraic Identities", body: "Identities are formulas true for all values. The big three: (a+b)² = a²+2ab+b², (a−b)² = a²−2ab+b², a²−b² = (a+b)(a−b). Many exam problems reduce to recognizing one of these.", example: "a+b = 7, ab = 12 → a²+b² = (a+b)² − 2ab = 49 − 24 = 25." },
+      { heading: "Inequalities", body: "Solve inequalities like equations, but flip the sign when multiplying or dividing by a negative. Represent solutions on a number line; the answer is often a range.", example: "−2x > 6 → x < −3 (sign flipped)." },
+      { heading: "Polynomials and Remainders", body: "The remainder theorem: when a polynomial f(x) is divided by (x−a), the remainder is f(a). This is the fastest check for divisibility by a linear factor.", example: "f(x) = x²+1 divided by (x−1) leaves f(1) = 2." },
+    ],
+    formulas: [
+      { name: "(a+b)²", formula: "a² + 2ab + b²" },
+      { name: "(a−b)²", formula: "a² − 2ab + b²" },
+      { name: "a² − b²", formula: "(a + b)(a − b)" },
+      { name: "(a+b)³", formula: "a³ + 3a²b + 3ab² + b³" },
+      { name: "(a−b)³", formula: "a³ − 3a²b + 3ab² − b³" },
+      { name: "a³ + b³", formula: "(a + b)(a² − ab + b²)" },
+      { name: "Quadratic roots", formula: "x = [−b ± √(b² − 4ac)] / 2a" },
+      { name: "Remainder theorem", formula: "f(x) ÷ (x−a) leaves remainder f(a)" },
+    ],
+    tips: [
+      "Recognize identities before expanding — it is 10× faster and error-free",
+      "For two linear equations, elimination is usually quicker than substitution",
+      "Check the discriminant before solving a quadratic to know if roots exist",
+      "When x² and y² appear but xy is missing, suspect a²−b² = (a+b)(a−b)",
+      "Symmetric problems (a+b, ab given) almost always reduce to identities",
+    ],
+  },
+  geometry: {
+    theory: [
+      { heading: "Lines and Angles", body: "Angles around a point sum to 360°, on a straight line to 180°. Vertically opposite angles are equal. Parallel lines cut by a transversal create equal alternate and corresponding angles, and supplementary co-interior angles.", example: "Two parallel lines with a transversal: alternate interior angles like 50° and 50° are equal." },
+      { heading: "Triangles", body: "Interior angles sum to 180°. Area = ½ × base × height, or Heron's formula √[s(s−a)(s−b)(s−c)] when only sides are known. Pythagoras: in a right triangle, a² + b² = c². The longest side is opposite the largest angle.", example: "Right triangle with legs 6 and 8 → hypotenuse = √(36+64) = 10." },
+      { heading: "Circles", body: "Area = πr², circumference = 2πr. The diameter subtends a right angle at the circumference. The perpendicular from the center to a chord bisects it.", example: "Radius 7 → area = (22/7)×49 = 154 cm², circumference = 2×(22/7)×7 = 44 cm." },
+      { heading: "Polygons", body: "Sum of interior angles of an n-sided polygon = (n−2)×180°. Each interior angle of a regular polygon divides this equally. Exterior angles always sum to 360°.", example: "Hexagon → (6−2)×180 = 720°; each angle of a regular hexagon = 120°." },
+      { heading: "Coordinate Geometry", body: "The distance between (x₁,y₁) and (x₂,y₂) is √[(x₂−x₁)² + (y₂−y₁)²]. The midpoint is the average of coordinates. The section formula divides a segment in a given ratio.", example: "Distance between (0,0) and (3,4) = √(9+16) = 5." },
+    ],
+    formulas: [
+      { name: "Sum of interior angles", formula: "(n − 2) × 180°" },
+      { name: "Triangle area", formula: "½ × base × height" },
+      { name: "Heron's formula", formula: "√[s(s−a)(s−b)(s−c)], s = (a+b+c)/2" },
+      { name: "Pythagoras", formula: "a² + b² = c² (right triangle)" },
+      { name: "Circle area / circumference", formula: "πr² / 2πr" },
+      { name: "Distance formula", formula: "√[(x₂−x₁)² + (y₂−y₁)²]" },
+      { name: "Midpoint", formula: "((x₁+x₂)/2, (y₁+y₂)/2)" },
+    ],
+    tips: [
+      "Draw the figure for every geometry problem — a sketch reveals relationships instantly",
+      "For right triangles, watch for Pythagorean triples: 3-4-5, 5-12-13, 7-24-25, 8-15-17",
+      "Angle-chasing: fill in every known angle, then look at triangles to find the unknown",
+      "In circles, remember the angle in a semicircle is always 90°",
+      "For regular polygons, all sides and angles are equal — exploit symmetry",
+    ],
+  },
+  trigonometry: {
+    theory: [
+      { heading: "Basic Trigonometric Ratios", body: "For a right triangle, sin θ = opposite/hypotenuse, cos θ = adjacent/hypotenuse, tan θ = opposite/adjacent = sin/cos. The reciprocal ratios are cosec, sec, cot.", example: "A 3-4-5 triangle with θ opposite the 3 side: sin θ = 3/5, cos θ = 4/5, tan θ = 3/4." },
+      { heading: "Standard Angle Values", body: "Memorize the common angles: sin 0° = 0, 30° = 1/2, 45° = 1/√2, 60° = √3/2, 90° = 1. Cos goes in reverse order. Tan = sin/cos.", example: "sin 30° = 1/2, tan 45° = 1, cos 60° = 1/2." },
+      { heading: "Trigonometric Identities", body: "The fundamental identity sin²θ + cos²θ = 1. From it: 1 + tan²θ = sec²θ and 1 + cot²θ = cosec²θ. Use them to simplify expressions.", example: "If sin θ = 3/5, then cos²θ = 1 − 9/25 = 16/25, so cos θ = 4/5." },
+      { heading: "Heights and Distances", body: "In a right triangle formed by a horizontal distance d, a vertical height h, and an angle of elevation θ, tan θ = h/d. Thus h = d tan θ. Angle of depression from above equals the angle of elevation from below.", example: "Angle of elevation 30°, distance 100 m → height = 100 × tan 30° = 100/√3 m." },
+      { heading: "Angle Relationships", body: "Complementary angle identities: sin(90°−θ) = cos θ, cos(90°−θ) = sin θ. These let you simplify problems with paired angles.", example: "sin 60° = cos 30° (since 60 + 30 = 90)." },
+    ],
+    formulas: [
+      { name: "sin θ", formula: "Opposite / Hypotenuse" },
+      { name: "cos θ", formula: "Adjacent / Hypotenuse" },
+      { name: "tan θ", formula: "Opposite / Adjacent = sin θ / cos θ" },
+      { name: "Fundamental identity", formula: "sin²θ + cos²θ = 1" },
+      { name: "Derived identities", formula: "1 + tan²θ = sec²θ; 1 + cot²θ = cosec²θ" },
+      { name: "Height", formula: "h = d × tan θ (angle of elevation)" },
+      { name: "Complementary", formula: "sin(90°−θ) = cos θ; tan(90°−θ) = cot θ" },
+    ],
+    tips: [
+      "Standard values table (0, 30, 45, 60, 90) is non-negotiable — memorize it",
+      "Draw the right triangle whenever a sin/cos value is given, then read the other ratios",
+      "In heights-and-distances, always sketch the vertical + horizontal right triangle",
+      "Rationalize answers like 1/√2 or 1/√3 when matching options",
+      "When both θ and (90°−θ) appear, convert one using complementary identities",
+    ],
+  },
+  mensuration: {
+    theory: [
+      { heading: "2D Shapes — Perimeter and Area", body: "Area measures the surface enclosed; perimeter measures the boundary. For rectangles, squares, triangles, and circles these are the most tested formulas. Composite figures are split into basic shapes.", example: "Circle radius 7 → area 154 cm², circumference 44 cm. Rectangle 8×5 → area 40, perimeter 26." },
+      { heading: "3D Solids — Volume and Surface Area", body: "Volume measures capacity; surface area measures the outer skin. A cube's volume is a³, surface area 6a². A cuboid is l×b×h and 2(lb+bh+hl). A cylinder is πr²h and 2πr(r+h).", example: "Cube side 5 → volume 125 cm³, surface area 150 cm²." },
+      { heading: "Spheres and Cones", body: "Sphere volume = 4/3πr³, surface area = 4πr². Cone volume = 1/3πr²h, curved surface = πrl where l is the slant height √(r²+h²).", example: "Sphere radius 7 → volume = 4/3 × 22/7 × 343 = 1437.3 cm³, surface area = 616 cm²." },
+      { heading: "Composite Shapes", body: "For combined figures, add or subtract the areas/volumes of the components. Water-filling problems compare volumes of containers — the transferred volume is conserved.", example: "A hemisphere on a cylinder of the same radius: volume = cylinder + half sphere." },
+      { heading: "Unit Conversions", body: "1 m = 100 cm = 1000 mm. Area scales by the square of the length ratio (1 m² = 10⁴ cm²); volume by the cube (1 m³ = 10⁶ cm³). 1 hectare = 10⁴ m²; 1 liter = 1000 cm³.", example: "Volume 1 m³ = 1000 liters (since 1 L = 1000 cm³ and 1 m³ = 10⁶ cm³)." },
+    ],
+    formulas: [
+      { name: "Rectangle", formula: "Area = l × b; Perimeter = 2(l + b)" },
+      { name: "Square", formula: "Area = a²; Perimeter = 4a" },
+      { name: "Triangle", formula: "Area = ½ × b × h" },
+      { name: "Circle", formula: "Area = πr²; Circumference = 2πr" },
+      { name: "Cube", formula: "Volume = a³; Surface area = 6a²" },
+      { name: "Cuboid", formula: "Volume = lbh; SA = 2(lb + bh + hl)" },
+      { name: "Cylinder", formula: "Volume = πr²h; TSA = 2πr(r + h)" },
+      { name: "Cone", formula: "Volume = ⅓πr²h; CSA = πrl (l = √(r²+h²))" },
+      { name: "Sphere", formula: "Volume = 4/3πr³; SA = 4πr²" },
+    ],
+    tips: [
+      "Draw and label the shape — write all given dimensions on it",
+      "Watch the units: convert everything to one unit before computing",
+      "For 'find the number of small objects from a big block', divide volumes",
+      "Total surface area of a cylinder = curved + two circular ends",
+      "A cube's diagonal = a√3; a cuboid's diagonal = √(l² + b² + h²)",
+    ],
+  },
+  "data-interpretation": {
+    theory: [
+      { heading: "Tables", body: "Data tables organize values in rows and columns. Read carefully: note what each row and column represents, then locate the cells you need. Most questions ask for sums, differences, ratios, or percentage changes between cells.", example: "Sales by month: Jan 50, Feb 60, Mar 70 → total = 180, growth Feb→Mar = 10/60 ≈ 16.7%." },
+      { heading: "Bar Graphs", body: "Bar length (or height) is proportional to the value. Read the scale carefully — each division may represent a large number. Questions combine bars across categories or time periods.", example: "Two bars for revenue and profit each year — compare their ratio or growth." },
+      { heading: "Pie Charts", body: "Each sector's angle is proportional to its share of the total: value = (angle/360) × total. Since a full circle is 360°, a sector of 90° is 25% of the whole.", example: "Sector 90° → 90/360 × 100 = 25% of the total." },
+      { heading: "Line Graphs", body: "Line graphs show trends over time. Slopes indicate rates of change — a steeper segment means faster change. Compute percentage growth between points using the (new − old)/old formula.", example: "Values 100 → 120 → 132: growth 20% then 10%." },
+      { heading: "Mixed and Combined Charts", body: "Some questions combine a table with a bar or pie, or give two data sources. Reconcile them: one source gives totals, the other gives breakdowns. Cross-check that percentages sum to 100 and parts sum to the whole.", example: "A pie of total sales and a bar of sales by region — combine to get region × product splits." },
+    ],
+    formulas: [
+      { name: "Sector share", formula: "Value = (Angle / 360) × Total" },
+      { name: "Sector percentage", formula: "(Angle / 360) × 100 %" },
+      { name: "Percentage change", formula: "((New − Old) / Old) × 100" },
+      { name: "Ratio", formula: "Value A / Value B (reduced)" },
+      { name: "Average from chart", formula: "Sum of values / Number of points" },
+    ],
+    tips: [
+      "Read the units and scale before anything else — a misread scale ruins the answer",
+      "Eliminate by approximation: estimate before computing precisely",
+      "For 'how many times more', divide; for 'what percent', use the change formula",
+      "In pie charts, sum of all sector angles is always 360° — use it to find a missing sector",
+      "Skim all the questions first; some can be answered from the same computation",
+    ],
+  },
+  "data-sufficiency": {
+    theory: [
+      { heading: "What is Data Sufficiency?", body: "You are given a question and two statements. You must decide whether the data is sufficient to answer — not actually compute the answer. The classic five options are: (1) alone, (2) alone, both together, either alone, or neither.", example: "Q: What is x? (1) x² = 25 (2) x > 0 → both needed, since (1) gives x = ±5." },
+      { heading: "Evaluate One Statement at a Time", body: "Test statement (1) alone, ignoring (2) entirely, and mark it sufficient or not. Then test (2) alone. Only when neither works alone, combine them. Do not let (2) bias your reading of (1).", example: "Q: Is x > 5? (1) x > 7 — sufficient alone. (2) x < 9 — not sufficient. Answer: (1) alone." },
+      { heading: "Beware of Overcomputation", body: "You only need to determine whether an answer exists, not what it is. As soon as a statement gives enough constraints to force a unique value (or a definite yes/no), it is sufficient.", example: "Q: What is x+y? (1) x=3, y=4 — sufficient even though you never write 7." },
+      { heading: "Yes/No Questions", body: "For yes/no questions, a statement is sufficient only if it answers with a definite yes OR a definite no. A statement that gives 'sometimes yes, sometimes no' is insufficient.", example: "Q: Is n even? (1) n is a multiple of 4 → definite yes, sufficient." },
+      { heading: "Combining Statements", body: "When neither works alone, combine the constraints and re-check. The key traps: redundant statements (2 repeats 1), contradictory statements, and hidden multiple solutions that persist after combining.", example: "Q: What is x? (1) x + y = 10 (2) x − y = 4 → combined: 2x = 14, x = 7. Sufficient together." },
+    ],
+    formulas: [
+      { name: "Answer structure", formula: "(1) alone | (2) alone | both together | either | neither" },
+      { name: "Sufficiency test", formula: "Does the statement force a UNIQUE value or a definite YES/NO?" },
+      { name: "Unique value needed", formula: "n equations for n unknowns (independent, consistent)" },
+      { name: "Redundant trap", formula: "Statement that adds no new constraint is insufficient" },
+      { name: "Contradiction", formula: "Statements that conflict can never be answered" },
+    ],
+    tips: [
+      "Test statements strictly one at a time — never let (2) influence your read of (1)",
+      "You don't need the answer, only sufficiency — stop once uniqueness or a definite yes/no is forced",
+      "Watch for hidden second solutions: x² = 25 gives two values, so it's insufficient without more info",
+      "Yes/No questions: a definite 'no' is also sufficient",
+      "If both statements give the same equation, they add no new information — combine is not enough",
+    ],
+  },
+  simplification: {
+    theory: [
+      { heading: "BODMAS Revisited", body: "Simplification questions are designed to test whether you respect operator precedence. Brackets first (inner to outer), then of, division/multiplication left to right, then addition/subtraction left to right.", example: "48 ÷ 6 × 3 = 8 × 3 = 24 (left to right — NOT 48 ÷ 18)." },
+      { heading: "Laws of Exponents", body: "aᵐ × aⁿ = aᵐ⁺ⁿ, aᵐ ÷ aⁿ = aᵐ⁻ⁿ, (aᵐ)ⁿ = aᵐⁿ, a⁻ⁿ = 1/aⁿ, a⁰ = 1, (ab)ⁿ = aⁿbⁿ. Express everything in the same base and add/subtract exponents.", example: "2⁵ × 2⁻² = 2³ = 8. (27)^(2/3) = (3³)^(2/3) = 3² = 9." },
+      { heading: "Surds", body: "Surds are roots left exact. Simplify by extracting square factors, combine like surds (2√3 + 3√3 = 5√3), and rationalize denominators by multiplying by the conjugate.", example: "(2√3 + 3√2)(2√3 − 3√2) = 12 − 18 = −6." },
+      { heading: "Square Roots and Cubes", body: "Perfect squares up to 30 and cubes up to 15 should be automatic. For larger numbers, use prime factorization: split into a perfect square times the rest, then take out the square root of the perfect part.", example: "√288 = √(144 × 2) = 12√2." },
+      { heading: "Approximation and Estimation", body: "When options are far apart, round aggressively and estimate. Keep rounding direction consistent so the error doesn't cross the option boundary.", example: "√3600 ≈ 60; 998 × 11 ≈ 10,978 (nearly 11,000)." },
+    ],
+    formulas: [
+      { name: "Product of powers", formula: "aᵐ × aⁿ = aᵐ⁺ⁿ" },
+      { name: "Quotient of powers", formula: "aᵐ ÷ aⁿ = aᵐ⁻ⁿ" },
+      { name: "Power of a power", formula: "(aᵐ)ⁿ = aᵐⁿ" },
+      { name: "Negative exponent", formula: "a⁻ⁿ = 1 / aⁿ" },
+      { name: "Zero exponent", formula: "a⁰ = 1" },
+      { name: "Surd product", formula: "√a × √b = √(ab)" },
+      { name: "Rationalizing", formula: "(a + √b)(a − √b) = a² − b" },
+    ],
+    tips: [
+      "Always apply BODMAS strictly — simplification questions are traps for careless order",
+      "Convert all terms to the same base before dealing with exponents",
+      "Extract perfect-square factors when simplifying roots",
+      "For surd products, look for the difference-of-squares pattern (a+√b)(a−√b)",
+      "Estimate first when options are well separated, then compute precisely only if needed",
+    ],
+  },
+  pipes: {
+    theory: [
+      { heading: "Fill and Empty Rates", body: "A pipe that fills a tank in T hours fills 1/T of it per hour. An emptying (waste) pipe removes 1/T per hour. Work with these rates — never with the times directly.", example: "A fills in 12 h → 1/12 per hour; in 3 hours it fills 3/12 = 1/4 of the tank." },
+      { heading: "Combined Pipes", body: "Fill rates add: with two filling pipes, net rate = 1/T₁ + 1/T₂, and time = 1/net rate. With a drain pipe, subtract its rate: net = fills − drains.", example: "A fills in 8 h, B in 12 h → rate 1/8 + 1/12 = 5/24, time = 24/5 = 4.8 h." },
+      { heading: "Leak Problems", body: "A leak empties the tank that a pipe is filling, slowing it down. The leak's rate is the difference between the pipe's fill rate and the observed net rate.", example: "Pipe fills in 10 h; with a leak it takes 15 h. Leak rate = 1/10 − 1/15 = 1/30, so the leak alone empties in 30 h." },
+      { heading: "Alternate Pipes and Partial Filling", body: "When pipes open alternately, compute the amount filled per full cycle, find how many cycles fill most of the tank, then handle the remainder with the appropriate pipe.", example: "A fills in 1 h, B in 2 h, alternating A then B: 2 h cycle fills 1/1 + 1/2 = 1.5 tanks... adjust for the target of exactly 1 tank by solving the last partial hour." },
+      { heading: "Capacity and Multiple Tanks", body: "For problems about transferring water between tanks or filling different-capacity vessels, compute everything in absolute volumes (like liters) using the pipe rates times time.", example: "A pipe delivering 10 L/min fills a 600 L tank in 60 min. Two such pipes in 30 min." },
+    ],
+    formulas: [
+      { name: "Fill rate", formula: "1 / Time to fill" },
+      { name: "Empty rate", formula: "1 / Time to empty (subtracted)" },
+      { name: "Net rate", formula: "Σ fills − Σ drains" },
+      { name: "Time to fill", formula: "1 / Net rate" },
+      { name: "Part filled in t hours", formula: "Net rate × t" },
+      { name: "Leak rate", formula: "Fill rate − Net rate" },
+    ],
+    tips: [
+      "Add fill rates, subtract drain rates — then invert for time",
+      "For two pipes of different speeds, use LCM of the times as a 'tank capacity' in units",
+      "If a pipe fills in n hours, in one hour it fills 1/n — write this before anything else",
+      "With a leak, net rate < fill rate; the time taken is always longer",
+      "In alternate-pipe questions, solve full cycles first, then the leftover fraction with one pipe",
+    ],
+  },
+};
+
+export const GENERIC_APTITUDE_THEORY: AptitudeTheory = {
+  theory: [
+    { heading: "Core Concepts", body: "Work through this topic's fundamentals step by step. Learn the definitions, understand the logic behind the main formulas, and practice applying them to simple problems before moving to harder ones." },
+    { heading: "Pattern Recognition", body: "Most aptitude questions follow recognizable patterns. Once you identify the pattern type, apply the matching formula or method. Repetition is what builds this pattern recognition." },
+    { heading: "Practice Strategy", body: "Attempt easy questions first to build confidence, then medium, then hard. Time yourself and review every wrong answer to find the mistake in your method, not just in arithmetic." },
+  ],
+  formulas: [
+    { name: "Formula", formula: "Understand the relationship before memorizing — derive it once and it stays" },
+    { name: "Check", formula: "Verify units and magnitudes — a wrong formula usually gives an obviously odd number" },
+  ],
+  tips: [
+    "Read the question twice before computing — most errors are misread questions",
+    "Use approximation to eliminate options before solving fully",
+    "Review mistakes weekly and retry the ones you got wrong",
+  ],
 };

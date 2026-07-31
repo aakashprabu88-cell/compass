@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, BookOpen, Lightbulb, AlertTriangle, HelpCircle, Building2, ChevronDown, ChevronRight, CheckCircle2, Video, Star, Clock, Zap, Award, BarChart3 } from "lucide-react";
+import { ArrowLeft, BookOpen, Lightbulb, AlertTriangle, HelpCircle, ChevronRight, CheckCircle2, Video, Zap } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import { APTITUDE_CONTENT, GENERIC_APTITUDE_THEORY } from "@/lib/aptitude-content";
 
 const TOPIC_META: Record<string, { title: string; topics: string[] }> = {
   percentage: { title: "Percentage", topics: ["Percentage Basics", "Fraction to Percentage", "Percentage Change", "Successive Percentage", "Population Problems"] },
@@ -130,6 +131,7 @@ export default function TopicPage() {
   const topicId = params.topic as string;
   const meta = TOPIC_META[topicId];
   const sampleQs = SAMPLE_QUESTIONS[topicId] || [];
+  const content = APTITUDE_CONTENT[topicId] || GENERIC_APTITUDE_THEORY;
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
@@ -221,17 +223,24 @@ export default function TopicPage() {
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
               <div className="p-6 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
                 <h2 className="font-semibold mb-4">{meta.title} — Theory & Concepts</h2>
-                <div className="space-y-4 text-sm text-slate-300 leading-relaxed">
-                  <p>Learn the core concepts of <strong>{meta.title}</strong> step by step. Each topic builds on the previous one.</p>
-                  <div className="space-y-2">
-                    {meta.topics.map((t, i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5">
-                        <div className="w-6 h-6 rounded-full bg-indigo-500/10 flex items-center justify-center text-xs font-bold text-indigo-400">{i + 1}</div>
-                        <span className="text-sm">{t}</span>
-                        <ChevronRight className="w-3.5 h-3.5 text-slate-600 ml-auto" />
+                <div className="space-y-5 text-sm text-slate-300 leading-relaxed">
+                  {content.theory.map((sec, i) => (
+                    <div key={i} className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                      <div className="flex items-start gap-3">
+                        <div className="w-7 h-7 rounded-full bg-indigo-500/10 flex items-center justify-center text-xs font-bold text-indigo-400 shrink-0 mt-0.5">{i + 1}</div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-slate-200 mb-1.5">{sec.heading}</h3>
+                          <p className="text-sm text-slate-400">{sec.body}</p>
+                          {sec.example && (
+                            <div className="mt-2 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/10">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Example</span>
+                              <p className="text-sm text-slate-300 mt-1 font-mono">{sec.example}</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </motion.div>
@@ -241,15 +250,9 @@ export default function TopicPage() {
           {openSection === "formulas" && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
               <div className="p-6 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
-                <h2 className="font-semibold mb-4">Formula Sheet</h2>
+                <h2 className="font-semibold mb-4">Formula Sheet — {meta.title}</h2>
                 <div className="space-y-3">
-                  {[
-                    { name: "Basic Formula", formula: "Percentage = (Value / Total) × 100" },
-                    { name: "Percentage Change", formula: "((New - Old) / Old) × 100" },
-                    { name: "Successive Change", formula: "a + b + (a×b)/100" },
-                    { name: "Population Growth", formula: "P × (1 + r/100)^n" },
-                    { name: "Discount", formula: "MP × (Discount% / 100)" },
-                  ].map((f, i) => (
+                  {content.formulas.map((f, i) => (
                     <div key={i} className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
                       <div className="text-xs text-indigo-400 font-medium mb-1">{f.name}</div>
                       <div className="text-sm font-mono text-slate-200">{f.formula}</div>
@@ -323,15 +326,9 @@ export default function TopicPage() {
           {openSection === "tips" && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
               <div className="p-6 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
-                <h2 className="font-semibold mb-4">Tips & Tricks</h2>
+                <h2 className="font-semibold mb-4">Tips & Tricks — {meta.title}</h2>
                 <div className="space-y-3">
-                  {[
-                    "Memorize common fraction-to-percentage conversions (1/2 = 50%, 1/4 = 25%, etc.)",
-                    "Use the 'assume 100' technique to simplify percentage problems",
-                    "For successive changes, apply the formula directly — don't calculate step by step",
-                    "Practice with a timer to improve speed",
-                    "Focus on accuracy first, then speed",
-                  ].map((tip, i) => (
+                  {content.tips.map((tip, i) => (
                     <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
                       <Zap className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
                       <p className="text-sm text-slate-300">{tip}</p>
