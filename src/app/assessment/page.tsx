@@ -4,21 +4,95 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, ChevronRight, Sparkles, Briefcase, GraduationCap, Code2, Heart, User, Zap, Loader2, Compass } from "lucide-react";
 
-const SKILL_OPTIONS = [
-  "JavaScript", "TypeScript", "Python", "Java", "C++", "C#", "Go", "Rust", "PHP", "Ruby",
-  "React", "Vue.js", "Angular", "Next.js", "Node.js", "Express", "Django", "Flask", "Spring Boot", "ASP.NET",
-  "HTML/CSS", "Tailwind CSS", "Bootstrap", "SASS",
-  "SQL", "PostgreSQL", "MySQL", "MongoDB", "Redis", "Firebase",
-  "Docker", "Kubernetes", "AWS", "Azure", "GCP", "CI/CD", "Git",
-  "Data Structures", "Algorithms", "System Design", "OOP", "Design Patterns",
-  "Machine Learning", "Deep Learning", "Data Science", "NLP", "Computer Vision",
-  "DevOps", "Cloud Computing", "Cybersecurity", "Blockchain", "Mobile Development",
+const SKILL_CATEGORIES: { label: string; skills: string[] }[] = [
+  {
+    label: "Technology & Programming",
+    skills: [
+      "JavaScript", "TypeScript", "Python", "Java", "C++", "C#", "Go", "Rust", "PHP", "Ruby",
+      "React", "Vue.js", "Angular", "Next.js", "Node.js", "Express", "Django", "Flask", "Spring Boot", "ASP.NET",
+      "HTML/CSS", "Tailwind CSS", "Bootstrap", "SASS",
+      "SQL", "PostgreSQL", "MySQL", "MongoDB", "Redis", "Firebase",
+      "Docker", "Kubernetes", "AWS", "Azure", "GCP", "CI/CD", "Git",
+      "Data Structures", "Algorithms", "System Design", "OOP", "Design Patterns",
+      "Machine Learning", "Deep Learning", "Data Science", "NLP", "Computer Vision",
+      "DevOps", "Cloud Computing", "Cybersecurity", "Blockchain", "Mobile Development",
+    ],
+  },
+  {
+    label: "Business & Commerce",
+    skills: [
+      "Accounting", "Bookkeeping", "Financial Analysis", "Excel", "Tally", "QuickBooks", "Taxation",
+      "Economics", "Marketing", "Digital Marketing", "SEO", "Social Media Marketing", "Sales", "Negotiation",
+      "Business Strategy", "HR Management", "Recruitment", "Payroll", "Public Relations", "Supply Chain", "Logistics",
+    ],
+  },
+  {
+    label: "Science & Research",
+    skills: [
+      "Physics", "Chemistry", "Biology", "Mathematics", "Statistics", "Research", "Laboratory Skills",
+      "Environmental Science", "Genetics", "Biochemistry", "Scientific Writing", "Data Analysis",
+    ],
+  },
+  {
+    label: "Healthcare & Medicine",
+    skills: [
+      "Medicine", "Nursing", "Anatomy", "Pharmacology", "Patient Care", "Physiotherapy",
+      "Radiology", "Dentistry", "Psychology", "First Aid", "Public Health", "Veterinary Science",
+    ],
+  },
+  {
+    label: "Law & Legal",
+    skills: [
+      "Legal Research", "Legal Writing", "Contract Law", "Litigation", "Corporate Law", "Intellectual Property",
+    ],
+  },
+  {
+    label: "Design & Creative",
+    skills: [
+      "Figma", "Photoshop", "Illustrator", "InDesign", "Canva", "UI/UX Design", "Graphic Design",
+      "Video Editing", "Animation", "Photography", "3D Modeling", "Typography", "SketchUp", "AutoCAD",
+    ],
+  },
+  {
+    label: "Arts & Humanities",
+    skills: [
+      "Writing", "Journalism", "Copywriting", "Content Creation", "History", "Sociology", "Political Science",
+      "Philosophy", "Languages", "Public Speaking", "Communication", "Storytelling",
+    ],
+  },
+  {
+    label: "Education & Teaching",
+    skills: [
+      "Teaching", "Curriculum Design", "Lesson Planning", "Educational Technology", "Career Counseling",
+    ],
+  },
+  {
+    label: "Trades & Skilled Work",
+    skills: [
+      "Electrical", "Plumbing", "Carpentry", "Welding", "Automotive Repair", "Construction", "HVAC", "Fabrication",
+    ],
+  },
+  {
+    label: "Soft Skills",
+    skills: [
+      "Leadership", "Teamwork", "Problem Solving", "Critical Thinking", "Creativity", "Adaptability",
+      "Time Management", "Empathy", "Project Management", "Decision Making", "Attention to Detail", "Organization",
+    ],
+  },
 ];
+
+const SKILL_OPTIONS = SKILL_CATEGORIES.flatMap(c => c.skills);
 
 const INTEREST_OPTIONS = [
   "Web Development", "AI/ML", "Data Science", "Cloud Computing", "DevOps",
   "Mobile Apps", "Cybersecurity", "Blockchain", "IoT", "Game Development",
   "Open Source", "System Design", "Database Administration", "UI/UX Design", "Product Management",
+  "Finance & Banking", "Marketing & Sales", "Entrepreneurship", "HR & People Management",
+  "Healthcare & Medicine", "Public Health", "Fitness & Sports",
+  "Education & Teaching", "Law & Legal", "Creative Arts & Design", "Film & Media",
+  "Music", "Writing & Publishing", "Science & Research",
+  "Government & Public Service", "NGO & Social Impact", "Trades & Skilled Work",
+  "Construction & Infrastructure", "Hospitality & Tourism", "Food & Beverage",
 ];
 
 const WORK_STYLES = ["remote", "hybrid", "onsite"];
@@ -136,14 +210,21 @@ export default function AssessmentPage() {
                 <Code2 className="w-5 h-5 text-indigo-400" />
                 <h2 className="text-lg font-semibold text-white">What are your skills?</h2>
               </div>
-              <p className="text-sm text-slate-500 mb-5">Select technologies and concepts you know — add custom ones too</p>
+              <p className="text-sm text-slate-500 mb-5">Select skills you know across any stream — add custom ones too</p>
 
-              <div className="flex flex-wrap gap-2 mb-5">
-                {SKILL_OPTIONS.map((s) => (
-                  <button key={s} onClick={() => toggleSkill(s)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${skills.includes(s) ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-sm" : "bg-white/[0.02] text-slate-500 border-white/[0.06] hover:border-white/20 hover:text-slate-300"}`}>
-                    {s}
-                  </button>
+              <div className="space-y-5">
+                {SKILL_CATEGORIES.map((cat) => (
+                  <div key={cat.label}>
+                    <div className="text-xs uppercase tracking-wider text-slate-500 mb-2">{cat.label}</div>
+                    <div className="flex flex-wrap gap-2">
+                      {cat.skills.map((s) => (
+                        <button key={s} onClick={() => toggleSkill(s)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${skills.includes(s) ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-sm" : "bg-white/[0.02] text-slate-500 border-white/[0.06] hover:border-white/20 hover:text-slate-300"}`}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
 
