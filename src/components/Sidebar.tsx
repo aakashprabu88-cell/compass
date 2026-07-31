@@ -6,8 +6,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Compass, LogOut, LayoutDashboard, Route, Sparkles, UsersRound,
-  Layers, FileText, Briefcase, TrendingUp, Mic, Menu, X, GraduationCap,
-  Shield, BookOpen, School
+  FileText, Briefcase, TrendingUp, Mic, Menu, X, GraduationCap,
+  Shield, Trophy
 } from "lucide-react";
 import { CommandPalette } from "./CommandPalette";
 import { LanguageSwitcher } from "./LanguageSwitcher";
@@ -22,9 +22,7 @@ const NAV = [
   { href: "/internships", label: "nav.internships", icon: GraduationCap, badge: "AI" },
   { href: "/panel-interview", label: "nav.panelInterview", icon: UsersRound, badge: "AI" },
   { href: "/automation-shield", label: "nav.automationShield", icon: Shield },
-  { href: "/govt-schemes", label: "nav.govtSchemes", icon: BookOpen },
-  { href: "/college", label: "nav.collegeDashboard", icon: School },
-  { href: "/digital-twin", label: "nav.digitalTwin", icon: Layers },
+  { href: "/hackathon", label: "nav.hackathon", icon: Trophy, badge: "AI" },
   { href: "/resume-builder", label: "nav.resumeBuilder", icon: FileText },
   { href: "/skills", label: "nav.skills", icon: TrendingUp },
 ];

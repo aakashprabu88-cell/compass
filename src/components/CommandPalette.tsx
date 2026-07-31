@@ -20,12 +20,10 @@ const COMMANDS: CommandItem[] = [
   { id: "jobs", label: "Jobs", href: "/jobs", category: "Navigation" },
   { id: "skills", label: "Skill Gaps", href: "/skills", category: "Navigation" },
   { id: "automation-shield", label: "AI Automation Shield", href: "/automation-shield", category: "Impact" },
-  { id: "govt-schemes", label: "Government Schemes", href: "/govt-schemes", category: "Impact" },
-  { id: "college", label: "College Dashboard", href: "/college", category: "Impact" },
+  { id: "hackathon", label: "Hackathon Winning Ideas", href: "/hackathon", category: "AI Tools" },
   { id: "resume-builder", label: "Resume Builder", href: "/resume-builder", category: "AI Tools" },
   { id: "agent", label: "AI Career Agent", href: "/agent", category: "AI Tools" },
   { id: "panel-interview", label: "Panel Interview", href: "/panel-interview", category: "AI Tools" },
-  { id: "digital-twin", label: "Digital Twin", href: "/digital-twin", category: "AI Tools" },
   { id: "internships", label: "Internships", href: "/internships", category: "AI Tools" },
 ];
 
