@@ -31,6 +31,8 @@ interface Recipient {
   applyUrl: string;
   subject?: string;
   body?: string;
+  bodyHtml?: string;
+  style?: string;
 }
 
 export async function POST(req: Request) {
@@ -49,6 +51,7 @@ export async function POST(req: Request) {
     const fromEmail = typeof body.fromEmail === "string" ? body.fromEmail : user.email;
     const customSubject = typeof body.subject === "string" ? body.subject.trim() : "";
     const customBody = typeof body.body === "string" ? body.body : "";
+    const customBodyHtml = typeof body.bodyHtml === "string" ? body.bodyHtml : "";
 
     if (!confirmed) {
       return NextResponse.json({ error: "Confirmation required. Set confirmed: true before sending." }, { status: 400 });
@@ -101,6 +104,7 @@ export async function POST(req: Request) {
       });
       const subject = r.subject || customSubject || built.subject;
       const body = r.body || customBody || built.body;
+      const bodyHtml = r.bodyHtml || customBodyHtml || "";
 
       const result = await sendEmail({
         to: r.toEmail,
@@ -117,6 +121,8 @@ export async function POST(req: Request) {
           role: r.role,
           subject,
           body,
+          bodyHtml,
+          style: r.style || "formal",
           status: result.success ? "sent" : "failed",
         },
       });

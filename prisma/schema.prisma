@@ -17,6 +17,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   assessment  Assessment?
+  careerDetails CareerDetails?
   paths       UserPath[]
   skillGaps   SkillGap[]
   resumes     Resume[]
@@ -25,6 +26,25 @@ model User {
   analysis    CareerAnalysis?
   panelQuestions PanelQuestion[]
   sentEmails  SentEmail[]
+}
+
+model CareerDetails {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  location        String   @default("")
+  phone           String   @default("")
+  github          String   @default("")
+  linkedin        String   @default("")
+  portfolio       String   @default("")
+  targetRole      String   @default("")
+  employmentType  String   @default("internship") // internship | fulltime
+  projects        String   @default("[]") // JSON [{name, tech, description, link}]
+  certifications  String   @default("[]") // JSON [{name, issuer, year}]
+  achievements    String   @default("[]") // JSON string[]
+  preferredStyle  String   @default("formal")
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PanelQuestion {
@@ -141,6 +161,8 @@ model SentEmail {
   role       String   @default("")
   subject    String
   body       String   @default("")
+  bodyHtml   String   @default("")
+  style      String   @default("formal")
   status     String   @default("sent") // sent, failed
   source     String   @default("email-center")
   sentAt     DateTime @default(now())
