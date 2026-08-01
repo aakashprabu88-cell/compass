@@ -168,6 +168,75 @@ function makeGrid() {
   return g;
 }
 
+function makeNebulaTexture() {
+  const c = document.createElement("canvas");
+  c.width = 1024; c.height = 512;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createLinearGradient(0, 0, 1024, 512);
+  g.addColorStop(0, "#06031a");
+  g.addColorStop(0.35, "#0f0830");
+  g.addColorStop(0.62, "#081028");
+  g.addColorStop(1, "#040217");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 1024, 512);
+  const blobs: [string, number, number, number][] = [
+    ["rgba(245,158,11,0.10)", 240, 160, 150],
+    ["rgba(129,140,248,0.16)", 780, 200, 190],
+    ["rgba(34,211,238,0.10)", 520, 300, 140],
+    ["rgba(168,85,247,0.13)", 150, 380, 170],
+    ["rgba(244,114,182,0.09)", 880, 370, 140],
+  ];
+  for (const [col, x, y, r] of blobs) {
+    const rg = ctx.createRadialGradient(x, y, 0, x, y, r);
+    rg.addColorStop(0, col);
+    rg.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = rg;
+    ctx.fillRect(0, 0, 1024, 512);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function makeRayTexture() {
+  const c = document.createElement("canvas");
+  c.width = 128; c.height = 1024;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createLinearGradient(0, 0, 0, 1024);
+  g.addColorStop(0, "rgba(255,255,255,0)");
+  g.addColorStop(0.28, "rgba(255,255,255,0.26)");
+  g.addColorStop(0.5, "rgba(255,255,255,0.05)");
+  g.addColorStop(0.72, "rgba(255,255,255,0.12)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 1024);
+  return new THREE.CanvasTexture(c);
+}
+
+function makeCircleLine(n: number, radius: number) {
+  const arr = new Float32Array((n + 1) * 3);
+  for (let i = 0; i <= n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    arr[i * 3] = Math.cos(a) * radius;
+    arr[i * 3 + 1] = Math.sin(a) * radius;
+    arr[i * 3 + 2] = 0;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+  return g;
+}
+
+function makeBokeh() {
+  return Array.from({ length: 18 }, () => ({
+    x: (Math.random() - 0.5) * 13,
+    y: (Math.random() - 0.5) * 7,
+    z: 1.6 + Math.random() * 4.6,
+    s: 0.12 + Math.random() * 0.4,
+    v: 0.5 + Math.random() * 1.2,
+    ph: Math.random() * Math.PI * 2,
+  }));
+}
+
 function HeroInner({ slide }: { slide: number }) {
   const { gl, scene } = useThree();
   const mouse = useRef({ x: 0, y: 0 });
@@ -185,7 +254,16 @@ function HeroInner({ slide }: { slide: number }) {
   const holoSpin = useRef<THREE.Group>(null!);
   const jobSpin = useRef<THREE.Group>(null!);
   const burst = useMemo(() => makeBurst(140), []);
+  const nebula = useRef<THREE.Mesh>(null!);
+  const rings = useRef<THREE.Group>(null!);
+  const rays = useRef<THREE.Group>(null!);
+  const hudRing = useRef<THREE.Line>(null!);  const glowDisc = useRef<THREE.Mesh>(null!);
+  const streak = useRef<THREE.Sprite>(null!);
+  const bokehGroup = useRef<THREE.Group>(null!);
+  const lastInt = useRef(-1);
+  const punch = useRef(0);
 
+  const bokeh = useMemo(() => makeBokeh(), []);
   const cardTex = useMemo(() => makeCardTexture(), []);
   const cardGeo = useMemo(() => new THREE.CircleGeometry(1.3, 96), []);
   const auraTex = useMemo(() => makeGlowTexture("rgba(255,255,255,0.9)", "rgba(255,255,255,0.22)"), []);
@@ -193,6 +271,14 @@ function HeroInner({ slide }: { slide: number }) {
   const dustGeo = useMemo(() => makeDust(130, 2.4, 6.4), []);
   const starsGeo = useMemo(() => makeDust(90, 4.5, 8.5), []);
   const gridGeo = useMemo(() => makeGrid(), []);
+  const nebulaTex = useMemo(() => makeNebulaTexture(), []);
+  const rayTex = useMemo(() => makeRayTexture(), []);
+  const nebulaGeo = useMemo(() => new THREE.SphereGeometry(42, 32, 16), []);
+  const rayGeo = useMemo(() => new THREE.PlaneGeometry(1.6, 11), []);
+  const ringGeo = useMemo(() => new THREE.TorusGeometry(2.35, 0.014, 8, 128), []);
+  const ringGeo2 = useMemo(() => new THREE.TorusGeometry(2.7, 0.01, 8, 128), []);
+  const hudRingGeo = useMemo(() => makeCircleLine(96, 2.9), []);
+  const discGeo = useMemo(() => new THREE.CircleGeometry(3.4, 48), []);
 
   const brassMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#b08a3e", metalness: 1, roughness: 0.3 }), []);
   const brassDarkMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#8a6a2f", metalness: 1, roughness: 0.42 }), []);
@@ -215,6 +301,14 @@ function HeroInner({ slide }: { slide: number }) {
   const jobLineMat = useMemo(() => new THREE.LineBasicMaterial({ color: "#34d399", transparent: true, opacity: 0.5, depthWrite: false }), []);
   const pulseMatA = useMemo(() => new THREE.MeshBasicMaterial({ color: "#f59e0b", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), []);
   const pulseMatB = useMemo(() => new THREE.MeshBasicMaterial({ color: "#818cf8", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), []);
+  const ringMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#8b8bff", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), []);
+  const hudRingMat = useMemo(() => new THREE.LineBasicMaterial({ color: "#cfe0ff", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), []);
+  const hudLine = useMemo(() => new THREE.Line(hudRingGeo, hudRingMat), [hudRingGeo, hudRingMat]);
+  const rayMat = useMemo(() => new THREE.MeshBasicMaterial({ map: rayTex, color: "#ffffff", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), [rayTex]);
+  const nebulaMat = useMemo(() => new THREE.MeshBasicMaterial({ map: nebulaTex, color: "#ffffff", side: THREE.BackSide, depthWrite: false, transparent: true }), [nebulaTex]);
+  const streakMat = useMemo(() => new THREE.SpriteMaterial({ map: auraTex, color: "#f59e0b", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), [auraTex]);
+  const bokehMat = useMemo(() => new THREE.SpriteMaterial({ map: auraTex, color: "#ffffff", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), [auraTex]);
+  const glowDiscMat = useMemo(() => new THREE.MeshBasicMaterial({ map: auraTex, color: "#f59e0b", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), [auraTex]);
   const careerMats = useMemo(() => ["#22d3ee", "#a855f7", "#f59e0b", "#f472b6", "#34d399"].map(col => new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.6, metalness: 0.4, roughness: 0.3, transparent: true, opacity: 1 })), []);
   const riskMats = useMemo(() => [
     new THREE.MeshStandardMaterial({ color: "#ef4444", emissive: "#ef4444", emissiveIntensity: 0.5, metalness: 0.4, roughness: 0.4, transparent: true, opacity: 1 }),
@@ -290,7 +384,9 @@ function HeroInner({ slide }: { slide: number }) {
       cardGeo.dispose(); cardTex.dispose(); auraTex.dispose(); shadowTex.dispose();
       dustGeo.dispose(); starsGeo.dispose(); gridGeo.dispose(); traitLineGeo.dispose();
       holoBeamGeo.dispose(); jobLineGeo.dispose(); ringPointsGeo.dispose(); burst.g.dispose();
-      [brassMat, brassDarkMat, steelMat, redMat, glassMat, coreMat, auraMat, dustMat, starsMat, burstMat, gridMat, trailMat, trailLineMat, holoMat, jobMat, jobLineMat, pulseMatA, pulseMatB, holoBeamMat].forEach(m => m.dispose());
+      nebulaTex.dispose(); rayTex.dispose(); nebulaGeo.dispose(); rayGeo.dispose();
+      ringGeo.dispose(); ringGeo2.dispose(); hudRingGeo.dispose(); discGeo.dispose();
+      [brassMat, brassDarkMat, steelMat, redMat, glassMat, coreMat, auraMat, dustMat, starsMat, burstMat, gridMat, trailMat, trailLineMat, holoMat, jobMat, jobLineMat, pulseMatA, pulseMatB, holoBeamMat, ringMat, hudRingMat, rayMat, nebulaMat, streakMat, bokehMat, glowDiscMat].forEach(m => m.dispose());
       careerMats.forEach(m => m.dispose());
       riskMats.forEach(m => m.dispose());
     };
@@ -319,12 +415,49 @@ function HeroInner({ slide }: { slide: number }) {
     if (spin.current) {
       spin.current.rotation.y = t * 0.22;
       spin.current.position.y = 0.15 + Math.sin(t * 1.3) * 0.06;
+      spin.current.scale.setScalar(1 + punch.current * 0.05);
     }
     if (tilt.current) {
       tilt.current.rotation.x += (mouse.current.y * 0.12 - tilt.current.rotation.x) * 0.04;
       tilt.current.rotation.z += (-mouse.current.x * 0.16 - tilt.current.rotation.z) * 0.04;
     }
     if (needle.current) needle.current.rotation.z = t * 0.16 + Math.sin(t * 0.4) * 0.03;
+
+    if (nebula.current) nebula.current.rotation.y += delta * 0.006;
+    if (rings.current) {
+      rings.current.rotation.y += delta * 0.14;
+      rings.current.rotation.z += delta * 0.02;
+    }
+    if (hudRing.current) {
+      hudRing.current.rotation.z += delta * 0.06;
+      hudRing.current.rotation.x = 0.2 + Math.sin(t * 0.4) * 0.08;
+    }
+    ringMat.opacity = 0.28 + 0.2 * Math.sin(t * 0.5);
+    hudRingMat.opacity = 0.22 + 0.16 * Math.sin(t * 0.8);
+    rayMat.opacity = 0.1 + 0.05 * Math.sin(t * 0.9);
+    glowDiscMat.color.copy(col);
+    if (glowDisc.current) glowDisc.current.scale.setScalar(1 + Math.sin(t * 0.9) * 0.05);
+    streakMat.color.copy(col);
+    streakMat.opacity = 0.22 + 0.1 * Math.sin(t * 1.4) + mouse.current.x * 0.08;
+    if (streak.current) {
+      streak.current.position.x = 1.7 - mouse.current.x * 0.55;
+      streak.current.position.y = 0.9 - mouse.current.y * 0.4;
+    }
+    bokehMat.opacity = 0.34 + 0.1 * Math.sin(t * 0.7);
+    if (bokehGroup.current) {
+      bokehGroup.current.children.forEach((s, i) => {
+        const b = bokeh[i];
+        s.position.y += Math.sin(t * b.v + b.ph) * delta * 0.09;
+        s.position.x += Math.cos(t * b.v * 0.8 + b.ph) * delta * 0.05;
+        const tw = 0.7 + 0.3 * Math.sin(t * 3 + b.ph);
+        s.scale.setScalar(b.s * (1 + tw * 0.25));
+      });
+    }
+
+    const half = d + 0.5;
+    const curInt = Math.floor(half);
+    if (curInt !== lastInt.current) { lastInt.current = curInt; punch.current = 1; }
+    punch.current *= Math.pow(0.02, delta);
 
     const f0 = fadeS(d, 0);
     const f1 = fadeS(d, 1);
@@ -333,6 +466,8 @@ function HeroInner({ slide }: { slide: number }) {
     const f4 = fadeS(d, 4);
     const f5 = fadeS(d, 5);
     const f6 = fadeS(d, 6);
+
+    glowDiscMat.opacity = (0.42 + 0.16 * Math.sin(t * 1.2)) * (0.5 + 0.5 * Math.max(f0, f6));
 
     starsMat.opacity = 0.15 + f0 * 0.45;
     dustMat.opacity = 0.35 + (f1 + f2 + f4 + f5) * 0.15;
@@ -405,13 +540,16 @@ function HeroInner({ slide }: { slide: number }) {
     const cam = state.camera;
     const a = CAMS[i0];
     const b = CAMS[i1];
-    const tx = a[0] + (b[0] - a[0]) * f + mouse.current.x * 0.5;
-    const ty = a[1] + (b[1] - a[1]) * f - mouse.current.y * 0.3;
-    const tz = a[2] + (b[2] - a[2]) * f;
+    const swayX = Math.sin(t * 0.6) * 0.05 + Math.sin(t * 1.7) * 0.025;
+    const swayY = Math.cos(t * 0.8) * 0.04 + Math.sin(t * 2.1) * 0.02;
+    const tx = a[0] + (b[0] - a[0]) * f + mouse.current.x * 0.55 + swayX;
+    const ty = a[1] + (b[1] - a[1]) * f - mouse.current.y * 0.35 + swayY;
+    const tz = a[2] + (b[2] - a[2]) * f + punch.current * 0.55;
     cam.position.x += (tx - cam.position.x) * 0.06;
     cam.position.y += (ty - cam.position.y) * 0.06;
     cam.position.z += (tz - cam.position.z) * 0.06;
     cam.lookAt(0, 0, 0);
+    cam.rotation.z += Math.sin(t * 0.4) * 0.014 + punch.current * 0.02;
   });
 
   return (
@@ -420,6 +558,54 @@ function HeroInner({ slide }: { slide: number }) {
       <directionalLight position={[3, 4, 5]} intensity={1.6} color="#fff1d6" />
       <directionalLight position={[-4, -2, -3]} intensity={0.6} color="#818cf8" />
       <pointLight ref={light} position={[0, 0.5, 3]} intensity={30} color="#f59e0b" />
+
+      <mesh ref={nebula} geometry={nebulaGeo}>
+        <primitive object={nebulaMat} attach="material" />
+      </mesh>
+
+      <group ref={rings}>
+        <mesh rotation={[1.05, 0.25, 0]}>
+          <primitive object={ringGeo} attach="geometry" />
+          <primitive object={ringMat} attach="material" />
+        </mesh>
+        <mesh rotation={[-0.8, -0.4, 0.2]}>
+          <primitive object={ringGeo2} attach="geometry" />
+          <primitive object={ringMat} attach="material" />
+        </mesh>
+      </group>
+
+      <primitive object={hudLine} ref={hudRing} />
+
+      <group ref={rays}>
+        <mesh position={[-3.4, 2.6, -2.5]} rotation={[0, 0, 0.7]}>
+          <primitive object={rayGeo} attach="geometry" />
+          <primitive object={rayMat} attach="material" />
+        </mesh>
+        <mesh position={[3.8, 3.1, -3.5]} rotation={[0, 0, -0.55]} scale={[1.4, 1.1, 1]}>
+          <primitive object={rayGeo} attach="geometry" />
+          <primitive object={rayMat} attach="material" />
+        </mesh>
+        <mesh position={[0.6, 3.4, -4]} rotation={[0, 0, 0.12]} scale={[0.8, 1.3, 1]}>
+          <primitive object={rayGeo} attach="geometry" />
+          <primitive object={rayMat} attach="material" />
+        </mesh>
+      </group>
+
+      <mesh ref={glowDisc} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.46, 0]} geometry={discGeo}>
+        <primitive object={glowDiscMat} attach="material" />
+      </mesh>
+
+      <sprite ref={streak} position={[1.7, 0.9, 1.1]} scale={[4.4, 0.34, 1]}>
+        <primitive object={streakMat} attach="material" />
+      </sprite>
+
+      <group ref={bokehGroup}>
+        {bokeh.map((b, i) => (
+          <sprite key={i} position={[b.x, b.y, b.z]} scale={[b.s, b.s, 1]}>
+            <primitive object={bokehMat} attach="material" />
+          </sprite>
+        ))}
+      </group>
 
       <sprite ref={aura} scale={[7, 7, 1]} position={[0, 0.2, -1.5]}>
         <primitive object={auraMat} attach="material" />

@@ -4,7 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring } from "framer-motion";
 import { ChevronLeft, ChevronRight, Compass, Loader2, Play, UserPlus, Zap } from "lucide-react";
 
 const HeroCompass = dynamic(() => import("@/components/HeroCompass"), { ssr: false, loading: () => null });
@@ -45,6 +45,8 @@ export default function HeroStory() {
   const lock = useRef(0);
   const wheelLock = useRef(0);
   const touch = useRef<{ x: number; y: number } | null>(null);
+  const rx = useSpring(useMotionValue(0), { stiffness: 140, damping: 22 });
+  const ry = useSpring(useMotionValue(0), { stiffness: 140, damping: 22 });
 
   const goTo = useCallback((i: number) => {
     const target = Math.max(0, Math.min(LAST, i));
@@ -106,6 +108,12 @@ export default function HeroStory() {
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#04040a] text-slate-200 select-none"
       onPointerEnter={() => setHovering(true)} onPointerLeave={() => setHovering(false)}
+      onPointerMove={(e) => {
+        const nx = e.clientX / window.innerWidth - 0.5;
+        const ny = e.clientY / window.innerHeight - 0.5;
+        ry.set(nx * -7);
+        rx.set(ny * 7);
+      }}
       onTouchStart={(e) => { touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
       onTouchEnd={(e) => {
         if (!touch.current) return;
@@ -129,6 +137,21 @@ export default function HeroStory() {
 
       <div className="absolute inset-0 z-[5] pointer-events-none mix-blend-overlay" style={{ backgroundImage: GRAIN, opacity: 0.07, animation: "storyGrain 0.6s steps(3) infinite" }} />
 
+      <motion.div key={`vig-${slide}`} className="absolute inset-0 z-[6] pointer-events-none"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.2 }}
+        style={{ boxShadow: `inset 0 0 26vmax ${ch.color}14, inset 0 0 22vmax rgba(0,0,0,0.78), inset 0 0 6vmax rgba(0,0,0,0.9)` }} />
+
+      <AnimatePresence>
+        {!reduced && (
+          <motion.div key={`sweep-${slide}`} className="pointer-events-none absolute inset-y-0 z-[7] w-[45%] -skew-x-12"
+            style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.04), rgba(255,255,255,0.09), rgba(255,255,255,0.04), transparent)" }}
+            initial={{ left: "-50%" }} animate={{ left: "115%" }} exit={{ left: "115%" }} transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }} />
+        )}
+      </AnimatePresence>
+
+      <div className="absolute top-0 inset-x-0 z-50 h-[6.5vh] bg-black/90 border-b pointer-events-none" style={{ borderColor: `${ch.color}22` }} />
+      <div className="absolute bottom-0 inset-x-0 z-50 h-[6.5vh] bg-black/90 border-t pointer-events-none" style={{ borderColor: `${ch.color}22` }} />
+
       <motion.div className="absolute top-0 left-0 right-0 z-30 bg-black"
         animate={{ height: busy && !reduced ? 44 : 0 }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }} />
       <motion.div className="absolute bottom-0 left-0 right-0 z-30 bg-black"
@@ -145,6 +168,9 @@ export default function HeroStory() {
           </div>
         </Link>
         <div className="flex items-center gap-3">
+          <span className="hidden sm:flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] uppercase text-slate-500">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> Rec
+          </span>
           <span className="text-[11px] tracking-[0.25em] text-slate-500 tabular-nums hidden sm:block">{String(slide + 1).padStart(2, "0")} / {String(SLIDES.length).padStart(2, "0")}</span>
           <Link href="/register" className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-colors">Skip →</Link>
         </div>
@@ -156,14 +182,20 @@ export default function HeroStory() {
       </div>
 
       <div className="absolute left-0 right-0 z-20 bottom-0 pb-32 sm:pb-28 sm:left-auto sm:max-w-2xl sm:pl-0 sm:pr-12 lg:pr-16 px-6 sm:flex sm:items-center sm:justify-start sm:top-0 sm:pt-0">
-        <div className="max-w-xl">
+        <motion.div className="relative max-w-xl" style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}>
+          <motion.div key={`ghost-${slide}`} initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            className="pointer-events-none absolute -left-6 -top-14 sm:-left-16 sm:-top-20 text-[clamp(8rem,24vw,20rem)] font-black leading-none select-none"
+            style={{ color: `${ch.color}0f`, WebkitTextStroke: `1px ${ch.color}26` }}>
+            {ch.no}
+          </motion.div>
           <AnimatePresence mode="wait">
             <motion.div key={slide} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-[10px] tracking-[0.45em] uppercase" style={{ color: ch.color }}>{ch.tag}</span>
                 <span className="h-px w-12" style={{ background: ch.color }} />
               </div>
-              <h2 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.02] text-white">
+              <h2 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.02] text-white"
+                style={{ textShadow: `0 0 60px ${ch.color}59, 0 0 18px ${ch.color}2e` }}>
                 {ch.title.map((line, i) => (
                   <span key={i} className="block overflow-hidden py-[0.05em] -my-[0.05em]">
                     <motion.span initial={{ y: "112%" }} animate={{ y: 0 }} transition={{ duration: 0.7, delay: 0.15 + i * 0.1, ease: [0.22, 1, 0.36, 1] }} className="block">
@@ -199,10 +231,14 @@ export default function HeroStory() {
               )}
             </motion.div>
           </AnimatePresence>
-        </div>
+        </motion.div>
       </div>
 
-      <div className="absolute bottom-0 inset-x-0 z-30 flex items-center justify-center gap-4 px-6 pb-7">
+      <div className="absolute left-6 bottom-24 z-30 text-[9px] tracking-[0.4em] uppercase text-slate-600 hidden sm:block pointer-events-none">
+        Compass · A career story in 7 scenes
+      </div>
+
+      <div className="absolute inset-x-0 z-30 flex items-center justify-center gap-4 px-6 bottom-[6vh]">
         <button onClick={goPrev} aria-label="Previous slide"
           className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
           <ChevronLeft className="w-5 h-5" />
