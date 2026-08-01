@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { chat, getUserProfile, profileToContext } from "@/lib/ai";
+import { chat, extractJSON, getUserProfile, profileToContext } from "@/lib/ai";
+import { prisma } from "@/lib/db";
 
-const INTERVIEWER_PERSONAS = {
+const INTERVIEWER_PERSONAS: Record<string, { name: string; role: string; system: string }> = {
   hr: {
     name: "Priya Sharma",
     role: "HR Manager",
-    system: `You are Priya Sharma, an HR Manager at a top Indian tech company (think: TCS, Infosys, Zoho, Freshworks). You are warm but probing.
+    system: `You are Priya Sharma, an HR Manager at a top Indian tech company (think: TCS, Infosys, Zoho, Freshworks, Google India). You are warm but probing.
 
 YOUR STYLE:
 - Behavioral questions: "Tell me about a time when...", "How would you handle..."
@@ -64,13 +65,115 @@ RULES:
 - Reference their background when asking behavioral questions
 - After the candidate answers, acknowledge briefly (1 sentence) then ask next question`,
   },
+  manager: {
+    name: "Rahul Verma",
+    role: "Hiring Manager",
+    system: `You are Rahul Verma, the Hiring Manager / Engineering Director at a top Indian company (or the senior business leader for non-tech roles). You are strategic, blunt but fair, and you decide the final outcome.
+
+YOUR STYLE:
+- Business impact: "How will you add value in your first 90 days?"
+- Vision and ownership: "Where do you want to be in 5 years, and how does this role fit?"
+- Big-picture scenarios: "If you joined tomorrow, what's the first problem you'd solve?"
+- Leadership potential: "Tell me about a time you took ownership beyond your job description"
+- Pressure and resilience: "How do you handle a situation where everything is failing?"
+- Closing questions: "Do you have any questions for us?"
+
+RULES:
+- Ask ONE question at a time
+- Think like a senior leader deciding hire/no-hire
+- Push on ownership, results, and growth mindset
+- Reference the candidate's specific background and skills
+- After the candidate answers, acknowledge briefly (1 sentence) then ask next question`,
+  },
+  design: {
+    name: "Kavya Iyer",
+    role: "Design Lead",
+    system: `You are Kavya Iyer, a Design Lead at a top product company (think: Flipkart, Zoho, Freshworks). You care about user empathy, design thinking, and craft.
+
+YOUR STYLE:
+- Design thinking: "Walk me through how you'd redesign [feature] for [users]"
+- User empathy: "How do you decide what a user actually needs vs. what they ask for?"
+- Portfolio depth: "Tell me about a project you're proud of and the trade-offs you made"
+- Critique and iteration: "How do you handle design feedback you disagree with?"
+- Collaboration: "How do you work with engineers and product managers?"
+
+RULES:
+- Ask ONE question at a time
+- Push for process, reasoning, and trade-offs — not just final visuals
+- Reference the candidate's skills and projects
+- After the candidate answers, acknowledge briefly (1 sentence) then ask next question`,
+  },
+  data: {
+    name: "Rohit Nair",
+    role: "Data Science Lead",
+    system: `You are Rohit Nair, a Data Science Lead at a top Indian company (think: Flipkart, PhonePe, Paytm, or a big analytics team). You value rigor, metrics, and honest modeling.
+
+YOUR STYLE:
+- Data reasoning: "How would you approach measuring [metric]?"
+- Modeling: "Walk me through how you'd build a model for [problem] — from data to deployment"
+- Statistics: "What does a p-value really tell you? When would you choose XGBoost over linear regression?"
+- Business impact: "How do you quantify the business value of a model?"
+- Trade-offs: "Bias vs. variance, speed vs. accuracy — how do you decide?"
+
+RULES:
+- Ask ONE question at a time
+- Push for concrete methodology, metrics, and honest caveats
+- Reference the candidate's skills and projects
+- After the candidate answers, acknowledge briefly (1 sentence) then ask next question`,
+  },
+  business: {
+    name: "Meera Krishnan",
+    role: "Business Lead",
+    system: `You are Meera Krishnan, a Business/Revenue Lead at a top Indian company (think: Swiggy, Zomato, Meesho, or an enterprise firm). You care about commercial instinct and execution.
+
+YOUR STYLE:
+- Business cases: "How would you grow [metric] in a tier-2 city?"
+- Customer thinking: "Who is the customer and what problem are we really solving?"
+- Analytics: "What numbers would you track to know this worked?"
+- Communication: "How would you explain this to a client who doesn't care about tech?"
+- Execution: "Walk me through a time you delivered under a tight deadline"
+
+RULES:
+- Ask ONE question at a time
+- Push for numbers, structure, and real-world pragmatism
+- Reference the candidate's background
+- After the candidate answers, acknowledge briefly (1 sentence) then ask next question`,
+  },
 };
+
+const QUESTIONS_PER_INTERVIEWER = 4;
+
+function normalizeQuestion(q: string): string {
+  return q.toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+}
+
+async function getAskedQuestions(userId: string): Promise<{ list: string[]; normalized: Set<string> }> {
+  const asked = await prisma.panelQuestion.findMany({
+    where: { userId },
+    orderBy: { askedAt: "desc" },
+    take: 40,
+    select: { question: true },
+  });
+  const list = asked.map(a => a.question).filter(Boolean);
+  const normalized = new Set(list.map(normalizeQuestion).filter(Boolean));
+  return { list, normalized };
+}
+
+async function saveQuestion(userId: string, question: string) {
+  const q = question?.trim();
+  if (!q) return;
+  try {
+    await prisma.panelQuestion.create({ data: { userId, question: q } });
+  } catch (e) {
+    console.error("panel save question failed", e);
+  }
+}
 
 export async function POST(req: NextRequest) {
   const user = await requireAuth(req);
   if (!user) return unauthorized();
 
-  if (!checkRateLimit(`panel:${user.id}`, 30, 60000)) {
+  if (!checkRateLimit(`panel:${user.id}`, 90, 60000)) {
     return NextResponse.json({ error: "Rate limit" }, { status: 429 });
   }
 
@@ -78,9 +181,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action, role, company, history } = body;
 
-    // Fetch user profile for personalized questions
     const profile = await getUserProfile(user.id);
     const profileContext = profile ? profileToContext(profile) : "";
+
+    const { list: askedList, normalized: askedNormalized } = await getAskedQuestions(user.id);
+    const askedContext = askedList.length > 0
+      ? `\n\nQUESTIONS ALREADY ASKED TO THIS CANDIDATE IN PREVIOUS SESSIONS (You MUST NOT repeat, rephrase, or ask anything similar to these — pick a fresh angle):\n${askedList.join("\n")}`
+      : "";
 
     if (action === "question") {
       const { interviewer, questionNumber } = body;
@@ -94,16 +201,26 @@ export async function POST(req: NextRequest) {
 
       const messages = [
         { role: "system" as const, content: persona.system + profileContext },
-        { role: "user" as const, content: `You are conducting interview question #${(questionNumber || 0) + 1} (out of 3 total from you) for ${role} at ${company}.${historyText}\n\nAsk your next question now.` },
+        { role: "user" as const, content: `You are conducting interview question #${(questionNumber || 0) + 1} (out of ${QUESTIONS_PER_INTERVIEWER} total from you) for ${role} at ${company}.${historyText}${askedContext}\n\nAsk your next question now. It must be a NEW question you have never asked this candidate before.` },
       ];
 
       const question = await chat(messages, { temperature: 0.8, maxTokens: 300 });
-      // Clean: remove quotes, markdown, and "Question:" prefix
-      const cleanQuestion = question
+      let cleanQuestion = question
         .replace(/^["']|["']$/g, "")
         .replace(/^Question:\s*/i, "")
         .replace(/\*\*/g, "")
         .trim();
+
+      if (askedNormalized.has(normalizeQuestion(cleanQuestion))) {
+        const retry = await chat(messages, { temperature: 0.9, maxTokens: 300 });
+        cleanQuestion = retry
+          .replace(/^["']|["']$/g, "")
+          .replace(/^Question:\s*/i, "")
+          .replace(/\*\*/g, "")
+          .trim();
+      }
+
+      await saveQuestion(user.id, cleanQuestion);
 
       return NextResponse.json({
         question: cleanQuestion,
@@ -124,53 +241,57 @@ export async function POST(req: NextRequest) {
 
       const messages = [
         { role: "system" as const, content: persona.system + profileContext },
-        { role: "user" as const, content: `The candidate was just asked: "${lastQuestion}"\nThey answered: "${lastAnswer}"${historyText}\n\nProvide a brief 1-sentence acknowledgment of their answer, then ask your NEXT question. The question MUST end with a question mark.` },
+        { role: "user" as const, content: `The candidate was just asked: "${lastQuestion}"\nThey answered: "${lastAnswer}"${historyText}${askedContext}
+
+Now do TWO things:
+1. EVALUATE their answer to "${lastQuestion}" — score 1-10 (7.5 is average, 9+ is exceptional). Be specific: reference exactly what they said. Note STAR structure, specificity, numbers, and depth.
+2. Ask your NEXT question for ${role} at ${company}. It must build on the conversation and be NEW — never repeat or rephrase a question from the ALREADY ASKED list.
+
+Return ONLY valid JSON (no markdown):
+{
+  "score": 7.5,
+  "feedback": "2 sentences referencing exactly what the candidate said",
+  "strengths": ["specific strength with example", "another"],
+  "improvements": ["specific improvement with example", "another"],
+  "modelAnswer": "A concise strong answer to their question (2-4 sentences, Indian interview style)",
+  "nextQuestion": "the next question"
+}` },
       ];
 
-      const response = await chat(messages, { temperature: 0.8, maxTokens: 400 });
+      const response = await chat(messages, { temperature: 0.7, maxTokens: 700 });
+      const parsed = extractJSON(response) || {};
 
-      // Better extraction: find the last sentence ending with "?"
-      const sentences = response.split(/(?<=[.!?])\s+/);
-      const lastQuestionIdx = sentences.findLastIndex((s: string) => s.trim().endsWith("?"));
-
-      let question: string;
-      if (lastQuestionIdx >= 0) {
-        // Combine the last question sentence (and any part of it that got split)
-        question = sentences.slice(lastQuestionIdx).join(" ").trim();
-      } else {
-        // Fallback: find the question mark and extract from there
-        const lastQMark = response.lastIndexOf("?");
-        if (lastQMark >= 0) {
-          // Go back to find the start of this sentence
-          let start = response.lastIndexOf(".", lastQMark);
-          if (start < 0 || start < lastQMark - 200) start = response.lastIndexOf("\n", lastQMark);
-          if (start < 0) start = Math.max(0, lastQMark - 200);
-          question = response.substring(start + 1).trim();
-        } else {
-          question = response;
-        }
+      let question = String(parsed.nextQuestion || "").trim();
+      if (!question || askedNormalized.has(normalizeQuestion(question))) {
+        const retry = await chat(messages, { temperature: 0.85, maxTokens: 700 });
+        const parsedRetry = extractJSON(retry) || {};
+        question = String(parsedRetry.nextQuestion || parsed.nextQuestion || "Can you tell me more about that?").trim();
       }
 
-      // Clean up the question
-      question = question
-        .replace(/^["',.\s]+|["',.\s]+$/g, "")
-        .replace(/\*\*/g, "")
-        .trim();
+      await saveQuestion(user.id, question);
 
       return NextResponse.json({
         question,
         interviewerName: persona.name,
         interviewerRole: persona.role,
+        evaluation: {
+          score: typeof parsed.score === "number" ? parsed.score : 6,
+          feedback: parsed.feedback || "The answer could use more specificity. Add concrete examples with numbers.",
+          strengths: Array.isArray(parsed.strengths) ? parsed.strengths : ["Attempted a complete answer"],
+          improvements: Array.isArray(parsed.improvements) ? parsed.improvements : ["Add quantified results (e.g., 'improved by 30%')", "Use STAR: Situation → Task → Action → Result"],
+          modelAnswer: parsed.modelAnswer || "A strong answer starts with a clear 1-line thesis, adds a specific example with numbers, and ends with the outcome you delivered.",
+        },
       });
     }
 
     if (action === "evaluate") {
-      const evalSystem = `You are a panel of 3 experienced interviewers at a top Indian tech company, evaluating a candidate for ${role} at ${company}.
+      const evalSystem = `You are the hiring panel chair at a top Indian tech company, delivering the final verdict for a candidate for ${role} at ${company}.
 
-Each interviewer has evaluated the candidate independently:
+The panel evaluated the candidate independently:
 - Priya Sharma (HR): culture fit, motivation, communication, career goals
-- Arjun Mehta (Tech Lead): technical depth, problem-solving, system design thinking
+- Arjun Mehta (Tech Lead) / domain lead: technical depth, problem-solving, domain thinking
 - Sneha Patel (Behavioral): STAR method usage, self-awareness, leadership examples
+- Rahul Verma (Hiring Manager): ownership, business impact, growth potential, final decision
 
 CANDIDATE PROFILE:${profileContext}
 
@@ -184,7 +305,7 @@ SCORING CRITERIA:
 Evaluate based on:
 1. Answer quality: specific vs. vague, quantified vs. hand-wavy
 2. STAR compliance: did they structure behavioral answers properly?
-3. Technical depth: did they demonstrate real understanding?
+3. Technical/domain depth: did they demonstrate real understanding?
 4. Communication: clear, concise, professional?
 5. Self-awareness: do they know their strengths and weaknesses?
 
@@ -196,7 +317,8 @@ Return ONLY valid JSON:
   "interviewerScores": [
     { "id": "hr", "score": 78, "feedback": "Specific feedback from HR perspective" },
     { "id": "tech", "score": 72, "feedback": "Specific technical feedback" },
-    { "id": "behavioral", "score": 75, "feedback": "Specific behavioral feedback" }
+    { "id": "behavioral", "score": 75, "feedback": "Specific behavioral feedback" },
+    { "id": "manager", "score": 74, "feedback": "Specific hiring-manager feedback" }
   ],
   "strengths": ["Specific strength: 'When asked about X, candidate gave a strong STAR response'", "Another specific strength"],
   "improvements": ["Specific improvement: 'For technical questions, provide more concrete examples with code'", "Another specific improvement"]
@@ -214,36 +336,25 @@ Decision must be one of: "strong_hire", "hire", "maybe", "no_hire"`;
       ];
 
       const response = await chat(messages, { temperature: 0.3, maxTokens: 2000 });
+      const parsed = extractJSON(response);
 
-      // Try JSON extraction
-      try {
-        const cleaned = response.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        const parsed = JSON.parse(cleaned);
+      if (parsed?.interviewerScores && parsed.overallScore) {
         return NextResponse.json(parsed);
-      } catch (e) {
-        console.error("panel evaluation JSON parse failed", e);
-        // Try brace extraction
-        const braceMatch = response.match(/\{[\s\S]*\}/);
-        if (braceMatch) {
-          try {
-            return NextResponse.json(JSON.parse(braceMatch[0]));
-          } catch (e2) { console.error("panel evaluation brace fallback failed", e2); }
-        }
-
-        // Personalized fallback
-        return NextResponse.json({
-          overallScore: 70,
-          decision: "hire",
-          summary: `The candidate showed ${profile ? "relevant skills in " + profile.skills.slice(0, 3).join(", ") : "potential"} but could improve answer specificity with more quantified examples.`,
-          interviewerScores: [
-            { id: "hr", score: 72, feedback: "Good communication and motivation clarity" },
-            { id: "tech", score: 68, feedback: "Demonstrated foundational knowledge but needs more depth" },
-            { id: "behavioral", score: 70, feedback: "Some good examples but could use more STAR structure" },
-          ],
-          strengths: ["Clear communication", `Relevant technical foundation${profile ? " in " + profile.skills.slice(0, 2).join(" and ") : ""}`],
-          improvements: ["Add specific metrics to examples", "Use STAR format for behavioral questions", "Drill deeper into technical details"],
-        });
       }
+
+      return NextResponse.json({
+        overallScore: 70,
+        decision: "hire",
+        summary: `The candidate showed ${profile ? "relevant skills in " + profile.skills.slice(0, 3).join(", ") : "potential"} but could improve answer specificity with more quantified examples.`,
+        interviewerScores: [
+          { id: "hr", score: 72, feedback: "Good communication and motivation clarity" },
+          { id: "tech", score: 68, feedback: "Demonstrated foundational knowledge but needs more depth" },
+          { id: "behavioral", score: 70, feedback: "Some good examples but could use more STAR structure" },
+          { id: "manager", score: 71, feedback: "Shows ownership potential but needs clearer career direction" },
+        ],
+        strengths: ["Clear communication", `Relevant foundation${profile ? " in " + profile.skills.slice(0, 2).join(" and ") : ""}`],
+        improvements: ["Add specific metrics to examples", "Use STAR format for behavioral questions", "Drill deeper into technical details"],
+      });
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });

@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Compass, ArrowRight, Brain, Shield, Trophy, Briefcase, Loader2, Zap, TrendingUp, Globe, LogIn, UserPlus } from "lucide-react";
+import { Compass, ArrowRight, Brain, Shield, Mic, Briefcase, Loader2, Zap, TrendingUp, Globe, LogIn, UserPlus } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 
 const FEATURES = [
   { icon: Brain, titleKey: "landing.feature1Title", descKey: "landing.feature1Desc", color: "rgba(99,102,241,0.15)" },
   { icon: Zap, titleKey: "landing.feature2Title", descKey: "landing.feature2Desc", color: "rgba(168,85,247,0.15)" },
-  { icon: Trophy, titleKey: "landing.feature3Title", descKey: "landing.feature3Desc", color: "rgba(6,182,212,0.15)" },
+  { icon: Mic, titleKey: "landing.feature3Title", descKey: "landing.feature3Desc", color: "rgba(6,182,212,0.15)" },
   { icon: Shield, titleKey: "landing.feature4Title", descKey: "landing.feature4Desc", color: "rgba(244,63,94,0.15)" },
   { icon: Briefcase, titleKey: "landing.feature5Title", descKey: "landing.feature5Desc", color: "rgba(16,185,129,0.15)" },
   { icon: Globe, titleKey: "landing.feature6Title", descKey: "landing.feature6Desc", color: "rgba(245,158,11,0.15)" },

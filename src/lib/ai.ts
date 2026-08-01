@@ -292,66 +292,250 @@ Return ONLY valid JSON (no markdown, no code fences):
 
 // ─── Resume Generation ─────────────────────────────────────────────
 
-export interface ResumeBullet {
-  section: string;
-  content: string;
+export interface ResumeExperienceInput { company: string; role: string; dates: string; description: string; }
+export interface ResumeProjectInput { name: string; tech: string; description: string; }
+export interface ResumeEducationInput { degree: string; school: string; year: string; gpa: string; }
+export interface ResumeCertInput { name: string; issuer: string; year: string; }
+
+export interface ResumeExperience { company: string; role: string; dates: string; bullets: string[]; }
+export interface ResumeProject { name: string; tech: string; bullets: string[]; }
+export interface ResumeEducation { degree: string; school: string; year: string; details: string; }
+export interface ResumeCert { name: string; issuer: string; year: string; }
+
+export interface ResumeAnalysis {
+  matchScore: number;
+  verdict: string;
+  summary: string;
+  experience: ResumeExperience[];
+  projects: ResumeProject[];
+  education: ResumeEducation[];
+  certifications: ResumeCert[];
+  achievements: string[];
+  skills: Record<string, string[]>;
+  hiringManagerView: string;
+  strengths: string[];
+  gaps: string[];
+  missingKeywords: string[];
+  recommendations: string[];
 }
 
-const RESUME_SYSTEM = `You are an expert resume writer who specializes in the Indian tech job market. You know:
-- What ATS (Applicant Tracking Systems) scan for: keywords, formatting, section headers
-- Indian resume conventions: 1-2 pages, education section prominent for freshers
-- How to quantify achievements (even for students: "reduced load time by 40%", "served 500+ users")
-- STAR format for bullet points: Situation, Task, Action, Result
-- Action verbs that impress: Architected, Spearheaded, Optimized, Engineered, Deployed
-
-Write resumes that pass ATS filters and impress hiring managers. Be specific and quantified.`;
-
-export async function generateResumeBullets(profile: {
+export interface ResumeBuildInput {
   name: string;
-  skills: string[];
-  projects: string[];
-  experience: string;
-  education: string;
+  email: string;
+  phone: string;
+  location: string;
+  linkedin: string;
+  github: string;
+  portfolio: string;
   targetRole: string;
-}): Promise<{ bullets: ResumeBullet[]; summary: string; atsTips: string[] }> {
-  const prompt = `Generate a professional resume for ${profile.name} targeting "${profile.targetRole}".
+  targetCompany: string;
+  jobDescription: string;
+  skills: string[];
+  experiences: ResumeExperienceInput[];
+  projects: ResumeProjectInput[];
+  education: ResumeEducationInput[];
+  certifications: ResumeCertInput[];
+  achievements: string[];
+  profileContext?: string;
+}
 
-SKILLS: ${profile.skills.join(", ")}
-PROJECTS: ${profile.projects.join("; ")}
-EXPERIENCE: ${profile.experience || "Entry-level — no formal experience yet"}
-EDUCATION: ${profile.education}
-TARGET ROLE: ${profile.targetRole}
+const RESUME_SYSTEM = `You are a world-class executive resume writer AND a senior hiring manager at a top technology company (think Google, Microsoft, Amazon, Meta, Flipkart, Razorpay, Zoho, Atlassian). You have seen tens of thousands of resumes and know exactly what makes a hiring manager shortlist one candidate out of 500.
+
+You think in two modes:
+1. THE HIRING MANAGER: when you open a resume you scan it in 6 seconds for: relevance to the role, quantified impact, progression, and red flags. You drop resumes with vague bullets, missing keywords, typos, or no measurable outcomes.
+2. THE RESUME WRITER: you rewrite content so it survives the 6-second scan AND the ATS keyword filter AND the recruiter's 30-second deeper read.
+
+Your rules:
+- NEVER fabricate facts. Never invent companies, degrees, titles, metrics, awards, or technologies the candidate did not provide. You may only reframe and strengthen what is given. If the input lacks a number, describe impact with strong, concrete, professional language instead of inventing metrics.
+- Every bullet starts with a powerful action verb and describes WHAT + HOW + RESULT (STAR).
+- Content must be keyword-rich for the target role and target company (their interview rounds, their tech stack, their values).
+- Use Indian job-market conventions: 1 page for freshers, concise, education near top for freshers.
+- Quantify wherever the input supports it (users served, % improvement, scale, team size, deadlines).
+- Be brutally honest in the analysis — a recruiter would be.`;
+
+export async function generateFirstClassResume(input: ResumeBuildInput): Promise<ResumeAnalysis> {
+  const expText = input.experiences.length > 0
+    ? input.experiences.map((e, i) => `${i + 1}. ${e.role || "Role"} @ ${e.company || "Company"} (${e.dates || "dates"})\n   Raw notes: ${e.description || "(none)"}`).join("\n")
+    : "(No work experience provided — emphasize projects and skills)";
+
+  const projText = input.projects.length > 0
+    ? input.projects.map((p, i) => `${i + 1}. ${p.name || "Project"} — Tech: ${p.tech || "?"}\n   Raw notes: ${p.description || "(none)"}`).join("\n")
+    : "(No projects provided)";
+
+  const eduText = input.education.length > 0
+    ? input.education.map((e) => `${e.degree || "Degree"} — ${e.school || "School"} (${e.year || "year"})${e.gpa ? `, GPA/CGPA: ${e.gpa}` : ""}`).join("\n")
+    : "(No education provided)";
+
+  const certText = input.certifications.length > 0
+    ? input.certifications.map((c) => `${c.name || "Cert"} — ${c.issuer || ""}${c.year ? ` (${c.year})` : ""}`).join("\n")
+    : "(None)";
+
+  const jdText = input.jobDescription?.trim()
+    ? `\n\nTARGET JOB DESCRIPTION (match keywords and priorities to this):\n${input.jobDescription}`
+    : "";
+
+  const prompt = `Build a first-class, hiring-manager-grade resume for ${input.name}, targeting "${input.targetRole}"${input.targetCompany ? ` at ${input.targetCompany}` : " at a top-tier company"}.
+${input.profileContext ? `\nSYSTEM PROFILE DATA (assessment results, career paths, skill gaps):\n${input.profileContext}` : ""}
+
+RAW CANDIDATE DATA:
+- Email: ${input.email || "?"}
+- Phone: ${input.phone || "?"}
+- Location: ${input.location || "?"}
+- LinkedIn: ${input.linkedin || "?"}
+- GitHub: ${input.github || "?"}
+- Portfolio: ${input.portfolio || "?"}
+- Skills: ${input.skills.join(", ") || "(none listed)"}
+- Achievements/Awards: ${input.achievements.join(", ") || "(none)"}
+
+EXPERIENCE (raw notes):
+${expText}
+
+PROJECTS (raw notes):
+${projText}
+
+EDUCATION:
+${eduText}
+
+CERTIFICATIONS:
+${certText}
+${jdText}
 
 TASK:
-1. Write a 2-3 sentence professional summary that mentions "${profile.targetRole}" and their top 2-3 skills
-2. Generate 10-12 bullet points across Experience, Projects, and Education sections
-3. Every bullet MUST: start with an action verb, quantify impact where possible, use STAR format
-4. List 3 ATS optimization tips specific to this resume
+1. Score how competitive this candidate is for "${input.targetRole}"${input.targetCompany ? ` at ${input.targetCompany}` : ""}. Be strict and realistic (a mediocre fresher resume ≈ 40-55, a strong one ≈ 70-80, exceptional ≈ 85+).
+2. Write the final resume content: a powerful summary, grouped skills, 2-4 experience entries (keep only relevant ones; 2-4 bullets each), up to 3 projects (2-3 bullets each), education, certifications, achievements. Rewrite every bullet to be action-first, specific, and impactful using ONLY what was provided.
+3. Analyze the resume exactly as a ${input.targetCompany || "top-company"} hiring manager would: their honest first impression, strengths, red flags a recruiter would flag, keywords missing that the ATS/recruiter searches for, and the single highest-leverage improvements ranked by impact.
 
 Return ONLY valid JSON (no markdown, no code fences):
 {
-  "bullets": [
-    { "section": "Experience", "content": "Action verb + task + quantified result" },
-    { "section": "Project", "content": "Built/deployed X using Y, achieving Z metric" },
-    { "section": "Education", "content": "Relevant coursework, GPA if strong, achievements" },
-    { "section": "Skills", "content": "Organized skill categories" }
-  ],
-  "summary": "Professional summary for ${profile.targetRole}",
-  "atsTips": ["Specific tip for this resume", "Another specific tip", "Third specific tip"]
+  "matchScore": 0-100,
+  "verdict": "Exceptional | Strong Match | Competitive | Needs Work | Not Ready",
+  "summary": "3-4 line quantified, keyword-rich professional summary",
+  "experience": [{ "company": "", "role": "", "dates": "", "bullets": ["action-first bullet with result", "..."] }],
+  "projects": [{ "name": "", "tech": "comma separated", "bullets": ["...", "..."] }],
+  "education": [{ "degree": "", "school": "", "year": "", "details": "CGPA/coursework, only if strong" }],
+  "certifications": [{ "name": "", "issuer": "", "year": "" }],
+  "achievements": ["award or achievement as one line"],
+  "skills": { "Category": ["skill", "skill"], "Category2": ["..."] },
+  "hiringManagerView": "3-5 sentences: 'When I open this resume for ${input.targetRole}, I see...' — what stands out, what would make the recruiter stop, what the 6-second scan concludes",
+  "strengths": ["3-4 specific strengths"],
+  "gaps": ["3-4 specific red flags or weaknesses"],
+  "missingKeywords": ["6-10 keywords the role/company searches for that are absent"],
+  "recommendations": ["4-6 concrete actions ranked by impact"]
 }`;
 
-  const text = await generateText(prompt, RESUME_SYSTEM, { temperature: 0.5, maxTokens: 3000 });
+  const text = await generateText(prompt, RESUME_SYSTEM, { temperature: 0.5, maxTokens: 7000 });
   const parsed = extractJSON(text);
-  if (parsed?.bullets) return parsed;
+  if (parsed?.summary && Array.isArray(parsed.experience)) return normalizeResumeAnalysis(parsed);
 
+  // Fallback: build a safe resume from raw input
+  return buildFallbackResume(input);
+}
+
+function normalizeResumeAnalysis(parsed: any): ResumeAnalysis {
   return {
-    bullets: [
-      { section: "Summary", content: `${profile.name} is a motivated professional targeting ${profile.targetRole} roles.` },
-      { section: "Skills", content: profile.skills.join(", ") || "Technical skills" },
-    ],
-    summary: `${profile.name} — ${profile.targetRole} candidate with skills in ${profile.skills.slice(0, 3).join(", ")}.`,
-    atsTips: ["Add quantified achievements to every bullet point", "Use keywords from the job description", "Keep formatting clean for ATS parsing"],
+    matchScore: typeof parsed.matchScore === "number" ? Math.max(0, Math.min(100, parsed.matchScore)) : 50,
+    verdict: typeof parsed.verdict === "string" ? parsed.verdict : "Competitive",
+    summary: parsed.summary || "",
+    experience: Array.isArray(parsed.experience) ? parsed.experience.map((e: any) => ({
+      company: e.company || "",
+      role: e.role || "",
+      dates: e.dates || "",
+      bullets: Array.isArray(e.bullets) ? e.bullets.map(String) : [],
+    })).filter((e: any) => e.company || e.role || e.bullets.length > 0) : [],
+    projects: Array.isArray(parsed.projects) ? parsed.projects.map((p: any) => ({
+      name: p.name || "",
+      tech: p.tech || "",
+      bullets: Array.isArray(p.bullets) ? p.bullets.map(String) : [],
+    })).filter((p: any) => p.name || p.bullets.length > 0) : [],
+    education: Array.isArray(parsed.education) ? parsed.education.map((e: any) => ({
+      degree: e.degree || "",
+      school: e.school || "",
+      year: e.year || "",
+      details: e.details || "",
+    })).filter((e: any) => e.degree || e.school) : [],
+    certifications: Array.isArray(parsed.certifications) ? parsed.certifications.map((c: any) => ({
+      name: c.name || "",
+      issuer: c.issuer || "",
+      year: c.year || "",
+    })).filter((c: any) => c.name) : [],
+    achievements: Array.isArray(parsed.achievements) ? parsed.achievements.map(String) : [],
+    skills: parsed.skills && typeof parsed.skills === "object" ? parsed.skills : {},
+    hiringManagerView: parsed.hiringManagerView || "",
+    strengths: Array.isArray(parsed.strengths) ? parsed.strengths.map(String) : [],
+    gaps: Array.isArray(parsed.gaps) ? parsed.gaps.map(String) : [],
+    missingKeywords: Array.isArray(parsed.missingKeywords) ? parsed.missingKeywords.map(String) : [],
+    recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations.map(String) : [],
   };
+}
+
+function buildFallbackResume(input: ResumeBuildInput): ResumeAnalysis {
+  const skillList = input.skills.length > 0 ? input.skills : [];
+  return {
+    matchScore: 55,
+    verdict: "Competitive",
+    summary: `${input.name} is a ${input.targetRole} candidate${input.targetCompany ? ` targeting ${input.targetCompany}` : ""} with skills in ${skillList.slice(0, 4).join(", ") || "software development"}. Focused on building production-quality solutions with measurable outcomes.`,
+    experience: input.experiences
+      .filter(e => e.company || e.role || e.description)
+      .map(e => ({
+        company: e.company || "",
+        role: e.role || "",
+        dates: e.dates || "",
+        bullets: e.description.split("\n").map(s => s.trim()).filter(Boolean).slice(0, 4),
+      })),
+    projects: input.projects
+      .filter(p => p.name || p.description)
+      .map(p => ({
+        name: p.name || "Project",
+        tech: p.tech || "",
+        bullets: p.description.split("\n").map(s => s.trim()).filter(Boolean).slice(0, 3),
+      })),
+    education: input.education.map(e => ({
+      degree: e.degree || "",
+      school: e.school || "",
+      year: e.year || "",
+      details: e.gpa ? `CGPA/GPA: ${e.gpa}` : "",
+    })),
+    certifications: input.certifications.map(c => ({ name: c.name, issuer: c.issuer, year: c.year })),
+    achievements: input.achievements,
+    skills: skillList.length > 0 ? { "Core Skills": skillList } : {},
+    hiringManagerView: `This resume shows a candidate targeting ${input.targetRole}${input.targetCompany ? ` at ${input.targetCompany}` : ""}. It has a foundation to build on, but the impact is not yet quantified — every bullet should show what was built, how, and the measurable result.`,
+    strengths: skillList.slice(0, 3).map(s => `Listed skill: ${s}`),
+    gaps: ["Bullets lack quantified outcomes (users, %, scale, time saved)", "No mention of measurable project impact", "Missing company-specific keywords for the target role"],
+    missingKeywords: [],
+    recommendations: [
+      "Rewrite every bullet with an action verb + what + how + result",
+      "Add numbers: users served, % improvement, scale, deadlines met",
+      "Mirror the exact keywords from the job description into Skills and bullets",
+      "Add LinkedIn/GitHub links so recruiters can verify projects",
+    ],
+  };
+}
+
+export async function improveResumeText(
+  targetRole: string,
+  kind: "experience" | "project",
+  raw: string
+): Promise<{ improved: string }> {
+  const prompt = `Rewrite the following ${kind === "experience" ? "work experience notes" : "project description"} into 2-4 powerful, ATS-friendly resume bullets for a "${targetRole}" role.
+
+RULES:
+- Every bullet: strong action verb + what you did + how + measurable result
+- Do NOT invent facts, numbers, or technologies not present
+- If no number exists, use strong concrete language (scale, impact, ownership)
+- No more than 4 bullets
+
+RAW NOTES:
+${raw}
+
+Return ONLY valid JSON (no markdown):
+{
+  "improved": "Bullet 1\\nBullet 2\\nBullet 3"
+}`;
+
+  const text = await generateText(prompt, RESUME_SYSTEM, { temperature: 0.4, maxTokens: 1000 });
+  const parsed = extractJSON(text);
+  if (parsed?.improved) return { improved: String(parsed.improved) };
+  return { improved: raw.split("\n").map(s => s.trim()).filter(Boolean).join("\n") };
 }
 
 // ─── Interview Evaluation ──────────────────────────────────────────

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, MessageSquare, HelpCircle, CheckCircle2, AlertCircle, Lightbulb, ChevronRight, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, MessageSquare, HelpCircle, CheckCircle2, AlertCircle, Lightbulb, ChevronRight, Send, Sparkles, RefreshCw } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 
 const HR_QUESTIONS = [
@@ -18,7 +18,34 @@ const HR_QUESTIONS = [
   { q: "Do you have any questions for us?", tip: "Always say yes. Ask about growth, culture, team, or challenges." },
   { q: "How do you handle feedback?", tip: "Show openness and growth mindset. Give a real example of acting on feedback." },
   { q: "Why did you leave your last job?", tip: "Stay positive. Focus on growth, learning, or career progression." },
+  { q: "Describe your ideal manager or work environment.", tip: "Be honest but flexible — mention what helps you do your best work without sounding demanding." },
+  { q: "What motivates you to come to work every day?", tip: "Connect motivation to real moments — solving problems, learning, helping users, team wins." },
+  { q: "Tell me about a time you disagreed with a manager.", tip: "Show respectful disagreement with data, then alignment once the decision was made." },
+  { q: "How do you handle criticism?", tip: "Give a real example: how you separated the message from the emotion and improved." },
+  { q: "What kind of work do you enjoy most?", tip: "Map it to the role — the tasks you love should be a large part of this job." },
+  { q: "Describe a project you are proud of.", tip: "Structure it: problem, your role, actions, and a quantified result." },
+  { q: "How do you prioritize when everything is urgent?", tip: "Explain a system — impact vs. effort, deadlines, and communication with stakeholders." },
+  { q: "Do you prefer working alone or in a team?", tip: "Say both, with examples — then link it to what this role needs." },
+  { q: "How do you stay updated in your field?", tip: "Name specific sources you actually use: courses, blogs, GitHub, communities, certifications." },
+  { q: "Tell me about a time you went beyond your job description.", tip: "Show ownership and initiative with a real story and a measurable outcome." },
+  { q: "How do you deal with a difficult coworker?", tip: "Focus on empathy, direct communication, and escalation only when needed." },
+  { q: "What are you looking for in your next role?", tip: "Link your wants to what this company offers — growth, learning, impact, stability." },
+  { q: "When can you join?", tip: "Give a realistic timeline and show flexibility; explain notice period if applicable." },
+  { q: "Tell me about a time you missed a deadline.", tip: "Own the mistake, explain what you did to recover, and what changed afterward." },
+  { q: "Why should we choose you over other candidates?", tip: "Don't trash others — differentiate with 2 specific strengths they need, with proof." },
+  { q: "Tell me something not on your resume.", tip: "Share a passion, a side project, or a skill that reveals character — keep it relevant." },
 ];
+
+const QUESTIONS_PER_SET = 12;
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 const RED_FLAGS = [
   "Speaking negatively about past employers", "Being unprepared — no company research",
@@ -33,6 +60,7 @@ export default function HRInterviewPage() {
   const [loading, setLoading] = useState(true);
   const [selectedQ, setSelectedQ] = useState<number | null>(null);
   const [answer, setAnswer] = useState("");
+  const [sessionQuestions, setSessionQuestions] = useState(() => shuffle(HR_QUESTIONS).slice(0, QUESTIONS_PER_SET));
 
   useEffect(() => {
     let cancelled = false;
@@ -52,6 +80,12 @@ export default function HRInterviewPage() {
 
   const logout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); };
 
+  const newSet = () => {
+    setSessionQuestions(shuffle(HR_QUESTIONS).slice(0, QUESTIONS_PER_SET));
+    setSelectedQ(null);
+    setAnswer("");
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
@@ -70,7 +104,7 @@ export default function HRInterviewPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold">HR Interview</h1>
-                <p className="text-sm text-slate-400">Master common HR questions with AI-powered answer evaluation and improvement tips</p>
+                <p className="text-sm text-slate-400">A fresh set of questions every visit — no repeats</p>
               </div>
             </div>
           </motion.div>
@@ -92,8 +126,15 @@ export default function HRInterviewPage() {
             </div>
           </motion.div>
 
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs text-slate-500">{QUESTIONS_PER_SET} of {HR_QUESTIONS.length} questions in this set</span>
+            <button onClick={newSet} className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+              <RefreshCw className="w-3 h-3" /> New Set
+            </button>
+          </div>
+
           <div className="space-y-2">
-            {HR_QUESTIONS.map((q, i) => (
+            {sessionQuestions.map((q, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}>
                 <button onClick={() => setSelectedQ(selectedQ === i ? null : i)}
                   className="w-full text-left p-4 rounded-xl border border-white/5 hover:border-white/10 transition-all"

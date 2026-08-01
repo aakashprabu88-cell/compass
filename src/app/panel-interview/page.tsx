@@ -17,8 +17,8 @@ interface SpeechRecognitionAPI {
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Mic, MicOff, Send, Users, Brain, Heart, Briefcase, Star,
-  ArrowRight, CheckCircle, XCircle, Clock, Volume2, Loader2
+  Mic, MicOff, Send, Users, Star,
+  ArrowRight, CheckCircle, Clock, Loader2, Sparkles, Lightbulb
 } from "lucide-react";
 
 interface Interviewer {
@@ -31,12 +31,19 @@ interface Interviewer {
   borderColor: string;
 }
 
+interface AnswerEvaluation {
+  score: number;
+  feedback: string;
+  strengths: string[];
+  improvements: string[];
+  modelAnswer: string;
+}
+
 interface PanelMessage {
   interviewerId: string;
   question: string;
   answer?: string;
-  score?: number;
-  feedback?: string;
+  evaluation?: AnswerEvaluation;
   timestamp: Date;
 }
 
@@ -49,7 +56,7 @@ interface InterviewResult {
   improvements: string[];
 }
 
-const INTERVIEWERS: Interviewer[] = [
+const ALL_INTERVIEWERS: Interviewer[] = [
   {
     id: "hr",
     name: "Priya Sharma",
@@ -77,16 +84,70 @@ const INTERVIEWERS: Interviewer[] = [
     color: "text-amber-400",
     borderColor: "border-amber-500/30",
   },
+  {
+    id: "manager",
+    name: "Rahul Verma",
+    role: "Hiring Manager",
+    personality: "Strategic and blunt. Judges ownership, business impact, and final decision.",
+    avatar: "RV",
+    color: "text-emerald-400",
+    borderColor: "border-emerald-500/30",
+  },
+  {
+    id: "design",
+    name: "Kavya Iyer",
+    role: "Design Lead",
+    personality: "Empathetic about users, rigorous about process and trade-offs.",
+    avatar: "KI",
+    color: "text-pink-400",
+    borderColor: "border-pink-500/30",
+  },
+  {
+    id: "data",
+    name: "Rohit Nair",
+    role: "Data Science Lead",
+    personality: "Rigorous about metrics, modeling, and honest caveats.",
+    avatar: "RN",
+    color: "text-sky-400",
+    borderColor: "border-sky-500/30",
+  },
+  {
+    id: "business",
+    name: "Meera Krishnan",
+    role: "Business Lead",
+    personality: "Commercial instinct. Pushes for numbers, structure, and execution.",
+    avatar: "MK",
+    color: "text-rose-400",
+    borderColor: "border-rose-500/30",
+  },
 ];
 
+const SPECIALIST_RULES: { regex: RegExp; specialist: Interviewer }[] = [
+  { regex: /design|ui\/ux|ux\s*design|product designer|creative|graphic/i, specialist: ALL_INTERVIEWERS[4] },
+  { regex: /data|analytics|analyst|machine learning|ml\s*engineer|ai\s*engineer|data scientist|scientist/i, specialist: ALL_INTERVIEWERS[5] },
+  { regex: /sales|marketing|business|hr\s*executive|finance|account|consultant|management|operations|product manager|non-?tech/i, specialist: ALL_INTERVIEWERS[6] },
+];
+
+function selectPanel(role: string, company: string): Interviewer[] {
+  const ctx = `${role} ${company}`;
+  const panel: Interviewer[] = [ALL_INTERVIEWERS[0], ALL_INTERVIEWERS[2], ALL_INTERVIEWERS[3]];
+  const rule = SPECIALIST_RULES.find(r => r.regex.test(ctx));
+  const specialist = rule?.specialist || ALL_INTERVIEWERS[1];
+  return [panel[0], specialist, panel[1], panel[2]];
+}
+
 type Phase = "setup" | "interview" | "results";
+
+const QUESTIONS_PER_INTERVIEWER = 4;
+const MAX_QUESTIONS = QUESTIONS_PER_INTERVIEWER * 4;
 
 export default function PanelInterviewPage() {
   const router = useRouter();
   const { user, loading: authLoading, logout } = useAuth({ requireOnboarded: true });
   const [phase, setPhase] = useState<Phase>("setup");
-  const [role, setRole] = useState("Software Engineer");
-  const [company, setCompany] = useState("Google");
+  const [role, setRole] = useState("");
+  const [company, setCompany] = useState("");
+  const [panel, setPanel] = useState<Interviewer[]>([ALL_INTERVIEWERS[0], ALL_INTERVIEWERS[1], ALL_INTERVIEWERS[2], ALL_INTERVIEWERS[3]]);
   const [messages, setMessages] = useState<PanelMessage[]>([]);
   const [currentInterviewer, setCurrentInterviewer] = useState(0);
   const [input, setInput] = useState("");
@@ -98,25 +159,35 @@ export default function PanelInterviewPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognitionAPI | null>(null);
 
-  const MAX_QUESTIONS = 9; // 3 per interviewer
-
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const suggestedRole = "Software Engineer";
+
   const startInterview = () => {
+    const r = role.trim() || suggestedRole;
+    const c = company.trim() || "Google";
+    setRole(r);
+    setCompany(c);
+    const selected = selectPanel(r, c);
+    setPanel(selected);
     setPhase("interview");
     setMessages([]);
     setCurrentInterviewer(0);
     setQuestionCount(0);
 
-    // First question from HR
-    generateQuestion(0, []);
+    generateQuestion(0, [], selected, r, c);
   };
 
-  const generateQuestion = async (interviewerIdx: number, history: PanelMessage[]) => {
+  const countByInterviewer = (history: PanelMessage[], interviewerId: string) =>
+    history.filter(m => m.interviewerId === interviewerId).length;
+
+  const generateQuestion = async (interviewerIdx: number, history: PanelMessage[], activePanel: Interviewer[], roleOverride?: string, companyOverride?: string) => {
     setLoading(true);
-    const interviewer = INTERVIEWERS[interviewerIdx];
+    const interviewer = activePanel[interviewerIdx];
+    const roleForCall = roleOverride || role;
+    const companyForCall = companyOverride || company;
     try {
       const res = await fetch("/api/ai/panel", {
         method: "POST",
@@ -127,9 +198,9 @@ export default function PanelInterviewPage() {
           interviewerName: interviewer.name,
           interviewerRole: interviewer.role,
           interviewerPersonality: interviewer.personality,
-          role,
-          company,
-          questionNumber: history.length,
+          role: roleForCall,
+          company: companyForCall,
+          questionNumber: countByInterviewer(history, interviewer.id),
           history: history.map(m => ({
             interviewer: m.interviewerId,
             question: m.question,
@@ -140,7 +211,7 @@ export default function PanelInterviewPage() {
       const data = await res.json();
       setMessages(prev => [...prev, {
         interviewerId: interviewer.id,
-        question: data.question || "Tell me about yourself.",
+        question: data.question || "Tell me about yourself and why you're interested in this role.",
         timestamp: new Date(),
       }]);
     } catch (e) {
@@ -171,7 +242,6 @@ export default function PanelInterviewPage() {
     setQuestionCount(newCount);
 
     if (newCount >= MAX_QUESTIONS) {
-      // End interview
       setLoading(true);
       try {
         const res = await fetch("/api/ai/panel", {
@@ -197,7 +267,7 @@ export default function PanelInterviewPage() {
           overallScore: 72,
           decision: "hire",
           summary: "Good performance across all areas with room for improvement in technical depth.",
-          interviewerScores: INTERVIEWERS.map(i => ({ id: i.id, score: 72, feedback: "Solid performance" })),
+          interviewerScores: panel.map(i => ({ id: i.id, score: 72, feedback: "Solid performance" })),
           strengths: ["Clear communication", "Good motivation"],
           improvements: ["Add more specific examples", "Deeper technical details"],
         });
@@ -208,14 +278,12 @@ export default function PanelInterviewPage() {
       return;
     }
 
-    // Rotate interviewers
-    const nextInterviewer = (currentInterviewer + 1) % 3;
+    const nextInterviewer = (currentInterviewer + 1) % 4;
     setCurrentInterviewer(nextInterviewer);
 
-    // Get evaluation of answer and next question
     setLoading(true);
     try {
-      const interviewer = INTERVIEWERS[nextInterviewer];
+      const interviewer = panel[nextInterviewer];
       const res = await fetch("/api/ai/panel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -237,6 +305,14 @@ export default function PanelInterviewPage() {
         }),
       });
       const data = await res.json();
+
+      // Attach evaluation to the answered message
+      if (data.evaluation) {
+        setMessages(prev => prev.map((m, i) =>
+          i === prev.length - 1 ? { ...m, evaluation: data.evaluation } : m
+        ));
+      }
+
       setMessages(prev => [...prev, {
         interviewerId: interviewer.id,
         question: data.question || "Can you tell me more about that?",
@@ -244,7 +320,7 @@ export default function PanelInterviewPage() {
       }]);
     } catch (e) {
       console.error("panel interview followup", e);
-      const interviewer = INTERVIEWERS[nextInterviewer];
+      const interviewer = panel[nextInterviewer];
       setMessages(prev => [...prev, {
         interviewerId: interviewer.id,
         question: "Can you give me a specific example from your experience?",
@@ -293,7 +369,7 @@ export default function PanelInterviewPage() {
     setIsListening(true);
   };
 
-  const getInterviewer = (id: string) => INTERVIEWERS.find(i => i.id === id) || INTERVIEWERS[0];
+  const getInterviewer = (id: string) => panel.find(i => i.id === id) || ALL_INTERVIEWERS[0];
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -311,20 +387,8 @@ export default function PanelInterviewPage() {
               <Users className="w-8 h-8 text-indigo-400" />
             </div>
             <h1 className="text-3xl font-bold mb-2">AI Panel Interview</h1>
-            <p className="text-slate-400 text-sm">3 AI interviewers. 9 questions. Real feedback.</p>
-          </div>
-
-          {/* Interviewers */}
-          <div className="grid grid-cols-3 gap-3 mb-8">
-            {INTERVIEWERS.map(interviewer => (
-              <div key={interviewer.id} className={`p-4 rounded-xl border ${interviewer.borderColor} bg-white/[0.02] text-center`}>
-                <div className={`w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-2 text-sm font-bold ${interviewer.color}`}>
-                  {interviewer.avatar}
-                </div>
-                <div className="text-sm font-medium">{interviewer.name}</div>
-                <div className="text-[10px] text-slate-500">{interviewer.role}</div>
-              </div>
-            ))}
+            <p className="text-slate-400 text-sm">4 AI interviewers. 16 questions. Detailed feedback after every answer.</p>
+            <p className="text-xs text-slate-600 mt-1">The panel adapts to your target role — no two interviews are the same, and questions never repeat.</p>
           </div>
 
           {/* Config */}
@@ -334,7 +398,8 @@ export default function PanelInterviewPage() {
               <input
                 value={role}
                 onChange={e => setRole(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-500/30"
+                placeholder="e.g. Software Engineer, Data Analyst, UX Designer"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-500/30 placeholder:text-slate-600"
               />
             </div>
             <div>
@@ -342,8 +407,27 @@ export default function PanelInterviewPage() {
               <input
                 value={company}
                 onChange={e => setCompany(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-500/30"
+                placeholder="e.g. Google, TCS, Zoho"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-500/30 placeholder:text-slate-600"
               />
+            </div>
+          </div>
+
+          {/* Panel preview */}
+          <div className="mb-6">
+            <div className="text-xs text-slate-500 mb-2">Your panel (auto-selected from your role):</div>
+            <div className="grid grid-cols-2 gap-2">
+              {selectPanel(role.trim() || "Software Engineer", company.trim() || "Google").map(interviewer => (
+                <div key={interviewer.id} className={`p-3 rounded-xl border ${interviewer.borderColor} bg-white/[0.02] flex items-center gap-2`}>
+                  <div className={`w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-bold shrink-0 ${interviewer.color}`}>
+                    {interviewer.avatar}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-medium truncate">{interviewer.name}</div>
+                    <div className="text-[9px] text-slate-500 truncate">{interviewer.role}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -353,7 +437,7 @@ export default function PanelInterviewPage() {
           >
             Start Interview <ArrowRight className="w-4 h-4" />
           </button>
-          <p className="text-center text-xs text-slate-600 mt-3">~5 minutes. You can type or use voice input.</p>
+          <p className="text-center text-xs text-slate-600 mt-3">~10 minutes. You can type or use voice input.</p>
         </motion.div>
       </div>
     );
@@ -393,7 +477,7 @@ export default function PanelInterviewPage() {
             </div>
 
             {/* Per-interviewer scores */}
-            <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
               {result.interviewerScores.map(score => {
                 const interviewer = getInterviewer(score.id);
                 return (
@@ -407,7 +491,7 @@ export default function PanelInterviewPage() {
             </div>
 
             {/* Strengths & Improvements */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
               <div className="p-4 rounded-xl border border-green-500/20 bg-green-500/5">
                 <div className="flex items-center gap-2 mb-3">
                   <CheckCircle className="w-4 h-4 text-green-400" />
@@ -432,7 +516,7 @@ export default function PanelInterviewPage() {
               onClick={() => setPhase("setup")}
               className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-medium transition-colors"
             >
-              Practice Again
+              Practice Again (New Questions)
             </button>
           </motion.div>
         </div>
@@ -458,9 +542,9 @@ export default function PanelInterviewPage() {
             Q{questionCount + 1}/{MAX_QUESTIONS}
           </div>
           <div className="flex gap-1.5">
-            {INTERVIEWERS.map((int, i) => (
+            {panel.map((int, i) => (
               <div key={int.id} className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold border ${
-                i === currentInterviewer % 3 ? `${int.borderColor} ${int.color} bg-white/5` : "border-white/5 text-slate-600"
+                i === currentInterviewer % 4 ? `${int.borderColor} ${int.color} bg-white/5` : "border-white/5 text-slate-600"
               }`}>
                 {int.avatar[0]}
               </div>
@@ -474,7 +558,6 @@ export default function PanelInterviewPage() {
         <AnimatePresence>
           {messages.map((msg, i) => {
             const interviewer = getInterviewer(msg.interviewerId);
-            const isActive = i === messages.length - 1 && !msg.answer;
             return (
               <motion.div
                 key={i}
@@ -505,6 +588,53 @@ export default function PanelInterviewPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Evaluation */}
+                {msg.answer && msg.evaluation && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="ml-10 mt-2 rounded-2xl border border-white/10 overflow-hidden"
+                    style={{ background: "rgba(17,17,24,0.6)" }}
+                  >
+                    <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-2 bg-indigo-500/10">
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                      <span className="text-[11px] font-semibold text-indigo-300">AI Feedback on your answer</span>
+                      <span className="ml-auto flex items-center gap-1 text-xs font-bold">
+                        <span className="text-slate-400">Score</span>
+                        <span className={`${msg.evaluation.score >= 7.5 ? "text-green-400" : msg.evaluation.score >= 6 ? "text-amber-400" : "text-red-400"}`}>
+                          {msg.evaluation.score.toFixed(1)}/10
+                        </span>
+                      </span>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <p className="text-xs text-slate-400">{msg.evaluation.feedback}</p>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        <div>
+                          <div className="text-[10px] font-semibold text-green-400 mb-1.5">✓ Strengths</div>
+                          {msg.evaluation.strengths.map((s, j) => (
+                            <div key={j} className="text-[11px] text-slate-400 mb-1">• {s}</div>
+                          ))}
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-semibold text-amber-400 mb-1.5">▲ Improvements</div>
+                          {msg.evaluation.improvements.map((s, j) => (
+                            <div key={j} className="text-[11px] text-slate-400 mb-1">• {s}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <details className="group">
+                        <summary className="text-[11px] text-indigo-400 cursor-pointer hover:text-indigo-300 transition-colors list-none flex items-center gap-1.5">
+                          <Lightbulb className="w-3 h-3" /> Model answer — how a strong candidate would respond
+                          <ArrowRight className="w-3 h-3 group-open:rotate-90 transition-transform ml-auto" />
+                        </summary>
+                        <p className="text-xs text-slate-300 mt-2 p-3 rounded-xl bg-white/[0.03] border border-white/5 leading-relaxed">
+                          {msg.evaluation.modelAnswer}
+                        </p>
+                      </details>
+                    </div>
+                  </motion.div>
+                )}
               </motion.div>
             );
           })}
@@ -512,8 +642,8 @@ export default function PanelInterviewPage() {
 
         {loading && (
           <div className="flex items-start gap-3">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center border ${INTERVIEWERS[currentInterviewer % 3].borderColor} bg-white/5`}>
-              <Loader2 className={`w-4 h-4 animate-spin ${INTERVIEWERS[currentInterviewer % 3].color}`} />
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center border ${panel[currentInterviewer % 4].borderColor} bg-white/5`}>
+              <Loader2 className={`w-4 h-4 animate-spin ${panel[currentInterviewer % 4].color}`} />
             </div>
             <div className="bg-white/5 rounded-2xl rounded-tl-md px-4 py-3">
               <div className="flex gap-1.5">

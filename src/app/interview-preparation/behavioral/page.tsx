@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Users, Star, Lightbulb, Target, Award, ChevronRight, BookOpen, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Users, Star, Lightbulb, Target, Award, ChevronRight, BookOpen, CheckCircle2, Shuffle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 
@@ -19,13 +19,49 @@ const QUESTIONS = [
   { id: "adaptability", q: "Describe a time when you had to quickly adapt to a significant change.", category: "Adaptability", tip: "Show flexibility and learning speed" },
   { id: "ownership", q: "Tell me about a time you took ownership of a project beyond your responsibilities.", category: "Ownership", tip: "Show initiative and accountability" },
   { id: "innovation", q: "Describe a time you introduced an innovative idea or improved an existing process.", category: "Innovation", tip: "Highlight impact and implementation" },
+  { id: "decision", q: "Tell me about a difficult decision you made with limited information.", category: "Decision Making", tip: "Explain your reasoning and how you validated it" },
+  { id: "communication", q: "Describe a time you explained a complex idea to a non-technical person.", category: "Communication", tip: "Show clarity, simplicity, and patience" },
+  { id: "criticism", q: "Tell me about a time you received tough criticism. How did you respond?", category: "Criticism", tip: "Separate the message from the emotion" },
+  { id: "mistake", q: "Describe a time you made a mistake that affected others.", category: "Mistakes", tip: "Own it early, fix it fast, and change the process" },
+  { id: "deadline", q: "Tell me about a time you had to deliver under a very tight deadline.", category: "Deadlines", tip: "Show prioritization and calm execution" },
+  { id: "ethics", q: "Describe a time you had to stand up for what was right.", category: "Integrity", tip: "Show courage, honesty, and respect" },
+  { id: "resilience", q: "Tell me about a time you bounced back from a setback.", category: "Resilience", tip: "Focus on your recovery plan and mindset" },
+  { id: "delegation", q: "Describe a time you delegated work. How did you ensure it went well?", category: "Delegation", tip: "Show trust, clear instructions, and follow-up" },
+  { id: "customer", q: "Tell me about a time you handled a difficult customer or client.", category: "Customer Handling", tip: "Empathy first, then a concrete solution" },
+  { id: "ambiguity", q: "Describe a time you worked on something with no clear instructions.", category: "Ambiguity", tip: "Show how you created structure and asked the right questions" },
+  { id: "initiative", q: "Tell me about something you started from scratch on your own.", category: "Initiative", tip: "Why you started it and the outcome" },
+  { id: "learning", q: "Describe a time you had to learn a new skill quickly.", category: "Learning", tip: "Name the skill, your method, and the result" },
+  { id: "cross-functional", q: "Tell me about a time you worked with people from a very different background or function.", category: "Collaboration", tip: "Show respect for differences and shared goals" },
+  { id: "goal", q: "Describe a long-term goal you set and how you achieved it.", category: "Goal Setting", tip: "Break it into milestones with evidence of progress" },
+  { id: "negative", q: "Tell me about a project or task you disliked. How did you handle it?", category: "Professionalism", tip: "Never badmouth — show discipline and focus" },
+  { id: "team-save", q: "Describe a time you helped a struggling teammate succeed.", category: "Support", tip: "Show generosity and impact on the team" },
+  { id: "priority", q: "Tell me about a time you had competing priorities. How did you choose?", category: "Prioritization", tip: "Show your criteria: impact, urgency, stakeholders" },
+  { id: "change", q: "Describe a time you drove a change others resisted.", category: "Change Management", tip: "Show persuasion, evidence, and empathy" },
 ];
+
+const QUESTIONS_PER_SET = 12;
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 export default function BehavioralPage() {
   const router = useRouter();
   const { user, loading, logout } = useAuth({ requireOnboarded: true });
   const [selectedQ, setSelectedQ] = useState<number | null>(null);
   const [answer, setAnswer] = useState("");
+  const [sessionQuestions, setSessionQuestions] = useState(() => shuffle(QUESTIONS).slice(0, QUESTIONS_PER_SET));
+
+  const newSet = () => {
+    setSessionQuestions(shuffle(QUESTIONS).slice(0, QUESTIONS_PER_SET));
+    setSelectedQ(null);
+    setAnswer("");
+  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -38,13 +74,18 @@ export default function BehavioralPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Interview Prep
           </Link>
 
-          <h1 className="text-2xl font-bold mb-1">Behavioral Interview Practice</h1>
-          <p className="text-slate-400 text-sm mb-8">Master the STAR method with AI-powered feedback</p>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold">Behavioral Interview Practice</h1>
+            <button onClick={newSet} className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+              <Shuffle className="w-3 h-3" /> Shuffle Questions
+            </button>
+          </div>
+          <p className="text-slate-400 text-sm mb-8">Master the STAR method with AI-powered feedback · fresh questions every visit</p>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Questions */}
             <div className="space-y-3">
-              {QUESTIONS.map((q, i) => (
+              {sessionQuestions.map((q, i) => (
                 <motion.button
                   key={q.id}
                   initial={{ opacity: 0, x: -10 }}
@@ -70,9 +111,9 @@ export default function BehavioralPage() {
                   className="rounded-xl border border-white/5 p-6" style={{ background: "rgba(17,17,24,0.5)" }}>
                   <div className="flex items-center gap-2 mb-4">
                     <Lightbulb className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs text-amber-400 font-medium">Tip: {QUESTIONS[selectedQ].tip}</span>
+                    <span className="text-xs text-amber-400 font-medium">Tip: {sessionQuestions[selectedQ].tip}</span>
                   </div>
-                  <h3 className="font-semibold mb-2">{QUESTIONS[selectedQ].q}</h3>
+                  <h3 className="font-semibold mb-2">{sessionQuestions[selectedQ].q}</h3>
                   <textarea
                     value={answer}
                     onChange={e => setAnswer(e.target.value)}

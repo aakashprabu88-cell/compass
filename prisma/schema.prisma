@@ -23,6 +23,17 @@ model User {
   applications JobApplication[]
   internships   UserInternship[]
   analysis    CareerAnalysis?
+  panelQuestions PanelQuestion[]
+}
+
+model PanelQuestion {
+  id       String   @id @default(cuid())
+  userId   String
+  question String
+  askedAt  DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Assessment {

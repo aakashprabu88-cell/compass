@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Target, Shield, AlertTriangle, ArrowRight, FileText, TrendingUp, UsersRound, Trophy, Zap } from "lucide-react";
+import { Target, Shield, AlertTriangle, ArrowRight, FileText, TrendingUp, UsersRound, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
@@ -74,7 +74,6 @@ export default function DashboardPage() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
             {[
               { href: "/panel-interview", label: getVal("dashboard.panelInterview"), icon: UsersRound, color: "from-indigo-500 to-purple-500" },
-              { href: "/hackathon", label: getVal("dashboard.hackathon"), icon: Trophy, color: "from-cyan-500 to-blue-500" },
               { href: "/resume-builder", label: getVal("dashboard.buildResume"), icon: FileText, color: "from-emerald-500 to-teal-500" },
               { href: "/jobs", label: getVal("dashboard.findJobs"), icon: Zap, color: "from-amber-500 to-orange-500" },
             ].map((action, i) => (
