@@ -27,6 +27,7 @@ export default function Tour({
   const [arrowLeft, setArrowLeft] = useState(0);
   const [paused, setPaused] = useState(false);
   const [progressPct, setProgressPct] = useState(0);
+  const [givenUp, setGivenUp] = useState(false);
 
   const step = steps[Math.min(index, steps.length - 1)];
 
@@ -42,6 +43,7 @@ export default function Tour({
   const navLock = useRef(0);
   const touchStartY = useRef<number | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const tipH = useRef(250);
 
   const tipW = typeof window !== "undefined" ? Math.min(330, window.innerWidth - 24) : 330;
 
@@ -61,7 +63,12 @@ export default function Tour({
 
   const recompute = useCallback(() => {
     const fallback = () => {
-      tipTop.set(20); tipLeft.set(20);
+      if (givenUp) {
+        tipTop.set(Math.max(10, window.innerHeight / 2 - 140));
+        tipLeft.set(Math.max(12, window.innerWidth / 2 - tipW / 2));
+      } else {
+        tipTop.set(20); tipLeft.set(20);
+      }
       spotTop.set(20); spotLeft.set(20); spotW.set(0); spotH.set(0);
     };
     if (!step.target) { setMissing(false); fallback(); setReady(true); return; }
@@ -71,16 +78,22 @@ export default function Tour({
     const r = getRect(el);
     spotTop.set(r.top - 6); spotLeft.set(r.left - 6); spotW.set(r.width + 12); spotH.set(r.height + 12);
     const w = tipW;
-    const below = r.top + r.height + 18 + 250 <= window.innerHeight;
-    setFlip(below ? "down" : "up");
-    let top = below ? r.top + r.height + 22 : r.top - 262;
+    const h = tipH.current;
+    const below = r.top + r.height + 18 + h <= window.innerHeight;
+    let top: number;
+    if (below) { top = r.top + r.height + 22; setFlip("down"); }
+    else {
+      const aboveTop = r.top - h - 12;
+      if (aboveTop >= 10) { top = aboveTop; setFlip("up"); }
+      else { top = r.top + r.height + 22; setFlip("down"); }
+    }
     let left = r.left + r.width / 2 - w / 2;
     left = Math.max(12, Math.min(window.innerWidth - w - 12, left));
-    top = Math.max(10, Math.min(window.innerHeight - 265, top));
+    top = Math.max(10, Math.min(window.innerHeight - h - 10, top));
     tipTop.set(top); tipLeft.set(left);
     setArrowLeft(Math.max(4, Math.min(w - 8, r.left + r.width / 2 - left)));
     setReady(true);
-  }, [step.target, tipW, tipTop, tipLeft, spotTop, spotLeft, spotW, spotH]);
+  }, [step.target, givenUp, tipW, tipTop, tipLeft, spotTop, spotLeft, spotW, spotH]);
 
   useEffect(() => {
     if (!open) return;
@@ -100,7 +113,7 @@ export default function Tour({
     const t = setInterval(() => {
       tries++;
       if (document.querySelector(step.target!)) { recompute(); clearInterval(t); }
-      else if (tries > 60) clearInterval(t);
+      else if (tries > 60) { setGivenUp(true); clearInterval(t); }
     }, 150);
     return () => clearInterval(t);
   }, [open, missing, step.target, recompute]);
@@ -108,8 +121,20 @@ export default function Tour({
   // Reset on open
   useEffect(() => {
     if (!open) return;
-    setIndex(0); setReady(false); setProgressPct(0);
+    setIndex(0); setReady(false); setProgressPct(0); setGivenUp(false); tipH.current = 250;
   }, [open]);
+
+  // Give up state is per-step
+  useEffect(() => { setGivenUp(false); }, [index]);
+
+  // Measure the rendered tooltip and re-position once its true height is known
+  useEffect(() => {
+    if (!open || !ready || missing) return;
+    const el = tooltipRef.current;
+    if (!el) return;
+    const h = el.offsetHeight;
+    if (h > 0 && Math.abs(h - tipH.current) > 4) { tipH.current = h; recompute(); }
+  }, [open, ready, missing, index, recompute]);
 
   // Auto-scroll the target into view so the spotlight centers itself
   useEffect(() => {
@@ -135,10 +160,12 @@ export default function Tour({
     if (dy < 0) goNext(); else goPrev();
   };
 
-  // Scroll wheel navigates steps too
+  // Scroll wheel navigates steps ONLY while hovering the tooltip, so the page
+  // behind the tour can scroll normally everywhere else.
   useEffect(() => {
     if (!open) return;
     const onWheel = (e: WheelEvent) => {
+      if (!paused) return;
       if (e.deltaY === 0 || Date.now() - navLock.current < 450) return;
       e.preventDefault();
       navLock.current = Date.now();
@@ -146,7 +173,7 @@ export default function Tour({
     };
     window.addEventListener("wheel", onWheel, { passive: false });
     return () => window.removeEventListener("wheel", onWheel);
-  }, [open, goNext, goPrev]);
+  }, [open, paused, goNext, goPrev]);
 
   // Keyboard
   useEffect(() => {
@@ -172,8 +199,10 @@ export default function Tour({
       const elapsed = adv.current.elapsed + (now - adv.current.start);
       const p = Math.min(1, elapsed / autoAdvanceMs);
       setProgressPct(p * 100);
-      if (p >= 1) goNext();
-      else raf = requestAnimationFrame(tick);
+      if (p >= 1) {
+        if (index >= steps.length - 1) return;
+        goNext();
+      } else raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
@@ -288,7 +317,7 @@ export default function Tour({
                           )}
                         </div>
                         <div className="flex items-center gap-1.5">
-                          {missing && <span className="flex items-center gap-1 text-[9px] text-slate-500"><motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2 }} className="w-1 h-1 rounded-full bg-indigo-400 inline-block" /> locating…</span>}
+                          {missing && !givenUp && <span className="flex items-center gap-1 text-[9px] text-slate-500"><motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2 }} className="w-1 h-1 rounded-full bg-indigo-400 inline-block" /> locating…</span>}
                           <button onClick={onClose} className="p-1 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-colors">
                             <X className="w-3.5 h-3.5" />
                           </button>
