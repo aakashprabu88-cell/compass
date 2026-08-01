@@ -12,6 +12,7 @@ import {
 import { CommandPalette } from "./CommandPalette";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useLanguage } from "./LanguageProvider";
+import AmbientCompass from "./AmbientCompass";
 
 const NAV = [
   { href: "/dashboard", label: "nav.dashboard", icon: LayoutDashboard },
@@ -109,6 +110,7 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
 
   return (
     <>
+      {pathname !== "/dashboard" && <AmbientCompass />}
       <button
         onClick={() => setMobileOpen(true)}
         className="fixed top-4 left-4 z-50 lg:hidden w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
