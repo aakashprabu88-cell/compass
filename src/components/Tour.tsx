@@ -218,6 +218,9 @@ export default function Tour({
   const spotShadow = accent === "emerald"
     ? ["0 0 30px rgba(16,185,129,0.4)", "0 0 70px rgba(45,212,191,0.55)", "0 0 30px rgba(16,185,129,0.4)"]
     : ["0 0 30px rgba(99,102,241,0.4)", "0 0 70px rgba(168,85,247,0.55)", "0 0 30px rgba(99,102,241,0.4)"];
+  const spotBorder = accent === "emerald"
+    ? "2px solid rgba(16,185,129,0.9)"
+    : "2px solid rgba(129,140,248,0.9)";
 
   const onTiltMove = (e: React.PointerEvent) => {
     const el = tooltipRef.current; if (!el) return;
@@ -231,22 +234,32 @@ export default function Tour({
     <AnimatePresence>
       {open && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100]">
-          {/* Dim layer + swipe capture */}
+          {/* Click blocker + swipe capture (under the spotlight cutout) */}
           <motion.div
-            className="absolute inset-0 bg-black/60"
+            className="absolute inset-0"
             onTouchStart={onTouchStart}
             onTouchEnd={onTouchEnd}
           />
 
-          {/* Spotlight with animated glow ring */}
+          {/* Fallback dim when the target is missing */}
+          {ready && missing && <motion.div className="absolute inset-0 bg-black/50" />}
+
+          {/* Spotlight cutout — target stays fully visible, everything else dims */}
           {ready && !missing && (
             <motion.div
-              className="absolute rounded-2xl p-[2px]"
-              style={{ top: spotTop, left: spotLeft, width: spotW, height: spotH, background: gradBg }}
+              className="absolute"
+              style={{ top: spotTop, left: spotLeft, width: spotW, height: spotH }}
             >
-              <motion.div className="w-full h-full rounded-[14px] bg-[#0a0a12]/95" />
               <motion.div
-                className="absolute inset-0 rounded-2xl"
+                className="absolute inset-0"
+                style={{
+                  boxShadow: "0 0 0 9999px rgba(0,0,0,0.62)",
+                  borderRadius: 16,
+                  border: spotBorder,
+                }}
+              />
+              <motion.div
+                className="absolute -inset-1 rounded-2xl pointer-events-none"
                 animate={{ boxShadow: spotShadow }}
                 transition={{ repeat: Infinity, duration: 2.6 }}
               />
