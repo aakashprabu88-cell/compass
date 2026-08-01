@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   ChevronRight, Target, FileText, Mail, Zap, TrendingUp,
   AlertTriangle, BrainCircuit, Rocket, GraduationCap, Send, CheckCircle2,
@@ -12,6 +13,8 @@ import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/components/LanguageProvider";
 import PageTour from "@/components/PageTour";
+
+const CompassCanvas = dynamic(() => import("@/components/Compass3D"), { ssr: false, loading: () => null });
 
 interface PathData { id: string; matchScore: number; careerPath: any; }
 interface SkillGapData { id: string; skillName: string; currentLevel: number; requiredLevel: number; gap: number; priority: string; }
@@ -166,6 +169,7 @@ export default function DashboardPage() {
   const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
 
   const card = "rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5";
+  const ambientScroll = useRef(0);
 
   return (
     <div className="h-screen flex overflow-hidden bg-[#0a0a12]">
@@ -174,8 +178,11 @@ export default function DashboardPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-6xl mx-auto p-4 lg:p-7">
           {/* Header */}
-          <motion.div variants={container} initial="hidden" animate="show" className="mb-6">
-            <motion.div variants={item} className="flex flex-wrap items-end justify-between gap-4">
+          <motion.div variants={container} initial="hidden" animate="show" className="relative mb-6">
+            <div className="absolute -top-32 -right-20 w-[28rem] h-[28rem] opacity-[0.14] pointer-events-none" aria-hidden>
+              <CompassCanvas scrollRef={ambientScroll} tumble={0.12} />
+            </div>
+            <motion.div variants={item} className="relative flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-[11px] text-slate-500 mb-1">{today}</p>
                 <h1 className="text-2xl font-bold tracking-tight text-white">
