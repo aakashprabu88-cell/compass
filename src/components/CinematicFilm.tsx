@@ -82,6 +82,7 @@ function FilmInner({ phase }: { phase: number }) {
   const ringA = useRef<THREE.Group>(null!);
   const ringB = useRef<THREE.Group>(null!);
   const needle = useRef<THREE.Group>(null!);
+  const compassG = useRef<THREE.Group>(null!);
   const dust = useRef<THREE.Points>(null!);
   const light = useRef<THREE.PointLight>(null!);
   const g0 = useRef<THREE.Group>(null!);
@@ -135,6 +136,85 @@ function FilmInner({ phase }: { phase: number }) {
   const nodeGeo = useMemo(() => new THREE.IcosahedronGeometry(0.28, 0), []);
   const panelGeo = useMemo(() => new THREE.BoxGeometry(0.05, 3.3, 1.35), []);
   const panelPos = useMemo(() => [-1.15, 0, 1.15].map(x => new THREE.Vector3(x * 1.7, 0, -1.4 - Math.abs(x) * 0.45)), []);
+  const cardGeo = useMemo(() => new THREE.CircleGeometry(1.32, 96), []);
+
+  const cardTexture = useMemo(() => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 1024;
+    const ctx = c.getContext("2d")!;
+    const g = ctx.createRadialGradient(512, 512, 200, 512, 512, 512);
+    g.addColorStop(0, "#f9f4e6");
+    g.addColorStop(1, "#e9dec2");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 1024, 1024);
+    ctx.beginPath();
+    ctx.arc(512, 512, 500, 0, Math.PI * 2);
+    ctx.fillStyle = "#b08a3e";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(512, 512, 476, 0, Math.PI * 2);
+    ctx.fillStyle = "#f2ead4";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(512, 512, 368, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(20,20,20,0.35)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(512, 512, 300, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(20,20,20,0.2)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    for (let a = 0; a < 360; a += 2) {
+      const rad = (a * Math.PI) / 180;
+      const long = a % 30 === 0;
+      const med = a % 10 === 0;
+      const r1 = 470;
+      const r2 = long ? 408 : med ? 448 : 466;
+      ctx.beginPath();
+      ctx.moveTo(512 + Math.sin(rad) * r1, 512 - Math.cos(rad) * r1);
+      ctx.lineTo(512 + Math.sin(rad) * r2, 512 - Math.cos(rad) * r2);
+      ctx.strokeStyle = long ? "#1a1a1a" : med ? "#3a3a3a" : "#6a6a6a";
+      ctx.lineWidth = long ? 10 : med ? 6 : 3;
+      ctx.stroke();
+    }
+    ctx.font = "900 64px Georgia, 'Times New Roman', serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const dirs: [string, number, number, string][] = [
+      ["N", 512, 512 - 342, "#c0392b"],
+      ["E", 512 + 342, 512, "#1a1a1a"],
+      ["S", 512, 512 + 342, "#1a1a1a"],
+      ["W", 512 - 342, 512, "#1a1a1a"],
+    ];
+    dirs.forEach(([t, x, y, col]) => {
+      ctx.fillStyle = col;
+      ctx.fillText(t, x, y);
+    });
+    ctx.font = "700 40px Georgia, serif";
+    ctx.fillStyle = "rgba(26,26,26,0.75)";
+    [["NE", 512 + 246, 512 - 246], ["SE", 512 + 246, 512 + 246], ["SW", 512 - 246, 512 + 246], ["NW", 512 - 246, 512 - 246]].forEach(([t, x, y]) => {
+      ctx.fillText(t as string, x as number, y as number);
+    });
+    ctx.font = "700 44px Georgia, serif";
+    ctx.fillStyle = "#222";
+    for (let a = 30; a < 360; a += 30) {
+      const rad = (a * Math.PI) / 180;
+      ctx.fillText(String(a), 512 + Math.sin(rad) * 388, 512 - Math.cos(rad) * 388);
+    }
+    ctx.beginPath();
+    ctx.arc(512, 512, 40, 0, Math.PI * 2);
+    ctx.fillStyle = "#b08a3e";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(512, 512, 16, 0, Math.PI * 2);
+    ctx.fillStyle = "#1a1a1a";
+    ctx.fill();
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 8;
+    return tex;
+  }, []);
 
   const curve = useMemo(() => {
     const pts: THREE.Vector3[] = [];
@@ -164,6 +244,8 @@ function FilmInner({ phase }: { phase: number }) {
   const webGeo = useMemo(() => makeWeb(), []);
   const burst = useMemo(() => makeBurst(170), []);
   const reach = useMemo(() => makeBurst(90), []);
+
+  const disp = useRef(phase);
 
   const chipsArr = useMemo(() =>
     Array.from({ length: 8 }, (_, i) => {
@@ -223,7 +305,7 @@ function FilmInner({ phase }: { phase: number }) {
   useEffect(() => {
     return () => {
       shardGeo.dispose(); dustGeo.dispose(); chipGeo.dispose(); nodeGeo.dispose();
-      panelGeo.dispose(); pathGeo.dispose(); pathSparksGeo.dispose(); webGeo.dispose(); burst.g.dispose();
+      panelGeo.dispose(); cardGeo.dispose(); cardTexture.dispose(); pathGeo.dispose(); pathSparksGeo.dispose(); webGeo.dispose(); burst.g.dispose();
       [shardMat, sweepMat, chipMat, nodeMat, pathMat, sparkMat, webMat, burstMat, reachMat, panelMat, glowMat].forEach(m => m.dispose());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -231,9 +313,11 @@ function FilmInner({ phase }: { phase: number }) {
 
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
-    const i0 = Math.min(6, Math.floor(phase));
+    disp.current += (phase - disp.current) * Math.min(1, delta * 3);
+    const p = disp.current;
+    const i0 = Math.min(6, Math.floor(p));
     const i1 = Math.min(6, i0 + 1);
-    const f = Math.max(0, Math.min(1, phase - i0));
+    const f = Math.max(0, Math.min(1, p - i0));
     const col = new THREE.Color(PHASES[i0].color).lerp(new THREE.Color(PHASES[i1].color), f);
 
     glowMat.color.copy(col);
@@ -252,11 +336,15 @@ function FilmInner({ phase }: { phase: number }) {
 
     if (ringA.current) ringA.current.rotation.set(t * 0.2, 0, Math.sin(t * 0.25) * 0.2);
     if (ringB.current) ringB.current.rotation.set(0, t * 0.15, 0.5 + Math.cos(t * 0.2) * 0.2);
-    if (needle.current) needle.current.rotation.z = t * 0.25 + phase * 0.4;
+    if (needle.current) needle.current.rotation.z = t * 0.25 + p * 0.4;
+    if (compassG.current) {
+      compassG.current.rotation.y = -root.current.rotation.y;
+      compassG.current.rotation.x = 0.1 + Math.sin(t * 0.35) * 0.05 + mouse.current.y * 0.12;
+    }
     if (dust.current) dust.current.rotation.set(t * 0.02, t * 0.03, 0);
 
     phaseMeta.forEach((meta, i) => {
-      const ff = fadeAt(phase, i);
+      const ff = fadeAt(p, i);
       const gr = groupRefs[meta.group].current;
       if (gr) {
         gr.visible = ff > 0.01;
@@ -348,15 +436,21 @@ function FilmInner({ phase }: { phase: number }) {
         <group ref={ringB} rotation={[-0.55, 0.3, 0.5]}>
           <mesh><torusGeometry args={[2.58, 0.045, 16, 96]} /><meshStandardMaterial color="#b08a3e" metalness={1} roughness={0.35} /></mesh>
         </group>
-        <group ref={needle}>
-          <mesh position={[0, 0.72, 0]}><boxGeometry args={[0.13, 1.44, 0.045]} /><meshStandardMaterial color="#ef4444" emissive="#7f1d1d" emissiveIntensity={0.4} metalness={0.6} roughness={0.35} /></mesh>
-          <mesh position={[0, -0.72, 0]}><boxGeometry args={[0.13, 1.44, 0.045]} /><meshStandardMaterial color="#d7dde6" metalness={0.85} roughness={0.25} /></mesh>
-          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.02]}><cylinderGeometry args={[0.12, 0.12, 0.1, 20]} /><meshStandardMaterial color="#b08a3e" metalness={1} roughness={0.3} /></mesh>
+        <group ref={compassG}>
+          <mesh geometry={cardGeo}>
+            <meshBasicMaterial map={cardTexture} />
+          </mesh>
+          <group ref={needle}>
+            <mesh position={[0, 0.66, 0.02]}><boxGeometry args={[0.13, 1.32, 0.025]} /><meshStandardMaterial color="#c0392b" metalness={0.5} roughness={0.35} /></mesh>
+            <mesh position={[0, -0.66, 0.02]}><boxGeometry args={[0.13, 1.32, 0.025]} /><meshStandardMaterial color="#e8e8e8" metalness={0.7} roughness={0.3} /></mesh>
+            <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.05]}><cylinderGeometry args={[0.09, 0.09, 0.12, 20]} /><meshStandardMaterial color="#b08a3e" metalness={1} roughness={0.3} /></mesh>
+            <mesh position={[0, 0, 0.1]}><sphereGeometry args={[0.11, 20, 16]} /><primitive object={glowMat} attach="material" /></mesh>
+          </group>
+          <mesh>
+            <sphereGeometry args={[1.5, 48, 32]} />
+            <meshPhysicalMaterial color="#dfe7ff" transparent opacity={0.06} roughness={0.06} metalness={0} clearcoat={1} clearcoatRoughness={0.08} depthWrite={false} />
+          </mesh>
         </group>
-        <mesh position={[0, 0, 0]}>
-          <sphereGeometry args={[0.7, 48, 32]} />
-          <primitive object={glowMat} attach="material" />
-        </mesh>
 
         <group ref={g0}>
           <mesh geometry={shardGeo} material={shardMat} />

@@ -11,20 +11,22 @@ const CinematicFilm = dynamic(() => import("@/components/CinematicFilm"), { ssr:
 
 const GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E")`;
 
-interface Chapter { no: string; tag: string; color: string; title: string[]; body: string; cta?: boolean; }
+interface Chapter { no: string; tag: string; color: string; title: string[]; body: string; phase: number; chips?: string[]; cta?: boolean; }
 
 const CHAPTERS: Chapter[] = [
-  { no: "00", tag: "THE PROBLEM", color: "#ef4444", title: ["India's", "hiring gap"], body: "Millions graduate every year with skills nobody maps to roles — while employers can't find who's actually ready." },
-  { no: "01", tag: "STEP 01 · ASSESS", color: "#818cf8", title: ["Map your", "strengths"], body: "An AI-guided assessment builds a precise graph of your skills, interests and ideal career paths in minutes." },
-  { no: "02", tag: "STEP 02 · UPSKILL", color: "#a855f7", title: ["Close every", "gap"], body: "Courses, aptitude drills and interview prep — sequenced exactly to your gaps, powered by a personal coach." },
-  { no: "03", tag: "STEP 03 · LAND", color: "#10b981", title: ["Real offers", "faster"], body: "Matched openings, AI-drafted outreach and mock interviews until you get hired." },
-  { no: "04", tag: "THE CORE", color: "#22d3ee", title: ["Compass AI", "is alive"], body: "One living career OS that thinks with you — a neural core mapping every skill to every opportunity." },
-  { no: "05", tag: "TOOL · EMAIL STUDIO", color: "#f59e0b", title: ["Open every", "door"], body: "AI-drafted, recruiter-ready outreach that gets replies — your pitch, sharpened by real data." },
-  { no: "06", tag: "TOOL · PANEL INTERVIEW", color: "#f472b6", title: ["Face the", "panel"], body: "Train against an AI interview panel across technical, HR and behavioral rounds — scored live." },
-  { no: "07", tag: "YOUR MOVE", color: "#f59e0b", title: ["Your career,", "mapped"], body: "Join Compass and let your true north find you.", cta: true },
+  { no: "00", tag: "THE PROBLEM", color: "#ef4444", phase: 0, title: ["India's", "hiring gap"], body: "Millions graduate ready to work — but skills never meet roles, and employers can't find who's actually ready." },
+  { no: "01", tag: "STEP 01 · ASSESS", color: "#818cf8", phase: 1, title: ["Find your", "true north"], body: "In minutes, an AI-guided assessment maps your strengths and interests to real, reachable career paths.", chips: ["AI Assessment", "Skill Graph", "ATS Score"] },
+  { no: "02", tag: "STEP 02 · UPSKILL", color: "#a855f7", phase: 2, title: ["Close the", "gap"], body: "A sequenced learning plan built around exactly what you're missing — not a generic syllabus.", chips: ["Courses", "Career Paths", "Personal Coach"] },
+  { no: "03", tag: "APTITUDE", color: "#7c3aed", phase: 2, title: ["Train your", "mind"], body: "Bite-sized aptitude drills with instant scoring, weekly tests and live performance tracking.", chips: ["Daily Quiz", "Weekly Test", "Live Performance"] },
+  { no: "04", tag: "INTERVIEW PREP", color: "#d946ef", phase: 2, title: ["Master the", "interview"], body: "Every round covered — technical, verbal, reasoning, HR, behavioral and company-specific.", chips: ["Technical", "Verbal", "Reasoning", "HR", "Behavioral", "Company-wise"] },
+  { no: "05", tag: "MOCK INTERVIEW", color: "#f472b6", phase: 6, title: ["Face the", "panel"], body: "Practice against an AI interview panel, scored live with honest, useful feedback.", chips: ["AI Panel", "Mock Interview", "Analytics"] },
+  { no: "06", tag: "STEP 03 · LAND", color: "#10b981", phase: 3, title: ["Land real", "offers"], body: "Openings matched to your profile — tracked end to end from apply to accepted offer.", chips: ["Matched Jobs", "Internships", "Live Tracker"] },
+  { no: "07", tag: "RESUME & EMAIL", color: "#f59e0b", phase: 5, title: ["Open every", "door"], body: "A sharp, ATS-ready resume plus AI-drafted outreach that actually gets replies.", chips: ["Resume Builder", "ATS Check", "AI Outreach"] },
+  { no: "08", tag: "COMPASS AI", color: "#22d3ee", phase: 4, title: ["An agent that", "thinks with you"], body: "Ask anything. Compass AI plans, drafts and guides you — from first question to final offer.", chips: ["Career Coach", "Live Agent", "24/7"] },
+  { no: "09", tag: "YOUR MOVE", color: "#f59e0b", phase: 4, title: ["Your career,", "mapped"], body: "Join Compass and let your true north find you.", cta: true },
 ];
 
-const AUTO_MS = 9000;
+const AUTO_MS = 8000;
 
 export default function CinematicManualPage() {
   const router = useRouter();
@@ -40,7 +42,7 @@ export default function CinematicManualPage() {
 
   useEffect(() => {
     if (reduced) { setTitle(false); return; }
-    const t = setTimeout(() => setTitle(false), 2600);
+    const t = setTimeout(() => setTitle(false), 3050);
     return () => clearTimeout(t);
   }, [reduced]);
 
@@ -90,43 +92,57 @@ export default function CinematicManualPage() {
   };
 
   const ch = CHAPTERS[slide];
-  const phase = slide === CHAPTERS.length - 1 ? 4 : Math.min(6, slide);
+  const phase = ch.phase;
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#04040a] text-slate-200 select-none"
       onPointerEnter={() => setHovering(true)} onPointerLeave={() => setHovering(false)}>
       <AnimatePresence>
         {title && (
-          <motion.div className="absolute inset-0 z-[70] flex flex-col items-center justify-center bg-[#04040a]" exit={{ opacity: 0 }} transition={{ duration: 0.6 }} style={{ perspective: 1000 }}>
-            <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6 }} className="text-[11px] tracking-[0.55em] uppercase text-slate-400 mb-8">
+          <motion.div className="absolute inset-0 z-[70] flex flex-col items-center justify-center bg-black overflow-hidden" exit={{ opacity: 0 }} transition={{ duration: 0.7 }}>
+            <div className="absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_40%,rgba(99,102,241,0.16),transparent_70%)]" />
+            <motion.div className="absolute inset-0 m-auto w-[52vmin] h-[52vmin] rounded-full border border-white/10"
+              animate={{ rotate: 360 }} transition={{ duration: 26, repeat: Infinity, ease: "linear" }} />
+            <motion.div className="absolute inset-0 m-auto w-[36vmin] h-[36vmin] rounded-full border border-dashed border-white/10"
+              animate={{ rotate: -360 }} transition={{ duration: 19, repeat: Infinity, ease: "linear" }} />
+            <motion.div className="absolute inset-y-0 w-[38%] -left-[42%] bg-gradient-to-r from-transparent via-white/15 to-transparent"
+              animate={{ x: ["0%", "320%"] }} transition={{ duration: 1.7, delay: 0.2, ease: "easeInOut" }} />
+
+            <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.7 }}
+              className="relative text-[11px] sm:text-xs tracking-[0.6em] uppercase text-slate-400 mb-4">
               Compass presents
             </motion.p>
-            <motion.div initial={{ scale: 0.92, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="relative w-72 sm:w-96">
-              <div className="relative h-44 sm:h-52 rounded-xl border border-white/15 overflow-hidden shadow-[0_30px_80px_-20px_rgba(99,102,241,0.45)]"
-                style={{ background: "linear-gradient(135deg, #171339, #2a1060)" }}>
-                <div className="absolute inset-0 opacity-25" style={{ background: "repeating-linear-gradient(-45deg, #ffffff 0 14px, transparent 14px 28px)" }} />
-                <div className="absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_100%,rgba(129,140,248,0.35),transparent_70%)]" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
-                  <span className="text-[9px] tracking-[0.5em] text-slate-300/80">A CAREER OS IN</span>
-                  <span className="text-2xl sm:text-3xl font-black tracking-tight text-white">THE FILM</span>
-                  <span className="text-[10px] tracking-[0.32em] text-slate-400">FROM FIRST ASSESSMENT TO ACCEPTED OFFER</span>
-                </div>
-                <motion.div className="absolute top-0 inset-x-0 h-[34%] origin-top border-b border-black/40"
-                  style={{ background: "repeating-linear-gradient(-45deg, rgba(255,255,255,0.5) 0 14px, rgba(255,255,255,0.12) 14px 28px), linear-gradient(135deg, #6366f1, #a855f7)" }}
-                  initial={{ rotateX: 0 }}
-                  animate={{ rotateX: [0, 0, -108] }}
-                  transition={{ duration: 0.55, times: [0, 0.55, 1], delay: 0.55, ease: "easeInOut" }} />
-                <div className="absolute inset-x-0 top-1/2 flex items-center justify-center gap-3 text-white font-mono text-sm -translate-y-[34%]">
-                  <span className="bg-black/30 px-3 py-1 rounded">COMPASS</span>
-                  <span className="bg-black/30 px-3 py-1 rounded">01 / FILM</span>
-                </div>
-              </div>
-            </motion.div>
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8, duration: 0.5 }} className="mt-8 text-xs tracking-[0.25em] uppercase text-slate-500">
-              Chapter 01 · The Gap
+
+            <h1 className="relative flex text-[clamp(3.4rem,17vw,12rem)] font-black leading-none tracking-tight" aria-label="COMPASS">
+              {"COMPASS".split("").map((ch, i) => (
+                <span key={i} className="inline-block overflow-hidden pb-[0.04em] -mb-[0.04em]">
+                  <motion.span
+                    initial={{ y: "112%" }}
+                    animate={{ y: 0 }}
+                    transition={{ delay: 0.32 + i * 0.06, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+                    className="inline-block"
+                    style={{ backgroundImage: "linear-gradient(180deg,#ffffff 30%,#b6bdf9 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    {ch}
+                  </motion.span>
+                </span>
+              ))}
+            </h1>
+
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.15, duration: 0.6 }}
+              className="relative mt-3 text-[11px] sm:text-sm tracking-[0.45em] uppercase text-slate-400 text-center">
+              The career OS · told in <span className="text-white font-semibold">{CHAPTERS.length} moves</span>
             </motion.p>
-            <div className="mt-5 w-44 h-[2px] bg-white/10 overflow-hidden rounded-full">
-              <motion.div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500" style={{ transformOrigin: "left" }} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 2.2, ease: "linear" }} />
+
+            <motion.div initial={{ opacity: 0, scaleX: 0 }} animate={{ opacity: 1, scaleX: 1 }} transition={{ delay: 1.4, duration: 0.5 }}
+              className="relative mt-7 w-64 sm:w-80 h-px bg-white/15 origin-left" />
+
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6, duration: 0.5 }}
+              className="relative mt-4 text-[10px] tracking-[0.4em] uppercase text-slate-500">
+              Now screening · Chapter 01
+            </motion.p>
+
+            <div className="relative mt-6 w-44 h-[2px] bg-white/10 overflow-hidden rounded-full">
+              <motion.div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500" style={{ transformOrigin: "left" }} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 2.8, ease: "linear" }} />
             </div>
           </motion.div>
         )}
@@ -196,6 +212,15 @@ export default function CinematicManualPage() {
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.6 }} className="text-sm sm:text-base text-slate-400 leading-relaxed mt-4 max-w-md">
                 {ch.body}
               </motion.p>
+
+              {ch.chips && (
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.62, duration: 0.55 }} className="flex flex-wrap gap-2 mt-5 max-w-md">
+                  {ch.chips.map(c => (
+                    <span key={c} className="px-3 py-1.5 rounded-full text-[10px] tracking-[0.18em] uppercase border"
+                      style={{ borderColor: `${ch.color}40`, color: ch.color, background: `${ch.color}14` }}>{c}</span>
+                  ))}
+                </motion.div>
+              )}
 
               {ch.cta && (
                 <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }} className="flex flex-wrap gap-3 mt-6">
