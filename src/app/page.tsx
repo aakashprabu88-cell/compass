@@ -200,7 +200,7 @@ export default function LandingPage() {
 
         <motion.div style={{ rotateX: heroRotateX, y: heroY, scale: heroScale, opacity: heroOpacity, transformStyle: "preserve-3d", transformPerspective: 1200 }}
           className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(100vw,60rem)] h-[min(100vw,60rem)] opacity-90">
+          <div className="absolute inset-0 opacity-80 [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_74%)]">
             <CompassCanvas scrollRef={heroScroll} tumble={0.35} />
           </div>
 

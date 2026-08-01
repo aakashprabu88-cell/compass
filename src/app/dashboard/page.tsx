@@ -174,6 +174,9 @@ export default function DashboardPage() {
 
   return (
     <div className="h-screen flex overflow-hidden bg-[#0a0a12]">
+      <div className="fixed inset-0 pointer-events-none opacity-[0.16] [mask-image:radial-gradient(ellipse_at_60%_30%,black_35%,transparent_75%)]" aria-hidden>
+        <CompassCanvas scrollRef={ambientScroll} tumble={0.12} />
+      </div>
       <Sidebar user={user} onLogout={logout} />
 
       <main ref={mainRef} onScroll={(e) => {
@@ -184,9 +187,6 @@ export default function DashboardPage() {
         <div className="max-w-6xl mx-auto p-4 lg:p-7">
           {/* Header */}
           <motion.div variants={container} initial="hidden" animate="show" className="relative mb-6">
-            <div className="absolute -top-32 -right-20 w-[28rem] h-[28rem] opacity-[0.14] pointer-events-none" aria-hidden>
-              <CompassCanvas scrollRef={ambientScroll} tumble={0.12} />
-            </div>
             <motion.div variants={item} className="relative flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-[11px] text-slate-500 mb-1">{today}</p>
