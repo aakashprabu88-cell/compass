@@ -1,5 +1,5 @@
-import FilmExperience from "@/components/FilmExperience";
+import { redirect } from "next/navigation";
 
 export default function ManualPage() {
-  return <FilmExperience />;
+  redirect("/");
 }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Compass, Sparkles, UserPlus, Zap } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Compass, Sparkles, UserPlus, Zap } from "lucide-react";
 import { DIRS } from "@/lib/directions";
 
 const DirectionCompass = dynamic(() => import("@/components/DirectionCompass"), { ssr: false, loading: () => null });
@@ -12,7 +12,7 @@ const DirectionCompass = dynamic(() => import("@/components/DirectionCompass"), 
 const GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E")`;
 
 const AUTO_MS = 5200;
-const LAST = 9;
+const LAST = 8;
 const clamp = (v: number) => Math.max(0, Math.min(LAST, v));
 const IDLE_DRAG = { x: 0, y: 0, active: false };
 
@@ -103,10 +103,10 @@ export default function CompassSwipe() {
     else { if (dy < 0) goNext(); else goPrev(); }
   };
 
-  const feature = slide >= 1 && slide <= 8 ? DIRS[slide - 1] : null;
-  const dir = feature ? slide - 1 : null;
-  const col = feature?.color ?? (slide === 9 ? "#fbbf24" : "#22d3ee");
-  const from = feature ? FROM[slide - 1] : { x: 0, y: -1 };
+  const feature = slide >= 0 && slide <= 7 ? DIRS[slide] : null;
+  const dir = feature ? slide : null;
+  const col = feature?.color ?? (slide === 8 ? "#fbbf24" : "#22d3ee");
+  const from = feature ? FROM[slide] : { x: 0, y: -1 };
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#04040a] text-slate-200 select-none"
@@ -165,31 +165,6 @@ export default function CompassSwipe() {
           initial={{ scaleX: 0 }} animate={{ scaleX: slide >= LAST || reduced || hovering ? 0 : 1 }} transition={{ duration: AUTO_MS / 1000, ease: "linear" }} />
       </div>
 
-      <AnimatePresence>
-        {slide === 0 && (
-          <motion.div key="intro" className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-6"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.05, filter: "blur(6px)" }} transition={{ duration: 0.8 }}>
-            <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7 }}
-              className="text-[10px] sm:text-xs tracking-[0.6em] uppercase text-cyan-300/90">Compass presents</motion.p>
-            <motion.h1 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.8 }}
-              className="mt-3 text-[clamp(2.6rem,9vw,6rem)] font-black leading-none tracking-tight"
-              style={{ backgroundImage: "linear-gradient(180deg,#ffffff 30%,#a5d8ff 95%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", filter: "drop-shadow(0 0 40px rgba(34,211,238,0.35))" }}>
-              Compass
-            </motion.h1>
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.7 }}
-              className="mt-4 max-w-md text-sm sm:text-base text-slate-400">
-              Eight directions. Eight ways to build your career. The compass turns itself — just follow along.
-            </motion.p>
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.1, duration: 0.6 }} className="mt-9">
-              <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                className="flex flex-col items-center gap-2 text-[10px] tracking-[0.4em] uppercase text-cyan-300/90">
-                <ChevronDown className="w-4 h-4" /> Scroll or swipe
-              </motion.div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <AnimatePresence mode="wait">
         {feature && (
           <motion.div key={`feat-${slide}`} className="absolute inset-0 z-20 flex items-center justify-center px-6 pb-24 pointer-events-none"
@@ -206,6 +181,17 @@ export default function CompassSwipe() {
                   {feature.key}
                 </motion.span>
               </div>
+
+              {slide === 0 && (
+                <>
+                  <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.7 }}
+                    className="text-[10px] sm:text-xs tracking-[0.6em] uppercase text-cyan-300/90">Compass presents</motion.p>
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.7 }}
+                    className="mt-2 mb-2 text-sm sm:text-base text-slate-400">
+                    Eight directions. Eight ways to build your career. The compass turns itself — just follow along.
+                  </motion.p>
+                </>
+              )}
 
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.7 }}
                 className="relative inline-flex items-center gap-2.5 px-4 py-2 rounded-full border"
@@ -252,7 +238,7 @@ export default function CompassSwipe() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {slide === 9 && (
+        {slide === 8 && (
           <motion.div key="final" className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-6 pb-10"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.9 }}>
             <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7 }}
@@ -290,7 +276,7 @@ export default function CompassSwipe() {
           {Array.from({ length: LAST + 1 }, (_, i) => (
             <button key={i} onClick={() => goTo(i)} aria-label={`Slide ${i + 1}`}
               className={`h-1.5 rounded-full transition-all ${i === slide ? "w-7" : "w-3 bg-white/15 hover:bg-white/30"}`}
-              style={i === slide ? { background: i >= 1 && i <= 8 ? DIRS[i - 1].color : i === 9 ? "#fbbf24" : "#22d3ee" } : undefined} />
+              style={i === slide ? { background: i <= 7 ? DIRS[i].color : "#fbbf24" } : undefined} />
           ))}
         </div>
         <button onClick={goNext} aria-label="Next"

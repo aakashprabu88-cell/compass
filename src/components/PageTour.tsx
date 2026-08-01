@@ -6,7 +6,7 @@ import { Play } from "lucide-react";
 import Tour, { TourStep } from "@/components/Tour";
 
 export default function PageTour({
-  id, steps, accent = "indigo", delay = 1000, auto = true, buttonLabel = "User guide", autoAdvanceMs = 9000,
+  id, steps, accent = "indigo", delay = 1000, auto = false, buttonLabel = "User guide", autoAdvanceMs = 9000,
 }: {
   id: string;
   steps: TourStep[];
@@ -39,14 +39,11 @@ export default function PageTour({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 1.3 }}
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-[90] flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-xs font-semibold text-white shadow-xl shadow-indigo-500/30 hover:from-indigo-400 hover:to-purple-400 transition-all hover:-translate-y-0.5"
+        className="fixed bottom-4 right-4 z-[90] flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30 hover:from-indigo-400 hover:to-purple-400 hover:scale-105 transition-all"
         title="Start the guided user guide"
+        aria-label={buttonLabel}
       >
-        <span className="relative flex w-2 h-2 mr-0.5">
-          <span className="absolute inline-flex h-full w-full rounded-full bg-white opacity-60 animate-ping" />
-          <span className="relative inline-flex rounded-full w-2 h-2 bg-white" />
-        </span>
-        <Play className="w-3.5 h-3.5" /> {buttonLabel}
+        <Play className="w-4 h-4" />
       </motion.button>
       <Tour accent={accent} open={open} onClose={() => setOpen(false)} steps={steps} autoAdvanceMs={autoAdvanceMs} />
     </>

@@ -104,6 +104,12 @@ select {
   outline: none;
   transition: border-color 0.2s;
   width: 100%;
+  color-scheme: dark;
+}
+
+select option {
+  color: #0f172a;
+  background: #ffffff;
 }
 
 input:focus, textarea:focus, select:focus {
