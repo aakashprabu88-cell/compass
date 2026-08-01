@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Sparkles, Briefcase, Target, TrendingUp, AlertTriangle, ExternalLink, MapPin, Clock, DollarSign, CheckCircle, ArrowRight, Loader2, Compass, ChevronRight, GraduationCap, Zap, Users, Brain, ListChecks, Award } from "lucide-react";
 import PageTour from "@/components/PageTour";
 import AmbientCompass from "@/components/AmbientCompass";
+import TrueNorthCompass from "@/components/TrueNorthCompass";
 
 interface Job {
   id: string; title: string; company: string; location: string; city: string;
@@ -137,6 +138,14 @@ export default function AssessmentResultsPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        <div data-tour="results-north" className="mb-8">
+          {paths.length > 0 && topPath ? (
+            <TrueNorthCompass title={topPath.careerPath.title} score={avgMatch} description={topPath.careerPath.description} />
+          ) : (
+            <TrueNorthCompass title="Your career" score={avgMatch} />
+          )}
         </div>
 
         {/* Stats */}
