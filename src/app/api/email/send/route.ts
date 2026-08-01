@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { sendEmail, isEmailConfigured, buildProfessionalEmail } from "@/lib/email";
+import { sendEmail, isEmailConfigured, buildProfessionalEmail, sanitizeEmailHtml } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function GET() {
@@ -110,6 +110,7 @@ export async function POST(req: Request) {
         to: r.toEmail,
         subject,
         body,
+        ...(bodyHtml ? { html: sanitizeEmailHtml(bodyHtml) } : {}),
       });
 
       await prisma.sentEmail.create({

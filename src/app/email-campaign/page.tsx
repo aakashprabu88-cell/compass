@@ -167,7 +167,7 @@ export default function EmailCampaignPage() {
   const { user, loading: authLoading, logout } = useAuth();
 
   const [companies, setCompanies] = useState<CompanyContact[]>([]);
-  const [config, setConfig] = useState<{ configured: boolean }>({ configured: false });
+  const [config, setConfig] = useState<{ configured: boolean; host?: string | null }>({ configured: false });
   const [totalHiring, setTotalHiring] = useState(0);
   const [tnHiring, setTnHiring] = useState(0);
   const [locationFilter, setLocationFilter] = useState<"all" | "tn">("all");
@@ -208,6 +208,7 @@ export default function EmailCampaignPage() {
   // misc
   const [history, setHistory] = useState<SentEmail[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [versions, setVersions] = useState<{ label: string; subject: string; html: string; ts: number }[]>([]);
@@ -676,10 +677,17 @@ export default function EmailCampaignPage() {
             </div>
           </header>
 
-          {!config.configured && (
+          {config.configured ? (
+            <div className="px-5 lg:px-6 py-2 bg-emerald-500/[0.07] border-b border-emerald-500/15 flex items-center gap-2 text-[11px] text-emerald-200/80 shrink-0">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              Auto-send is live{config.host ? ` via ${config.host}` : ""} — emails deliver straight from the studio.
+            </div>
+          ) : (
             <div className="px-5 lg:px-6 py-2 bg-amber-500/[0.07] border-b border-amber-500/15 flex items-center gap-2 text-[11px] text-amber-200/80 shrink-0">
               <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              Auto-send isn&apos;t connected. Use Gmail / Outlook one-click below — or add SMTP env vars to enable direct sending.
+              <span className="flex-1">Auto-send isn&apos;t connected — using Gmail / Outlook one-click for now.</span>
+              <button onClick={() => setSetupOpen(true)}
+                className="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/25 text-amber-200 hover:bg-amber-500/25 transition-colors">Connect SMTP</button>
             </div>
           )}
 
@@ -1107,6 +1115,11 @@ export default function EmailCampaignPage() {
           {profileOpen && <ProfileModal details={details} onClose={() => setProfileOpen(false)} onSave={saveProfile} />}
         </AnimatePresence>
 
+        {/* ── SMTP setup modal ── */}
+        <AnimatePresence>
+          {setupOpen && <SetupModal onClose={() => setSetupOpen(false)} />}
+        </AnimatePresence>
+
         {/* ── Guided demo tour ── */}
         <PageTour
           id="email"
@@ -1281,5 +1294,78 @@ function Field({ label, value, onChange, placeholder }: { label: string; value: 
       <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
         className="w-full p-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-sm outline-none focus:border-indigo-500/50 placeholder:text-slate-600" />
     </div>
+  );
+}
+
+function SetupModal({ onClose }: { onClose: () => void }) {
+  const envVars = [
+    { name: "SMTP_HOST", value: "smtp.gmail.com" },
+    { name: "SMTP_PORT", value: "587" },
+    { name: "SMTP_USER", value: "your@gmail.com" },
+    { name: "SMTP_PASS", value: "<16-char app password>" },
+    { name: "SMTP_FROM", value: "Your Name <your@gmail.com>" },
+  ];
+  const steps = [
+    "Turn on 2-Step Verification for the Gmail account (myaccount.google.com/security).",
+    "Create an App Password at myaccount.google.com/apppasswords and copy it (16 characters).",
+    "In Vercel → your project → Settings → Environment Variables, add the five vars below.",
+    "Redeploy (or push a commit) — the banner above flips to green when it&apos;s live.",
+  ];
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={onClose}>
+      <motion.div initial={{ opacity: 0, y: 20, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.97 }}
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#0b0f19] shadow-2xl shadow-indigo-500/10 p-6 max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+              <Mail className="w-4.5 h-4.5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-white">Connect auto-send (Gmail)</h3>
+              <p className="text-[11px] text-slate-500">SMTP sends your outreach directly from the studio</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/5">×</button>
+        </div>
+
+        <div className="space-y-4 text-xs text-slate-400">
+          <div>
+            <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-2">Setup steps</p>
+            <ol className="space-y-2">
+              {steps.map((s, i) => (
+                <li key={i} className="flex gap-2.5 items-start">
+                  <span className="w-5 h-5 shrink-0 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-[10px] flex items-center justify-center font-bold">{i + 1}</span>
+                  <span>{s}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <div>
+            <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-2">Env vars (Vercel → Settings → Environment Variables)</p>
+            <div className="rounded-xl border border-white/10 divide-y divide-white/[0.06] overflow-hidden">
+              {envVars.map(ev => (
+                <div key={ev.name} className="flex items-center gap-3 bg-white/[0.02] px-3 py-2.5">
+                  <code className="font-mono text-[11px] text-indigo-300 w-24 shrink-0">{ev.name}</code>
+                  <code className="font-mono text-[11px] text-slate-400 truncate">{ev.value}</code>
+                  <button onClick={() => navigator.clipboard.writeText(ev.value)}
+                    className="ml-auto text-[10px] px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white shrink-0">Copy</button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-[11px] text-slate-500 bg-white/[0.02] border border-white/[0.06] rounded-xl p-3">
+            Never paste the app password into chat or code — it lives only in Vercel&apos;s env var store. The app password is secret even though SMTP_USER is not.
+          </p>
+        </div>
+
+        <button onClick={onClose}
+          className="mt-6 w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-sm font-semibold text-white">Got it</button>
+      </motion.div>
+    </motion.div>
   );
 }

@@ -43,6 +43,7 @@ export async function sendEmail(opts: {
   to: string;
   subject: string;
   body: string;
+  html?: string;
   from?: string;
 }): Promise<{ success: boolean; error?: string }> {
   if (!isEmailConfigured()) {
@@ -58,11 +59,26 @@ export async function sendEmail(opts: {
       to: opts.to,
       subject: opts.subject,
       text: opts.body,
+      ...(opts.html ? { html: opts.html } : {}),
     });
     return { success: true };
   } catch (e: any) {
     return { success: false, error: e?.message || "Failed to send email" };
   }
+}
+
+// Make contentEditable output email-client-safe: strip editor-only attributes and
+// Tailwind classes, then add minimal inline styles that render in Gmail/Outlook.
+export function sanitizeEmailHtml(raw: string): string {
+  let html = (raw || "").trim();
+  if (!html) return "";
+  html = html.replace(/\s+(contenteditable|spellcheck|autocorrect|autocapitalize|data-[a-z0-9-]+|role|aria-[a-z-]+)="[^"]*"/gi, "");
+  html = html.replace(/\s+(contenteditable|spellcheck|autocorrect|autocapitalize)(?=\s|>)/gi, "");
+  html = html.replace(/\s+class="[^"]*"/gi, "");
+  html = html.replace(/<div(?![^>]*style=)/gi, '<div style="margin:0 0 12px"');
+  html = html.replace(/<p(?![^>]*style=)/gi, '<p style="margin:0 0 12px"');
+  html = html.replace(/<li(?![^>]*style=)/gi, '<li style="margin:0 0 6px"');
+  return `<div style="font-family:Segoe UI,Arial,Helvetica,sans-serif;font-size:14px;line-height:1.7;color:#1f2937">${html}</div>`;
 }
 
 const BLACKLISTED_COMPANIES = new Set([
