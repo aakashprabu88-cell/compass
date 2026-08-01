@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronRight, ChevronLeft, Play, Check } from "lucide-react";
+import { motion, AnimatePresence, useSpring } from "framer-motion";
+import { X, ChevronRight, ChevronLeft, Play, Check, ChevronsUpDown } from "lucide-react";
 
 export interface TourStep {
   target?: string;
@@ -18,38 +18,69 @@ function getRect(el: Element): Rect {
 }
 
 export default function Tour({
-  steps, open, onClose, accent = "indigo",
-}: { steps: TourStep[]; open: boolean; onClose: () => void; accent?: string }) {
+  steps, open, onClose, accent = "indigo", autoAdvanceMs = 0,
+}: { steps: TourStep[]; open: boolean; onClose: () => void; accent?: string; autoAdvanceMs?: number }) {
   const [index, setIndex] = useState(0);
-  const [rect, setRect] = useState<Rect | null>(null);
-  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const [ready, setReady] = useState(false);
   const [missing, setMissing] = useState(false);
+  const [flip, setFlip] = useState<"down" | "up">("down");
+  const [arrowLeft, setArrowLeft] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [progressPct, setProgressPct] = useState(0);
 
   const step = steps[Math.min(index, steps.length - 1)];
 
+  const spotTop = useSpring(20, { stiffness: 230, damping: 27 });
+  const spotLeft = useSpring(20, { stiffness: 230, damping: 27 });
+  const spotW = useSpring(0, { stiffness: 190, damping: 25 });
+  const spotH = useSpring(0, { stiffness: 190, damping: 25 });
+  const tipTop = useSpring(0, { stiffness: 210, damping: 26 });
+  const tipLeft = useSpring(0, { stiffness: 210, damping: 26 });
+  const tiltX = useSpring(0, { stiffness: 280, damping: 18 });
+  const tiltY = useSpring(0, { stiffness: 280, damping: 18 });
+
+  const navLock = useRef(0);
+  const touchStartY = useRef<number | null>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
+  const tipW = typeof window !== "undefined" ? Math.min(330, window.innerWidth - 24) : 330;
+
+  const navigate = useCallback((delta: number) => {
+    if (delta === 0 || Date.now() - navLock.current < 420) return;
+    navLock.current = Date.now();
+    setIndex(prev => Math.max(0, Math.min(prev + delta, steps.length - 1)));
+    setReady(false);
+  }, [steps.length]);
+
+  const goNext = useCallback(() => {
+    if (index >= steps.length - 1) onClose();
+    else navigate(1);
+  }, [index, steps.length, onClose, navigate]);
+
+  const goPrev = useCallback(() => navigate(-1), [navigate]);
+
   const recompute = useCallback(() => {
-    if (!step.target) { setRect(null); setMissing(false); setTooltipPos({ top: 20, left: 20 }); setReady(true); return; }
+    const fallback = () => {
+      tipTop.set(20); tipLeft.set(20);
+      spotTop.set(20); spotLeft.set(20); spotW.set(0); spotH.set(0);
+    };
+    if (!step.target) { setMissing(false); fallback(); setReady(true); return; }
     const el = document.querySelector(step.target);
-    if (!el) { setRect(null); setMissing(true); setTooltipPos({ top: 20, left: 20 }); setReady(true); return; }
+    if (!el) { setMissing(true); fallback(); setReady(true); return; }
     setMissing(false);
     const r = getRect(el);
-    setRect(r);
-    // Place tooltip below by default, above if too close to bottom
-    const w = 300;
-    let top = r.top + r.height + 14;
+    spotTop.set(r.top - 6); spotLeft.set(r.left - 6); spotW.set(r.width + 12); spotH.set(r.height + 12);
+    const w = tipW;
+    const below = r.top + r.height + 18 + 250 <= window.innerHeight;
+    setFlip(below ? "down" : "up");
+    let top = below ? r.top + r.height + 22 : r.top - 262;
     let left = r.left + r.width / 2 - w / 2;
-    if (top + 220 > window.innerHeight) top = r.top - 230;
     left = Math.max(12, Math.min(window.innerWidth - w - 12, left));
-    setTooltipPos({ top, left });
+    top = Math.max(10, Math.min(window.innerHeight - 265, top));
+    tipTop.set(top); tipLeft.set(left);
+    setArrowLeft(Math.max(4, Math.min(w - 8, r.left + r.width / 2 - left)));
     setReady(true);
-  }, [step.target, index]);
-
-  useEffect(() => {
-    if (!open) return;
-    setIndex(0);
-    setReady(false);
-  }, [open]);
+  }, [step.target, tipW, tipTop, tipLeft, spotTop, spotLeft, spotW, spotH]);
 
   useEffect(() => {
     if (!open) return;
@@ -74,79 +105,224 @@ export default function Tour({
     return () => clearInterval(t);
   }, [open, missing, step.target, recompute]);
 
+  // Reset on open
+  useEffect(() => {
+    if (!open) return;
+    setIndex(0); setReady(false); setProgressPct(0);
+  }, [open]);
+
+  // Auto-scroll the target into view so the spotlight centers itself
+  useEffect(() => {
+    if (!open || !step.target) return;
+    const el = document.querySelector(step.target);
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const pad = 170;
+    if (r.top < pad || r.bottom > window.innerHeight - pad) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      const t = setTimeout(recompute, 720);
+      return () => clearTimeout(t);
+    }
+  }, [open, index, step.target, recompute]);
+
+  // Swipe up/down on the dim layer
+  const onTouchStart = (e: React.TouchEvent) => { touchStartY.current = e.touches[0].clientY; };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartY.current == null) return;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    touchStartY.current = null;
+    if (Math.abs(dy) < 45) return;
+    if (dy < 0) goNext(); else goPrev();
+  };
+
+  // Scroll wheel navigates steps too
+  useEffect(() => {
+    if (!open) return;
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY === 0 || Date.now() - navLock.current < 450) return;
+      e.preventDefault();
+      navLock.current = Date.now();
+      if (e.deltaY > 0) goNext(); else goPrev();
+    };
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, [open, goNext, goPrev]);
+
+  // Keyboard
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight") setIndex(i => Math.min(i + 1, steps.length - 1));
-      if (e.key === "ArrowLeft") setIndex(i => Math.max(i - 1, 0));
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft") goPrev();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose, steps.length]);
+  }, [open, onClose, goNext, goPrev]);
 
-  const next = () => {
-    if (index >= steps.length - 1) onClose();
-    else { setIndex(i => i + 1); setReady(false); }
-  };
+  // Auto-advance with a visible progress bar (pauses on hover)
+  const adv = useRef({ start: 0, elapsed: 0 });
+  useEffect(() => { adv.current.elapsed = 0; setProgressPct(0); }, [index, open]);
+  useEffect(() => {
+    if (!open || autoAdvanceMs <= 0) { setProgressPct(0); return; }
+    if (paused) { adv.current.elapsed += performance.now() - adv.current.start; return; }
+    adv.current.start = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const elapsed = adv.current.elapsed + (now - adv.current.start);
+      const p = Math.min(1, elapsed / autoAdvanceMs);
+      setProgressPct(p * 100);
+      if (p >= 1) goNext();
+      else raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [open, autoAdvanceMs, paused, index, goNext]);
 
   const grad = accent === "emerald" ? "from-emerald-500 to-teal-500" : "from-indigo-500 to-purple-500";
+  const gradBg = accent === "emerald"
+    ? "linear-gradient(120deg, rgba(16,185,129,0.95), rgba(20,184,166,0.85), rgba(52,211,153,0.9))"
+    : "linear-gradient(120deg, rgba(99,102,241,0.95), rgba(168,85,247,0.85), rgba(236,72,153,0.9))";
+  const glowCss = accent === "emerald"
+    ? "radial-gradient(circle at 30% 20%, rgba(16,185,129,0.5), rgba(45,212,191,0.3), transparent 70%)"
+    : "radial-gradient(circle at 30% 20%, rgba(99,102,241,0.55), rgba(168,85,247,0.35), transparent 70%)";
+  const spotShadow = accent === "emerald"
+    ? ["0 0 30px rgba(16,185,129,0.4)", "0 0 70px rgba(45,212,191,0.55)", "0 0 30px rgba(16,185,129,0.4)"]
+    : ["0 0 30px rgba(99,102,241,0.4)", "0 0 70px rgba(168,85,247,0.55)", "0 0 30px rgba(99,102,241,0.4)"];
+
+  const onTiltMove = (e: React.PointerEvent) => {
+    const el = tooltipRef.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    tiltY.set(((e.clientX - r.left) / r.width - 0.5) * 18);
+    tiltX.set(((e.clientY - r.top) / r.height - 0.5) * -18);
+  };
+  const onTiltLeave = () => { tiltX.set(0); tiltY.set(0); };
 
   return (
     <AnimatePresence>
       {open && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] pointer-events-none">
-          {/* Dim + spotlight */}
-          <div className="absolute inset-0 bg-black/55" />
-          {rect && ready && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100]">
+          {/* Dim layer + swipe capture */}
+          <motion.div
+            className="absolute inset-0 bg-black/60"
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
+          />
+
+          {/* Spotlight with animated glow ring */}
+          {ready && !missing && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.25 }}
-              className="absolute rounded-xl border-2 border-indigo-400/70"
-              style={{ top: rect.top - 6, left: rect.left - 6, width: rect.width + 12, height: rect.height + 12, boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)" }}
-            />
+              className="absolute rounded-2xl p-[2px]"
+              style={{ top: spotTop, left: spotLeft, width: spotW, height: spotH, background: gradBg }}
+            >
+              <motion.div className="w-full h-full rounded-[14px] bg-[#0a0a12]/95" />
+              <motion.div
+                className="absolute inset-0 rounded-2xl"
+                animate={{ boxShadow: spotShadow }}
+                transition={{ repeat: Infinity, duration: 2.6 }}
+              />
+            </motion.div>
           )}
 
-          {/* Tooltip */}
+          {/* 3D tooltip */}
           {ready && (
             <motion.div
-              initial={{ opacity: 0, y: 12, scale: 0.97 }}
+              initial={{ opacity: 0, y: 30, scale: 0.88 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute pointer-events-auto w-[300px] rounded-2xl border border-white/10 p-4 shadow-2xl"
-              style={{ top: tooltipPos.top, left: tooltipPos.left, background: "rgba(18,18,28,0.97)", backdropFilter: "blur(20px)" }}
+              exit={{ opacity: 0, y: 30, scale: 0.88 }}
+              transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute"
+              style={{ top: tipTop, left: tipLeft, width: tipW }}
+              onPointerEnter={() => setPaused(true)}
+              onPointerLeave={() => setPaused(false)}
             >
-              <div className="flex items-center justify-between mb-2">
-                <span className={`text-[9px] px-2 py-0.5 rounded-full bg-gradient-to-r ${grad} text-white font-bold tracking-wider`}>
-                  STEP {index + 1}/{steps.length}
-                </span>
-                <div className="flex items-center gap-1.5">
-                  {missing && <span className="flex items-center gap-1 text-[9px] text-slate-500"><motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2 }} className="w-1 h-1 rounded-full bg-indigo-400 inline-block" /> locating…</span>}
-                  <button onClick={onClose} className="p-1 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-colors">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-              <h4 className="text-sm font-bold mb-1 text-white">{step.title}</h4>
-              <p className="text-xs text-slate-400 leading-relaxed mb-3">{step.body}</p>
-              <div className="flex items-center gap-1 mb-3">
-                {steps.map((_, i) => (
-                  <button key={i} onClick={() => { setIndex(i); setReady(false); }}
-                    className={`h-1 rounded-full transition-all ${i === index ? `bg-gradient-to-r ${grad} w-5` : "bg-white/15 w-2.5"}`} />
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => setIndex(i => Math.max(i - 1, 0))} disabled={index === 0}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] text-slate-300 disabled:opacity-40 hover:text-white transition-colors">
-                  <ChevronLeft className="w-3 h-3" /> Back
-                </button>
-                <button onClick={next}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-gradient-to-r ${grad} text-[11px] font-semibold text-white shadow-lg`}>
-                  {index >= steps.length - 1 ? (<><Check className="w-3 h-3" /> Done</>) : (<><Play className="w-3 h-3" /> Next <ChevronRight className="w-3 h-3" /></>)}
-                </button>
-              </div>
+              {/* Connector arrow pointing at the spotlight */}
+              {!missing && (
+                <div
+                  className="absolute w-3 h-3 rotate-45 rounded-[2px] z-0"
+                  style={{
+                    top: flip === "down" ? -6 : undefined,
+                    bottom: flip === "up" ? -6 : undefined,
+                    left: arrowLeft - 6,
+                    background: gradBg,
+                  }}
+                />
+              )}
+
+              {/* Float wrapper */}
+              <motion.div animate={{ y: [0, -7, 0] }} transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}>
+                {/* 3D tilt wrapper */}
+                <motion.div
+                  ref={tooltipRef}
+                  onPointerMove={onTiltMove}
+                  onPointerLeave={onTiltLeave}
+                  style={{ rotateX: tiltX, rotateY: tiltY, transformPerspective: 900, transformStyle: "preserve-3d" }}
+                  className="relative"
+                >
+                  {/* Glow blob */}
+                  <div className="absolute -inset-3 -z-10 rounded-3xl blur-2xl opacity-60" style={{ background: glowCss }} />
+                  {/* Gradient border card */}
+                  <div className="relative rounded-2xl p-[1.5px] shadow-2xl shadow-black/60" style={{ background: gradBg }}>
+                    <div className="relative rounded-[14.5px] p-4 overflow-hidden" style={{ background: "rgba(16,16,26,0.97)", backdropFilter: "blur(24px)" }}>
+                      {/* Shine sweep */}
+                      <motion.div
+                        className="absolute inset-0 pointer-events-none"
+                        initial={{ x: "-130%" }}
+                        animate={{ x: "230%" }}
+                        transition={{ repeat: Infinity, duration: 3.4, ease: "easeInOut", repeatDelay: 1.2 }}
+                        style={{
+                          background: "linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.07) 45%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0.07) 55%, transparent 80%)",
+                          transform: "skewX(-14deg)",
+                        }}
+                      />
+
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[9px] px-2 py-0.5 rounded-full bg-gradient-to-r ${grad} text-white font-bold tracking-wider`}>
+                            STEP {index + 1}/{steps.length}
+                          </span>
+                          {autoAdvanceMs > 0 && (
+                            <span className="w-10 h-1 rounded-full bg-white/10 overflow-hidden">
+                              <span className={`block h-full bg-gradient-to-r ${grad}`} style={{ width: `${progressPct}%` }} />
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {missing && <span className="flex items-center gap-1 text-[9px] text-slate-500"><motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2 }} className="w-1 h-1 rounded-full bg-indigo-400 inline-block" /> locating…</span>}
+                          <button onClick={onClose} className="p-1 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-colors">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <h4 className="text-sm font-bold mb-1 text-white" style={{ transform: "translateZ(34px)" }}>{step.title}</h4>
+                      <p className="text-xs text-slate-400 leading-relaxed mb-3" style={{ transform: "translateZ(22px)" }}>{step.body}</p>
+
+                      <div className="flex items-center gap-1 mb-3">
+                        {steps.map((_, i) => (
+                          <button key={i} onClick={() => navigate(i - index)}
+                            className={`h-1 rounded-full transition-all ${i === index ? `bg-gradient-to-r ${grad} w-5` : "bg-white/15 w-2.5 hover:bg-white/30"}`} />
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button onClick={goPrev} disabled={index === 0}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] text-slate-300 disabled:opacity-40 hover:text-white transition-colors">
+                          <ChevronLeft className="w-3 h-3" /> Back
+                        </button>
+                        <button onClick={goNext}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-gradient-to-r ${grad} text-[11px] font-semibold text-white shadow-lg shadow-indigo-500/30`}>
+                          {index >= steps.length - 1 ? (<><Check className="w-3 h-3" /> Done</>) : (<><Play className="w-3 h-3" /> Next <ChevronRight className="w-3 h-3" /></>)}
+                        </button>
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-center gap-1.5 text-[9px] text-slate-600">
+                        <ChevronsUpDown className="w-3 h-3 text-indigo-400" /> Swipe up / down or scroll · auto-advances · hover to pause
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
             </motion.div>
           )}
         </motion.div>

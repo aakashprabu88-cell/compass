@@ -6,7 +6,7 @@ import { Play } from "lucide-react";
 import Tour, { TourStep } from "@/components/Tour";
 
 export default function PageTour({
-  id, steps, accent = "indigo", delay = 1000, auto = true, buttonLabel = "User guide",
+  id, steps, accent = "indigo", delay = 1000, auto = true, buttonLabel = "User guide", autoAdvanceMs = 9000,
 }: {
   id: string;
   steps: TourStep[];
@@ -14,6 +14,7 @@ export default function PageTour({
   delay?: number;
   auto?: boolean;
   buttonLabel?: string;
+  autoAdvanceMs?: number;
 }) {
   const [open, setOpen] = useState(false);
   const [shown, setShown] = useState(false);
@@ -41,9 +42,13 @@ export default function PageTour({
         className="fixed bottom-5 right-5 z-[90] flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-xs font-semibold text-white shadow-xl shadow-indigo-500/30 hover:from-indigo-400 hover:to-purple-400 transition-all hover:-translate-y-0.5"
         title="Start the guided user guide"
       >
+        <span className="relative flex w-2 h-2 mr-0.5">
+          <span className="absolute inline-flex h-full w-full rounded-full bg-white opacity-60 animate-ping" />
+          <span className="relative inline-flex rounded-full w-2 h-2 bg-white" />
+        </span>
         <Play className="w-3.5 h-3.5" /> {buttonLabel}
       </motion.button>
-      <Tour accent={accent} open={open} onClose={() => setOpen(false)} steps={steps} />
+      <Tour accent={accent} open={open} onClose={() => setOpen(false)} steps={steps} autoAdvanceMs={autoAdvanceMs} />
     </>
   );
 }
