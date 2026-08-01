@@ -4,6 +4,21 @@ import { prisma } from "@/lib/db";
 import { sendEmail, isEmailConfigured, buildProfessionalEmail, sanitizeEmailHtml } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rate-limit";
 
+export const maxDuration = 60;
+
+async function runPool<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const idx = cursor++;
+      results[idx] = await fn(items[idx]);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
 export async function GET() {
   try {
     const user = await getUser();
@@ -93,9 +108,8 @@ export async function POST(req: Request) {
     };
 
     const sent: Array<{ company: string; toEmail: string; ok: boolean; error?: string }> = [];
-    let okCount = 0;
 
-    for (const r of recipients) {
+    const results = await runPool(recipients, 5, async (r) => {
       const built = buildProfessionalEmail({
         profile,
         company: r.company,
@@ -128,11 +142,12 @@ export async function POST(req: Request) {
         },
       });
 
-      if (result.success) okCount++;
-      sent.push({ company: r.company, toEmail: r.toEmail, ok: result.success, error: result.error });
-    }
+      return { company: r.company, toEmail: r.toEmail, ok: result.success, error: result.error };
+    });
 
-    return NextResponse.json({ sent: okCount, failed: sent.length - okCount, details: sent });
+    sent.push(...results);
+
+    return NextResponse.json({ sent: sent.filter(s => s.ok).length, failed: sent.filter(s => !s.ok).length, details: sent });
   } catch (e: any) {
     console.error("POST /api/email/send", e);
     return NextResponse.json({ error: e?.message || "Failed to send emails" }, { status: 500 });

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { parseJsonArray } from "@/lib/careers";
-import { fetchRealCompanies, rankRealJobs, isTamilNaduLocation } from "@/lib/jobs";
+import { fetchRealCompanies, rankRealJobs, isTamilNaduLocation, matchJobs } from "@/lib/jobs";
 import { deriveCompanyContact, isRealCompany, getEmailConfigStatus, buildProfessionalEmail } from "@/lib/email";
 
 function buildQueries(topTitles: string[], userSkills: string[], userInterests: string[]): string[] {
@@ -55,9 +55,35 @@ export async function GET(req: Request) {
     const locationFilter = url.searchParams.get("location") || "all";
 
     const queries = buildQueries(topTitles, userSkills, userInterests);
-    const { companies } = await fetchRealCompanies(queries, 25);
 
-    const ranked = rankRealJobs(companies, userSkills, userInterests, topTitles);
+    let ranked: ReturnType<typeof rankRealJobs> = [];
+    try {
+      const { companies } = await fetchRealCompanies(queries, 25);
+      ranked = rankRealJobs(companies, userSkills, userInterests, topTitles);
+    } catch (e) {
+      console.error("Live company feed failed, using curated fallback", e);
+    }
+
+    if (ranked.length === 0) {
+      ranked = matchJobs(userSkills, userInterests, topTitles).slice(0, 50).map(j => ({
+        id: j.id,
+        title: j.title,
+        company: j.company,
+        companyLogo: "",
+        location: j.location,
+        city: j.city,
+        type: j.type,
+        salary: j.salary,
+        salaryMin: j.salaryMin,
+        salaryMax: j.salaryMax,
+        description: j.description,
+        applyUrl: j.applyUrl,
+        postedAt: new Date().toISOString(),
+        experience: j.experience,
+        requiredSkills: j.requiredSkills,
+        matchScore: j.matchScore,
+      }));
+    }
 
     const profile = {
       name: user.name,

@@ -1,6 +1,7 @@
 import { prisma } from "./db";
 
 const GROQ_API = "https://api.groq.com/openai/v1/chat/completions";
+const GEMINI_API = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 const MODEL = "llama-3.3-70b-versatile";
 const FALLBACK_MODEL = "llama-3.1-8b-instant";
 
@@ -23,8 +24,9 @@ export async function chat(
   messages: ChatMessage[],
   opts: ChatOptions = {}
 ): Promise<string> {
-  const key = process.env.GROQ_API_KEY;
-  if (!key) throw new Error("GROQ_API_KEY not set");
+  const groqKey = process.env.GROQ_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!groqKey && !geminiKey) throw new Error("No AI API key set (GROQ_API_KEY or GEMINI_API_KEY)");
 
   const temperature = opts.temperature ?? 0.7;
   const maxTokens = opts.maxTokens ?? 4096;
@@ -32,33 +34,66 @@ export async function chat(
   const models = [MODEL, FALLBACK_MODEL];
   let lastError: Error | null = null;
 
-  for (const model of models) {
+  if (groqKey) {
+    for (const model of models) {
+      try {
+        const res = await fetch(GROQ_API, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${groqKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages,
+            temperature,
+            max_tokens: maxTokens,
+          }),
+        });
+
+        if (!res.ok) {
+          const errBody = await res.text();
+          lastError = new Error(`Groq ${model} ${res.status}: ${errBody.substring(0, 200)}`);
+          continue;
+        }
+
+        const data = await res.json();
+        return data.choices?.[0]?.message?.content || "";
+      } catch (err: any) {
+        lastError = err;
+        continue;
+      }
+    }
+  }
+
+  if (geminiKey) {
     try {
-      const res = await fetch(GROQ_API, {
+      const system = messages.filter(m => m.role === "system").map(m => m.content).join("\n").trim();
+      const contents = messages
+        .filter(m => m.role !== "system")
+        .map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
+
+      const res = await fetch(`${GEMINI_API}?key=${geminiKey}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${key}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model,
-          messages,
-          temperature,
-          max_tokens: maxTokens,
+          ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
+          contents,
+          generationConfig: { temperature, maxOutputTokens: maxTokens },
         }),
       });
 
       if (!res.ok) {
         const errBody = await res.text();
-        lastError = new Error(`Groq ${model} ${res.status}: ${errBody.substring(0, 200)}`);
-        continue;
+        lastError = new Error(`Gemini ${res.status}: ${errBody.substring(0, 200)}`);
+      } else {
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text).join("") || "";
+        if (text) return text;
+        lastError = new Error("Gemini returned empty response");
       }
-
-      const data = await res.json();
-      return data.choices?.[0]?.message?.content || "";
-    } catch (err: any) {
-      lastError = err;
-      continue;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
     }
   }
 

@@ -112,7 +112,34 @@ export default function JobsPage() {
     }
   };
 
-  if (authLoading || loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
+  if (authLoading || loading) return (
+    <div className="h-screen flex overflow-hidden bg-[#0a0a12]">
+      <Sidebar user={user} onLogout={logout} />
+      <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+        <div className="max-w-6xl mx-auto">
+          <div className="h-8 w-72 bg-white/5 rounded-xl animate-pulse mb-6" />
+          <div className="flex flex-col gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2">
+                    <div className="h-5 w-56 bg-white/5 rounded-lg animate-pulse" />
+                    <div className="h-4 w-40 bg-white/5 rounded-lg animate-pulse" />
+                  </div>
+                  <div className="h-6 w-24 bg-indigo-500/20 rounded-full animate-pulse" />
+                </div>
+                <div className="h-3 w-full bg-white/5 rounded animate-pulse" />
+                <div className="h-3 w-3/4 bg-white/5 rounded animate-pulse" />
+                <div className="flex gap-2 pt-2">
+                  {Array.from({ length: 4 }).map((_, j) => <div key={j} className="h-6 w-20 bg-white/5 rounded-full animate-pulse" />)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 
   const realJobs = jobs.filter(j => j._isReal);
   const hasData = hasRealData || allJobs.length > 0;

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { parseJsonArray } from "@/lib/careers";
-import { fetchTNJobs, rankRealJobs } from "@/lib/jobs";
+import { fetchTNJobs, rankRealJobs, matchJobs } from "@/lib/jobs";
 
 function buildJobQueries(topTitles: string[], userSkills: string[], userInterests: string[]): string[] {
   const queries = new Set<string>();
@@ -39,7 +39,14 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    if (!assessment) return NextResponse.json({ realJobs: [], fallbackJobs: [], hasRealData: false, totalRealJobs: 0 });
+    if (!assessment) {
+      return NextResponse.json({
+        realJobs: [],
+        fallbackJobs: matchJobs([], [], []).sort((a, b) => b.openings - a.openings).slice(0, 100),
+        hasRealData: false,
+        totalRealJobs: 0,
+      });
+    }
 
     const userSkills = parseJsonArray(assessment.skills);
     const userInterests = parseJsonArray(assessment.interests);
@@ -54,34 +61,29 @@ export async function GET() {
     const topTitles = userPaths.map(up => up.careerPath.title);
 
     const queries = buildJobQueries(topTitles, userSkills, userInterests);
-    const realResult = await fetchTNJobs(queries, 50);
-    const ranked = rankRealJobs(realResult.jobs, userSkills, userInterests, topTitles);
+
+    let ranked: ReturnType<typeof rankRealJobs> = [];
+    let totalCount = 0;
+    try {
+      const realResult = await fetchTNJobs(queries, 50);
+      totalCount = realResult.totalCount;
+      ranked = rankRealJobs(realResult.jobs, userSkills, userInterests, topTitles);
+    } catch (e) {
+      console.error("Live job feed failed, using curated fallback", e);
+    }
+
+    const fallbackJobs = ranked.length === 0
+      ? matchJobs(userSkills, userInterests, topTitles).slice(0, 100)
+      : [];
 
     return NextResponse.json({
       realJobs: ranked.slice(0, 100),
-      fallbackJobs: [],
+      fallbackJobs,
       hasRealData: ranked.length > 0,
-      totalRealJobs: realResult.totalCount,
+      totalRealJobs: totalCount,
     });
   } catch (e) {
     console.error("GET /api/jobs", e);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const user = await getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const { email } = await request.json();
-
-    return NextResponse.json({
-      success: true,
-      message: `Job alerts enabled for ${email}. You'll receive notifications for matching positions.`,
-    });
-  } catch (e) {
-    console.error("POST /api/jobs", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
