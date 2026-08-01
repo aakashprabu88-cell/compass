@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, ChevronRight, Sparkles, Briefcase, GraduationCap, Code2, Heart, User, Zap, Loader2, Compass } from "lucide-react";
 import PageTour from "@/components/PageTour";
+import AmbientCompass from "@/components/AmbientCompass";
 
 const SKILL_CATEGORIES: { label: string; skills: string[] }[] = [
   {
@@ -177,7 +178,8 @@ export default function AssessmentPage() {
 
   return (
     <div className="min-h-screen p-4 lg:p-8 overflow-y-auto bg-[#0a0a12]">
-      <div className="max-w-3xl mx-auto" style={{ animation: "fadeIn 0.4s ease-out both" }}>
+      <AmbientCompass />
+      <div className="relative z-10 max-w-3xl mx-auto" style={{ animation: "fadeIn 0.4s ease-out both" }}>
         {isDemo && (
           <div className="mb-6 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs text-center">
             <Zap className="w-3.5 h-3.5 inline -mt-0.5 mr-1" />

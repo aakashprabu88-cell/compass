@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Sparkles, Briefcase, Target, TrendingUp, AlertTriangle, ExternalLink, MapPin, Clock, DollarSign, CheckCircle, ArrowRight, Loader2, Compass, ChevronRight, GraduationCap, Zap, Users, Brain, ListChecks, Award } from "lucide-react";
 import PageTour from "@/components/PageTour";
+import AmbientCompass from "@/components/AmbientCompass";
 
 interface Job {
   id: string; title: string; company: string; location: string; city: string;
@@ -116,7 +117,8 @@ export default function AssessmentResultsPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a12] overflow-y-auto">
-      <div className="max-w-5xl mx-auto p-4 lg:p-8">
+      <AmbientCompass />
+      <div className="relative z-10 max-w-5xl mx-auto p-4 lg:p-8">
         {/* Success Banner */}
         <div data-tour="results-banner" className="p-6 mb-8 rounded-2xl border border-emerald-500/20 relative overflow-hidden" style={{ background: "rgba(16,185,129,0.05)" }}>
           <div className="absolute top-0 right-0 w-64 h-64 opacity-[0.03]" style={{ background: "radial-gradient(circle, #10b981, transparent 70%)" }} />
