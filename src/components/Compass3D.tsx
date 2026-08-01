@@ -372,7 +372,7 @@ class CompassBoundary extends Component<{ children: React.ReactNode }, { failed:
 export default function CompassCanvas({ scrollRef, tumble = 0.35 }: { scrollRef: { current: number }; tumble?: number }) {
   return (
     <CompassBoundary>
-      <Canvas camera={{ position: [0, 0.4, 6.2], fov: 40 }} dpr={[1, 2]} gl={{ antialias: true, alpha: true }}>
+      <Canvas camera={{ position: [0, 0.4, 6.2], fov: 40 }} dpr={[1, 2]} gl={{ antialias: true, alpha: true }} style={{ pointerEvents: "none" }}>
         <CompassInner scrollRef={scrollRef} tumble={tumble} />
       </Canvas>
     </CompassBoundary>
