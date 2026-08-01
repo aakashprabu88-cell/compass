@@ -1,5 +1,5 @@
-﻿import HeroStory from "@/components/HeroStory";
+﻿import CompassHero from "@/components/CompassHero";
 
 export default function HomePage() {
-  return <HeroStory />;
+  return <CompassHero />;
 }
