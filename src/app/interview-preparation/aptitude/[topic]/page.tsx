@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, BookOpen, Lightbulb, AlertTriangle, HelpCircle, ChevronRight, CheckCircle2, Video, Zap } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 import { APTITUDE_CONTENT, GENERIC_APTITUDE_THEORY } from "@/lib/aptitude-content";
 
 const TOPIC_META: Record<string, { title: string; topics: string[] }> = {
@@ -190,7 +191,7 @@ export default function TopicPage() {
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6" data-tour="prep-topic-header">
             <Link href="/interview-preparation/aptitude" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-white transition-colors mb-3">
               <ArrowLeft className="w-3.5 h-3.5" /> Back to Aptitude
             </Link>
@@ -206,7 +207,7 @@ export default function TopicPage() {
           </motion.div>
 
           {/* Section Tabs */}
-          <div className="flex gap-1.5 mb-6 overflow-x-auto pb-2">
+          <div className="flex gap-1.5 mb-6 overflow-x-auto pb-2" data-tour="prep-topic-tabs">
             {sections.map(s => (
               <button key={s.id} onClick={() => setOpenSection(s.id)}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
@@ -221,7 +222,7 @@ export default function TopicPage() {
           {/* Theory Section */}
           {openSection === "theory" && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="p-6 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
+              <div className="p-6 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }} data-tour="prep-topic-content">
                 <h2 className="font-semibold mb-4">{meta.title} — Theory & Concepts</h2>
                 <div className="space-y-5 text-sm text-slate-300 leading-relaxed">
                   {content.theory.map((sec, i) => (
@@ -368,6 +369,15 @@ export default function TopicPage() {
             </motion.div>
           )}
         </div>
+
+        <PageTour
+          id="prep-topic"
+          steps={[
+            { target: "[data-tour='prep-topic-header']", title: "Topic deep dive", body: "Full theory, formulas and practice for this aptitude topic." },
+            { target: "[data-tour='prep-topic-tabs']", title: "Five sections", body: "Theory, formula sheet, practice, tips and video tutorials." },
+            { target: "[data-tour='prep-topic-content']", title: "Learn by example", body: "Every concept comes with worked examples and drills." },
+          ]}
+        />
       </main>
     </div>
   );

@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Play, RefreshCw, AlertTriangle, CheckCircle2, Clock, Code2, Lightbulb, ChevronRight, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 const PROBLEMS = [
   { id: "two-sum", title: "Two Sum", difficulty: "Easy", desc: "Find two numbers that add up to target." },
@@ -75,7 +76,7 @@ export default function CodingPlaygroundPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Interview Prep
           </Link>
 
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-6" data-tour="prep-coding-header">
             <div>
               <h1 className="text-2xl font-bold mb-1">AI Coding Playground</h1>
               <p className="text-slate-400 text-sm">Write, run, and get AI feedback on your code</p>
@@ -89,7 +90,7 @@ export default function CodingPlaygroundPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             {/* Problem List */}
-            <div className="space-y-2">
+            <div className="space-y-2" data-tour="prep-coding-problems">
               <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-3">Problems</h3>
               {PROBLEMS.map(p => (
                 <button key={p.id} onClick={() => { setSelectedProblem(p); setOutput([]); }}
@@ -105,7 +106,7 @@ export default function CodingPlaygroundPage() {
             </div>
 
             {/* Code Editor */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2" data-tour="prep-coding-editor">
               <div className="rounded-xl border border-white/5 overflow-hidden" style={{ background: "rgba(17,17,24,0.5)" }}>
                 <div className="flex items-center justify-between px-4 py-2 border-b border-white/5">
                   <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -129,7 +130,7 @@ export default function CodingPlaygroundPage() {
             </div>
 
             {/* Output */}
-            <div>
+            <div data-tour="prep-coding-output">
               <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-3">Output</h3>
               <div className="rounded-xl border border-white/5 p-4" style={{ background: "rgba(17,17,24,0.5)", minHeight: "200px" }}>
                 {output.length > 0 ? (
@@ -145,6 +146,16 @@ export default function CodingPlaygroundPage() {
             </div>
           </div>
         </div>
+
+        <PageTour
+          id="prep-coding"
+          steps={[
+            { target: "[data-tour='prep-coding-header']", title: "AI Coding Playground", body: "Practice DSA problems in your browser — run code instantly." },
+            { target: "[data-tour='prep-coding-problems']", title: "Pick a problem", body: "Filtered by difficulty and pattern, with example inputs." },
+            { target: "[data-tour='prep-coding-editor']", title: "Write code", body: "Type your solution and run it in the built-in executor." },
+            { target: "[data-tour='prep-coding-output']", title: "See results", body: "Output, runtime and test results right below." },
+          ]}
+        />
       </main>
     </div>
   );

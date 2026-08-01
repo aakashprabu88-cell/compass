@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Compass, ArrowRight, Brain, Shield, Mic, Briefcase, Loader2, Zap, TrendingUp, Globe, LogIn, UserPlus } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
+import PageTour from "@/components/PageTour";
 
 const FEATURES = [
   { icon: Brain, titleKey: "landing.feature1Title", descKey: "landing.feature1Desc", color: "rgba(99,102,241,0.15)" },
@@ -84,7 +85,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-16 px-6 relative">
+      <section data-tour="landing-hero" className="pt-32 pb-16 px-6 relative">
         <div className="absolute top-10 left-1/4 w-[500px] h-[500px] rounded-full opacity-15 animate-pulse" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.4), transparent 70%)", animationDuration: "4s" }} />
         <div className="absolute top-40 right-1/4 w-[400px] h-[400px] rounded-full opacity-10 animate-pulse" style={{ background: "radial-gradient(circle, rgba(168,85,247,0.4), transparent 70%)", animationDuration: "6s" }} />
 
@@ -136,7 +137,7 @@ export default function LandingPage() {
       </section>
 
       {/* Crisis Section */}
-      <section className="py-20 px-6">
+      <section data-tour="landing-impact" className="py-20 px-6">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-3">{getVal("landing.impactTitle")}</h2>
@@ -157,7 +158,7 @@ export default function LandingPage() {
       </section>
 
       {/* Why Compass */}
-      <section className="py-20 px-6">
+      <section data-tour="landing-features" className="py-20 px-6">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-3">{getVal("landing.whyTitle")}</h2>
@@ -180,7 +181,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-6">
+      <section data-tour="landing-cta" className="py-20 px-6">
         <div className="max-w-2xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="p-10 rounded-2xl border border-indigo-500/20 relative overflow-hidden" style={{ background: "rgba(99,102,241,0.05)" }}>
@@ -208,6 +209,13 @@ export default function LandingPage() {
           <div>{getVal("landing.footer")}</div>
         </div>
       </footer>
+
+      <PageTour id="landing" steps={[
+        { target: "[data-tour='landing-hero']", title: "The problem is real", body: "India's hiring crisis in numbers — Compass was built to fix it." },
+        { target: "[data-tour='landing-impact']", title: "Why it matters", body: "Millions of students struggle to match skills to careers. See the gap firsthand." },
+        { target: "[data-tour='landing-features']", title: "How Compass helps", body: "AI assessments, internships, interviews, resume and outreach — one career OS." },
+        { target: "[data-tour='landing-cta']", title: "Start free", body: "Launch the demo to experience the full platform instantly." },
+      ]} />
     </div>
   );
 }

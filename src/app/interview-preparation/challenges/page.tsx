@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Trophy, Flame, Calendar, CheckCircle2, Clock, Zap, Users, Star, ChevronRight, Gift, Target, Layers } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 const DAILY_CHALLENGES = [
   { day: "Mon", title: "Array Manipulation", difficulty: "Medium", points: 50, completed: true },
@@ -70,7 +71,7 @@ export default function ChallengesPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Interview Prep
           </Link>
 
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6" data-tour="prep-challenges-header">
             <div className="flex items-center gap-3 mb-1">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center">
                 <Trophy className="w-5 h-5 text-white" />
@@ -83,7 +84,7 @@ export default function ChallengesPage() {
           </motion.div>
 
           {/* Badges */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-3 gap-3 mb-6" data-tour="prep-challenges-badges">
             {BADGES.map((badge, i) => (
               <motion.div key={badge.name} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
                 className="p-3 rounded-xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
@@ -115,7 +116,7 @@ export default function ChallengesPage() {
           </motion.div>
 
           {/* Weekly & Company Challenges in grid */}
-          <div className="grid lg:grid-cols-2 gap-4">
+          <div className="grid lg:grid-cols-2 gap-4" data-tour="prep-challenges-cards">
             {/* Weekly Challenges */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.07 }}
               className="p-4 rounded-xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
@@ -158,6 +159,15 @@ export default function ChallengesPage() {
             </motion.div>
           </div>
         </div>
+
+        <PageTour
+          id="prep-challenges"
+          steps={[
+            { target: "[data-tour='prep-challenges-header']", title: "Coding Challenges", body: "Structured competitions to push your problem-solving skill." },
+            { target: "[data-tour='prep-challenges-badges']", title: "Your stats", body: "Streaks, stars and challenge wins at a glance." },
+            { target: "[data-tour='prep-challenges-cards']", title: "Weekly battles", body: "New challenges every week plus company-specific sets." },
+          ]}
+        />
       </main>
     </div>
   );

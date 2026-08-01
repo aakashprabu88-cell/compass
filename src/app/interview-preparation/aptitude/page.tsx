@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Calculator, TrendingUp, Percent, DollarSign, Clock, GitBranch, Dice1 as Dice, BookOpen, Target, Award, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 const TOPICS = [
   { id: "arithmetic", icon: Calculator, title: "Arithmetic", desc: "Basic arithmetic operations, fractions, decimals, and simplification techniques.", color: "rgba(99,102,241,0.15)" },
@@ -51,7 +52,7 @@ export default function AptitudePage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Interview Prep
           </Link>
 
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-8" data-tour="prep-aptitude-header">
             <div>
               <h1 className="text-2xl font-bold mb-1">Aptitude Preparation</h1>
               <p className="text-slate-400 text-sm">Master quantitative aptitude with theory, formulas, and practice questions</p>
@@ -59,7 +60,7 @@ export default function AptitudePage() {
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8" data-tour="prep-aptitude-stats">
             {QUICK_STATS.map((stat, i) => (
               <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center">
@@ -70,7 +71,7 @@ export default function AptitudePage() {
           </div>
 
           {/* Topics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-tour="prep-aptitude-grid">
             {TOPICS.map((topic, i) => (
               <motion.div key={topic.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
                 <Link href={`/interview-preparation/aptitude/${topic.id}`}
@@ -90,6 +91,11 @@ export default function AptitudePage() {
             ))}
           </div>
         </div>
+        <PageTour id="prep-aptitude" steps={[
+          { target: "[data-tour='prep-aptitude-header']", title: "Aptitude Preparation", body: "Daily quizzes, weekly tests and topic-wise practice for placement aptitude." },
+          { target: "[data-tour='prep-aptitude-stats']", title: "Track progress", body: "Your streak, tests taken and best scores, all in one place." },
+          { target: "[data-tour='prep-aptitude-grid']", title: "Learn by topic", body: "Pick a topic — each one opens theory, formulas, practice and tips." }
+        ]} />
       </main>
     </div>
   );

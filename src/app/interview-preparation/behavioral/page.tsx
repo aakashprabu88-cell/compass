@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Users, Star, Lightbulb, Target, Award, ChevronRight, BookOpen, CheckCircle2, Shuffle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 const QUESTIONS = [
   { id: "star", q: "Describe a situation using the STAR method where you solved a difficult problem.", category: "STAR Method", tip: "Structure: Situation, Task, Action, Result" },
@@ -74,7 +75,7 @@ export default function BehavioralPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Interview Prep
           </Link>
 
-          <div className="flex items-center justify-between mb-4">
+          <div data-tour="prep-behavioral-header" className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold">Behavioral Interview Practice</h1>
             <button onClick={newSet} className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
               <Shuffle className="w-3 h-3" /> Shuffle Questions
@@ -84,7 +85,7 @@ export default function BehavioralPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Questions */}
-            <div className="space-y-3">
+            <div data-tour="prep-behavioral-questions" className="space-y-3">
               {sessionQuestions.map((q, i) => (
                 <motion.button
                   key={q.id}
@@ -105,7 +106,7 @@ export default function BehavioralPage() {
             </div>
 
             {/* Practice Area */}
-            <div>
+            <div data-tour="prep-behavioral-practice">
               {selectedQ !== null ? (
                 <motion.div key={selectedQ} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                   className="rounded-xl border border-white/5 p-6" style={{ background: "rgba(17,17,24,0.5)" }}>
@@ -145,6 +146,15 @@ export default function BehavioralPage() {
             </div>
           </div>
         </div>
+
+        <PageTour
+          id="prep-behavioral"
+          steps={[
+            { target: "[data-tour='prep-behavioral-header']", title: "Behavioral Practice", body: "STAR-method questions real interviewers ask — shuffle for a fresh set." },
+            { target: "[data-tour='prep-behavioral-questions']", title: "Pick a question", body: "Choose any question to practice your answer." },
+            { target: "[data-tour='prep-behavioral-practice']", title: "Write & get feedback", body: "Draft your response and get instant AI feedback on structure and impact." },
+          ]}
+        />
       </main>
     </div>
   );

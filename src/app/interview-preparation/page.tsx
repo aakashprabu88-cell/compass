@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 const MODULES = [
   { id: "aptitude", href: "/interview-preparation/aptitude", icon: Brain, title: "Aptitude Preparation", desc: "Quantitative aptitude, arithmetic, algebra, geometry, and more with theory, formulas, and practice.", color: "rgba(99,102,241,0.15)" },
@@ -46,13 +47,13 @@ export default function InterviewPreparationPage() {
       <Sidebar user={user} onLogout={logout} />
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} data-tour="prep-hub-header">
             <h1 className="text-2xl font-bold mb-1">Interview Preparation</h1>
             <p className="text-slate-400 text-sm mb-8">Everything you need to crack your next interview</p>
           </motion.div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8" data-tour="prep-hub-stats">
             {QUICK_STATS.map((stat, i) => (
               <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center">
@@ -63,7 +64,7 @@ export default function InterviewPreparationPage() {
           </div>
 
           {/* Modules Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-tour="prep-hub-modules">
             {MODULES.map((mod, i) => (
               <motion.div key={mod.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
                 <Link href={mod.href}
@@ -84,6 +85,11 @@ export default function InterviewPreparationPage() {
             ))}
           </div>
         </div>
+        <PageTour id="prep-hub" steps={[
+          { target: "[data-tour='prep-hub-header']", title: "Interview Preparation", body: "One command center for every interview format — technical, HR, behavioral and more." },
+          { target: "[data-tour='prep-hub-stats']", title: "Your readiness", body: "Quick stats on questions practiced, tests taken and skills covered." },
+          { target: "[data-tour='prep-hub-modules']", title: "Pick a mode", body: "Choose a module: technical, HR, behavioral, coding, mock interviews and more." }
+        ]} />
       </main>
     </div>
   );

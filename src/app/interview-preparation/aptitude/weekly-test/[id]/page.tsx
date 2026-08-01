@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Clock, Award, CheckCircle2, XCircle, AlertTriangle, Loader2, ChevronRight, BarChart3 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 const TESTS = [
   { id: 1, week: "Week 1", topic: "Percentage, Profit & Loss, Ratio", questionCount: 15, topicIds: ["percentage", "profit-loss", "ratio"] },
@@ -165,7 +166,7 @@ export default function WeeklyTestDetailPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Weekly Tests
           </Link>
 
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <motion.div data-tour="prep-test-header" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
                 <Award className="w-5 h-5 text-white" />
@@ -201,7 +202,7 @@ export default function WeeklyTestDetailPage() {
             </motion.div>
           )}
 
-          <div className="space-y-4">
+          <div data-tour="prep-test-questions" className="space-y-4">
             {questions.map((q, i) => {
               const selected = answers[q.id];
               const isCorrect = selected === q.correct;
@@ -250,7 +251,7 @@ export default function WeeklyTestDetailPage() {
             })}
           </div>
 
-          <div className="flex items-center justify-between mt-6 mb-12">
+          <div data-tour="prep-test-footer" className="flex items-center justify-between mt-6 mb-12">
             <Link href="/interview-preparation/aptitude/weekly-test"
               className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-white transition-all">
               <ArrowLeft className="w-4 h-4" /> Back to Tests
@@ -268,6 +269,15 @@ export default function WeeklyTestDetailPage() {
             )}
           </div>
         </div>
+
+        <PageTour
+          id="prep-test"
+          steps={[
+            { target: "[data-tour='prep-test-header']", title: "Weekly test", body: "A full-length timed test to benchmark your aptitude." },
+            { target: "[data-tour='prep-test-questions']", title: "Answer carefully", body: "All questions are shuffled — no skipping the hard ones." },
+            { target: "[data-tour='prep-test-footer']", title: "Submit your test", body: "Get an instant score and per-topic breakdown." },
+          ]}
+        />
       </main>
     </div>
   );

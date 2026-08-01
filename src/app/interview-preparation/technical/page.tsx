@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Code2, Monitor, Server, Database, Cpu, Shield, Cloud, Palette, BarChart3, Smartphone, Gamepad2, Braces, GitBranch, Layout, Globe, ChevronRight, Laptop, Terminal } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 const ROLES = [
   { id: "frontend", icon: Monitor, title: "Frontend Developer", desc: "React, Next.js, HTML/CSS, JavaScript, TypeScript, UI/UX principles.", color: "rgba(99,102,241,0.15)" },
@@ -68,7 +69,7 @@ export default function TechnicalPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Interview Prep
           </Link>
 
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6" data-tour="prep-technical-header">
             <div className="flex items-center gap-3 mb-1">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
                 <Code2 className="w-5 h-5 text-white" />
@@ -82,7 +83,7 @@ export default function TechnicalPage() {
 
           {/* Core CS Topics */}
           <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Core Computer Science</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8" data-tour="prep-technical-core">
             {CORE_TOPICS.map((topic, i) => {
               const topicLink
                 = topic.id === "dsa" ? "/interview-preparation/aptitude/number-system"
@@ -117,7 +118,7 @@ export default function TechnicalPage() {
 
           {/* Roles */}
           <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Select Your Role</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3" data-tour="prep-technical-roles">
             {ROLES.map((role, i) => {
               const roleLink
                 = role.id === "frontend" ? "/interview-preparation/company/google"
@@ -156,6 +157,11 @@ export default function TechnicalPage() {
             })}
           </div>
         </div>
+        <PageTour id="prep-technical" steps={[
+          { target: "[data-tour='prep-technical-header']", title: "Technical Interview", body: "Core computer science foundations plus role-specific interview prep." },
+          { target: "[data-tour='prep-technical-core']", title: "Core topics", body: "Data structures, OS, DBMS, networking and more." },
+          { target: "[data-tour='prep-technical-roles']", title: "Your role", body: "Pick your target role for questions tuned to that position." }
+        ]} />
       </main>
     </div>
   );

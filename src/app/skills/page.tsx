@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SKILL_RESOURCES } from "@/data/skill-resources";
+import PageTour from "@/components/PageTour";
 
 interface SkillGap { id: string; skillName: string; currentLevel: number; requiredLevel: number; gap: number; priority: string; }
 
@@ -46,11 +47,13 @@ export default function SkillsPage() {
 
         <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-2xl font-bold mb-1">Skill Gap Analysis</h1>
-            <p className="text-slate-400 text-sm mb-8">AI-identified gaps between your current skills and career requirements</p>
+            <div data-tour="skills-header">
+              <h1 className="text-2xl font-bold mb-1">Skill Gap Analysis</h1>
+              <p className="text-slate-400 text-sm mb-8">AI-identified gaps between your current skills and career requirements</p>
+            </div>
 
             {/* Summary */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
+            <div data-tour="skills-summary" className="grid grid-cols-3 gap-4 mb-8">
               {[
                 { label: "High Priority", count: highGaps.length, colorClass: "text-red-400", desc: "Critical skills to build now" },
                 { label: "Medium Priority", count: medGaps.length, colorClass: "text-yellow-400", desc: "Important for advancement" },
@@ -72,7 +75,7 @@ export default function SkillsPage() {
                 <p className="text-sm text-slate-500">Complete your assessment to see skill gaps</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div data-tour="skills-list" className="space-y-4">
                 {gaps.map(gap => {
                   const resources = SKILL_RESOURCES[gap.skillName] || SKILL_RESOURCES.default;
                   return (
@@ -127,6 +130,11 @@ export default function SkillsPage() {
               </div>
             )}
           </div>
+        <PageTour id="skills" steps={[
+          { target: "[data-tour='skills-header']", title: "Skill Gap Analysis", body: "See exactly which skills you're missing for your target roles." },
+          { target: "[data-tour='skills-summary']", title: "Priority summary", body: "High, medium and low priority gaps — focus where it matters most." },
+          { target: "[data-tour='skills-list']", title: "Close your gaps", body: "Each gap links to free and paid resources so you can level up fast." },
+        ]}/>
         </main>
       </div>
     </ErrorBoundary>

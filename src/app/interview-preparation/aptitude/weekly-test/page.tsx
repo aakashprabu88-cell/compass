@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Award, Clock, BarChart3, CheckCircle2, AlertTriangle, ChevronRight } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 const MOCK_TESTS = [
   { id: 1, week: "Week 1", topic: "Percentage, Profit & Loss, Ratio", questions: 15, completed: true, score: "80%", date: "24 Jul" },
@@ -49,7 +50,7 @@ export default function WeeklyTestPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Aptitude
           </Link>
 
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <motion.div data-tour="prep-weekly-header" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
             <div className="flex items-center gap-3 mb-1">
               <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
                 <Award className="w-5 h-5 text-indigo-400" />
@@ -61,7 +62,7 @@ export default function WeeklyTestPage() {
             </div>
           </motion.div>
 
-          <div className="space-y-3">
+          <div data-tour="prep-weekly-list" className="space-y-3">
             {MOCK_TESTS.map((test, i) => (
               <motion.div key={test.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                 <div className={`p-5 rounded-2xl border transition-all ${test.completed ? "border-green-500/20" : "border-white/5 hover:border-white/10"}`}
@@ -90,6 +91,14 @@ export default function WeeklyTestPage() {
             ))}
           </div>
         </div>
+
+        <PageTour
+          id="prep-weekly"
+          steps={[
+            { target: "[data-tour='prep-weekly-header']", title: "Weekly Tests", body: "Five full-length tests to track your aptitude growth." },
+            { target: "[data-tour='prep-weekly-list']", title: "Start a test", body: "Each test mirrors real placement papers — start anytime." },
+          ]}
+        />
       </main>
     </div>
   );

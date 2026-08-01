@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Sparkles, Briefcase, Target, TrendingUp, AlertTriangle, ExternalLink, MapPin, Clock, DollarSign, CheckCircle, ArrowRight, Loader2, Compass, ChevronRight, GraduationCap, Zap, Users, Brain, ListChecks, Award } from "lucide-react";
+import PageTour from "@/components/PageTour";
 
 interface Job {
   id: string; title: string; company: string; location: string; city: string;
@@ -117,7 +118,7 @@ export default function AssessmentResultsPage() {
     <div className="min-h-screen bg-[#0a0a12] overflow-y-auto">
       <div className="max-w-5xl mx-auto p-4 lg:p-8">
         {/* Success Banner */}
-        <div className="p-6 mb-8 rounded-2xl border border-emerald-500/20 relative overflow-hidden" style={{ background: "rgba(16,185,129,0.05)" }}>
+        <div data-tour="results-banner" className="p-6 mb-8 rounded-2xl border border-emerald-500/20 relative overflow-hidden" style={{ background: "rgba(16,185,129,0.05)" }}>
           <div className="absolute top-0 right-0 w-64 h-64 opacity-[0.03]" style={{ background: "radial-gradient(circle, #10b981, transparent 70%)" }} />
           <div className="flex items-start gap-4 relative">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
@@ -137,7 +138,7 @@ export default function AssessmentResultsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+        <div data-tour="results-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
           {[
             { label: "Top Match", value: topPath?.careerPath?.title?.split(" ").slice(0, 3).join(" ") || "—", icon: Target, color: "text-indigo-400" },
             { label: "Avg Match Score", value: `${avgMatch}%`, icon: TrendingUp, color: "text-emerald-400" },
@@ -155,7 +156,7 @@ export default function AssessmentResultsPage() {
         </div>
 
         {/* Deep Personalized Analysis */}
-        <div className="mb-8 rounded-2xl border border-indigo-500/20 overflow-hidden" style={{ background: "rgba(15,15,30,0.6)" }}>
+        <div data-tour="results-analysis" className="mb-8 rounded-2xl border border-indigo-500/20 overflow-hidden" style={{ background: "rgba(15,15,30,0.6)" }}>
           <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5 bg-white/[0.02]">
             <Brain className="w-4 h-4 text-indigo-400" />
             <h2 className="text-sm font-semibold text-white">Your Personalized Analysis</h2>
@@ -431,7 +432,7 @@ export default function AssessmentResultsPage() {
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8 pt-6 border-t border-white/5">
+        <div data-tour="results-actions" className="flex flex-col sm:flex-row gap-3 justify-center mt-8 pt-6 border-t border-white/5">
           <Link href="/dashboard"
             className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-indigo-500/20 text-white">
             Go to Dashboard <ArrowRight className="w-4 h-4" />
@@ -446,6 +447,13 @@ export default function AssessmentResultsPage() {
           </Link>
         </div>
       </div>
+
+      <PageTour id="assessment-results" steps={[
+        { target: "[data-tour='results-banner']", title: "Profile complete", body: "Your AI profile is ready — built from your skills, interests and experience." },
+        { target: "[data-tour='results-stats']", title: "Your match stats", body: "Top career match, average match, jobs found and skill gaps at a glance." },
+        { target: "[data-tour='results-analysis']", title: "Deep personal analysis", body: "A full AI breakdown: strengths, recommended paths, gaps, jobs and an action plan." },
+        { target: "[data-tour='results-actions']", title: "Next steps", body: "Jump to your dashboard, browse matched jobs, or start interview prep." },
+      ]}/>
 
       <style jsx>{`
         @keyframes slideUp {

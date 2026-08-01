@@ -6,6 +6,7 @@ import { GraduationCap, ExternalLink, Star, CheckCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import PageTour from "@/components/PageTour";
 
 interface Course {
   id: string; title: string; provider: string; url: string; category: string;
@@ -49,11 +50,13 @@ export default function CoursesPage() {
 
         <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-5xl mx-auto">
-            <h1 className="text-2xl font-bold mb-1">Free Courses for You</h1>
-            <p className="text-slate-400 text-sm mb-6">AI-recommended courses based on your skill gaps and career goals</p>
+            <div data-tour="courses-header">
+              <h1 className="text-2xl font-bold mb-1">Free Courses for You</h1>
+              <p className="text-slate-400 text-sm mb-6">AI-recommended courses based on your skill gaps and career goals</p>
+            </div>
 
             {/* Category Filter */}
-            <div className="flex gap-2 mb-6 flex-wrap">
+            <div data-tour="courses-filter" className="flex gap-2 mb-6 flex-wrap">
               {categories.map(cat => (
                 <button key={cat} onClick={() => setFilter(cat)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filter === cat ? "bg-indigo-500 text-white" : "bg-white/5 text-slate-400 hover:bg-white/10"}`}>
@@ -69,7 +72,7 @@ export default function CoursesPage() {
                 <p className="text-sm text-slate-500">Complete your assessment to get personalized recommendations</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div data-tour="courses-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filtered.map(course => (
                   <div key={course.id} className="rounded-xl border border-white/5 p-5 hover:border-white/10 transition-all flex flex-col" style={{ background: "rgba(17,17,24,0.5)" }}>
                     <div className="flex items-start justify-between mb-3">
@@ -102,6 +105,12 @@ export default function CoursesPage() {
               </div>
             )}
           </div>
+
+          <PageTour id="courses" steps={[
+            { target: "[data-tour='courses-header']", title: "Free courses", body: "Curated free courses matched to your skill gaps and career path." },
+            { target: "[data-tour='courses-filter']", title: "Filter by category", body: "Zero in on programming, design, business and more." },
+            { target: "[data-tour='courses-grid']", title: "Start learning", body: "Every course is free and vetted — open it and start learning today." },
+          ]} />
         </main>
       </div>
     </ErrorBoundary>

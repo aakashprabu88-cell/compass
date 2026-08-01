@@ -7,13 +7,13 @@ import {
   History, ShieldCheck, PenLine, MapPin, Wand2, Download, FileText, FileCode,
   RotateCcw, Bold, Italic, Underline, List, Link as LinkIcon, Undo2, Redo2, Eye, Gauge, Lightbulb,
   ChevronDown, ChevronRight, X, Settings2, TrendingUp, Save, Target, Users,
-  Clock, Bot, Check, RefreshCw, Globe, BrainCircuit, Play, Sparkle
+  Clock, Bot, Check, RefreshCw, Globe, BrainCircuit
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { toast } from "@/components/Toast";
-import Tour from "@/components/Tour";
+import PageTour from "@/components/PageTour";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -212,7 +212,6 @@ export default function EmailCampaignPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [versions, setVersions] = useState<{ label: string; subject: string; html: string; ts: number }[]>([]);
   const [versionsOpen, setVersionsOpen] = useState(false);
-  const [tourOpen, setTourOpen] = useState(false);
   const [culture, setCulture] = useState<{ values: string[]; focus: string; isStartup: boolean } | null>(null);
 
   const autoScored = useRef<Set<string>>(new Set());
@@ -308,17 +307,6 @@ export default function EmailCampaignPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.company, activeStyle]);
-
-  // Auto-open the demo tour on first visit
-  useEffect(() => {
-    if (authLoading || loading) return;
-    try {
-      if (!localStorage.getItem("compass_tour_email")) {
-        const t = setTimeout(() => { setTourOpen(true); localStorage.setItem("compass_tour_email", "1"); }, 1200);
-        return () => clearTimeout(t);
-      }
-    } catch {}
-  }, [authLoading, loading]);
 
   // Auto-load subjects for active company
   useEffect(() => {
@@ -1119,19 +1107,10 @@ export default function EmailCampaignPage() {
           {profileOpen && <ProfileModal details={details} onClose={() => setProfileOpen(false)} onSave={saveProfile} />}
         </AnimatePresence>
 
-        {/* ── Floating demo tour button ── */}
-        <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 1.6 }}
-          onClick={() => setTourOpen(true)}
-          className="fixed bottom-5 right-5 z-[90] flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-xs font-semibold text-white shadow-xl shadow-indigo-500/30 hover:from-indigo-400 hover:to-purple-400 transition-all hover:-translate-y-0.5"
-          title="Start the demo tour">
-          <Play className="w-3.5 h-3.5" /> Demo tour
-        </motion.button>
-
         {/* ── Guided demo tour ── */}
-        <Tour
+        <PageTour
+          id="email"
           accent="indigo"
-          open={tourOpen}
-          onClose={() => setTourOpen(false)}
           steps={[
             { target: "[data-tour='rail']", title: "Real companies, right now", body: "Hundreds of live, skill-matched companies across India. Filter by Tamil Nadu or search — pick one to start drafting." },
             { target: "[data-tour='styles']", title: "Five AI versions", body: "The AI writes Formal, Friendly, Technical, Startup and Executive versions of the same email. Switch instantly — tone adapts to you." },

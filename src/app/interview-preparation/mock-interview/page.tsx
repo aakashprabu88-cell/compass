@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Mic, Users, MessageSquare, Monitor, Camera, BarChart3, Play, Clock, Award, ChevronRight, Loader2, CheckCircle2, XCircle, Lightbulb, Sparkles, RotateCcw } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 import { useAuth } from "@/hooks/useAuth";
 
 const INTERVIEW_TYPES = [
@@ -157,7 +158,7 @@ export default function MockInterviewPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Interview Prep
           </Link>
 
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6" data-tour="prep-mock-header">
             <div className="flex items-center gap-3 mb-1">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center">
                 <Mic className="w-5 h-5 text-white" />
@@ -177,7 +178,7 @@ export default function MockInterviewPage() {
           )}
 
           {stage === "select" && (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3" data-tour="prep-mock-select">
               {INTERVIEW_TYPES.map((type, i) => (
                 <motion.div key={type.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
                   <button onClick={() => startInterview(type.id)}
@@ -212,7 +213,7 @@ export default function MockInterviewPage() {
 
           {stage === "interview" && session && current && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="p-6 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
+              <div className="p-6 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }} data-tour="prep-mock-stage">
                 {/* Interview Header */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
@@ -402,6 +403,15 @@ export default function MockInterviewPage() {
             </motion.div>
           )}
         </div>
+
+        <PageTour
+          id="prep-mock"
+          steps={[
+            { target: "[data-tour='prep-mock-header']", title: "AI Mock Interview", body: "A realistic AI interviewer that adapts to your role and experience." },
+            { target: "[data-tour='prep-mock-select']", title: "Choose your format", body: "Behavioral, technical, HR, aptitude and more — pick your arena." },
+            { target: "[data-tour='prep-mock-stage']", title: "Answer & improve", body: "The AI questions you, gives tips, and grades every response." },
+          ]}
+        />
       </main>
     </div>
   );

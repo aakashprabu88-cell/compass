@@ -5,13 +5,13 @@ import Link from "next/link";
 import {
   Sparkles, ChevronRight, Target, FileText, UsersRound, Mail, Zap, TrendingUp,
   AlertTriangle, BrainCircuit, Rocket, GraduationCap, Send, CheckCircle2, Clock,
-  Activity, Layers, BarChart3, ListChecks, Flame, Award, Play
+  Activity, Layers, BarChart3, ListChecks, Flame, Award
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/components/LanguageProvider";
-import Tour from "@/components/Tour";
+import PageTour from "@/components/PageTour";
 
 interface PathData { id: string; matchScore: number; careerPath: any; }
 interface SkillGapData { id: string; skillName: string; currentLevel: number; requiredLevel: number; gap: number; priority: string; }
@@ -71,7 +71,6 @@ export default function DashboardPage() {
   const [appCount, setAppCount] = useState(0);
   const [sentCount, setSentCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [tourOpen, setTourOpen] = useState(false);
   const [goals, setGoals] = useState<{ id: number; text: string; done: boolean }[]>([
     { id: 1, text: "Apply to 3 matched internships", done: false },
     { id: 2, text: "Send 1 outreach email", done: false },
@@ -184,9 +183,6 @@ export default function DashboardPage() {
                 <p className="text-sm text-slate-500 mt-1">{greeting} — here&apos;s your career command center.</p>
               </div>
               <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                <button onClick={() => setTourOpen(true)} className="px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold flex items-center gap-1.5 hover:from-indigo-400 hover:to-purple-400 transition-all shadow-lg shadow-indigo-500/25" title="Start the demo tour">
-                  <Play className="w-3 h-3" /> Demo tour
-                </button>
                 <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-1.5"><Flame className="w-3 h-3" /> {applied + sentCount} actions this week</span>
                 <span className="px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/10 hidden sm:flex items-center gap-1.5"><BrainCircuit className="w-3 h-3 text-indigo-400" /> AI Coach active</span>
               </div>
@@ -411,10 +407,9 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Guided demo tour ── */}
-        <Tour
+        <PageTour
+          id="dashboard"
           accent="indigo"
-          open={tourOpen}
-          onClose={() => setTourOpen(false)}
           steps={[
             { target: "[data-tour='kpis']", title: "Your career at a glance", body: "Live AI match scores, priority skill gaps and interview readiness — animated the moment you log in." },
             { target: "[data-tour='insights']", title: "AI Career Insights", body: "Every assessment feeds a personal AI coach. Review your top paths, skill gaps and hiring strategy — or ask the coach directly." },

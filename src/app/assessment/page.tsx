@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, ChevronRight, Sparkles, Briefcase, GraduationCap, Code2, Heart, User, Zap, Loader2, Compass } from "lucide-react";
+import PageTour from "@/components/PageTour";
 
 const SKILL_CATEGORIES: { label: string; skills: string[] }[] = [
   {
@@ -184,7 +185,7 @@ export default function AssessmentPage() {
           </div>
         )}
 
-        <div className="mb-8 text-center" style={{ animation: "slideUp 0.5s ease-out both" }}>
+        <div data-tour="assessment-hero" className="mb-8 text-center" style={{ animation: "slideUp 0.5s ease-out both" }}>
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mx-auto mb-3 shadow-lg shadow-indigo-500/20">
             <Sparkles className="w-7 h-7 text-white" />
           </div>
@@ -203,7 +204,7 @@ export default function AssessmentPage() {
           ))}
         </div>
 
-        <div key={step} style={{ animation: "slideIn 0.35s ease-out both" }}>
+        <div data-tour="assessment-step" key={step} style={{ animation: "slideIn 0.35s ease-out both" }}>
           {step === 1 && (
             <div className="p-6 rounded-2xl border border-white/[0.06]" style={{ background: "rgba(17,17,24,0.6)" }}>
               <div className="flex items-center gap-2 mb-1">
@@ -346,7 +347,7 @@ export default function AssessmentPage() {
           )}
         </div>
 
-        <div className="flex items-center justify-between mt-6">
+        <div data-tour="assessment-nav" className="flex items-center justify-between mt-6">
           <button onClick={() => step > 1 ? setStep(step - 1) : router.push("/")}
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm text-slate-500 hover:text-slate-300 transition-all">
             <ArrowLeft className="w-4 h-4" /> {step === 1 ? "Back to Home" : "Previous"}
@@ -366,6 +367,12 @@ export default function AssessmentPage() {
           )}
         </div>
       </div>
+
+      <PageTour id="assessment" steps={[
+        { target: "[data-tour='assessment-hero']", title: "3 steps to your profile", body: "Compass builds your career profile from skills, interests and experience." },
+        { target: "[data-tour='assessment-step']", title: "Pick your skills", body: "Select from AI-suggested categories or add your own — every choice sharpens your match." },
+        { target: "[data-tour='assessment-nav']", title: "Review & complete", body: "Step through Back / Next and finish to unlock your AI career analysis." },
+      ]}/>
 
       <style jsx>{`
         @keyframes slideUp {

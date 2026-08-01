@@ -8,6 +8,7 @@ import { formatSalary, getRiskBg, getGrowthBg } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import PageTour from "@/components/PageTour";
 
 interface PathData { id: string; matchScore: number; skillMatch: number; interestMatch: number; aiSafetyScore: number; rank: number; careerPath: any; }
 
@@ -44,12 +45,14 @@ export default function PathsPage() {
 
         <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-2xl font-bold mb-1">AI Career Paths</h1>
-            <p className="text-slate-400 text-sm mb-8">Ranked by compatibility with your skills, interests, and AI safety</p>
+            <div data-tour="paths-header">
+              <h1 className="text-2xl font-bold mb-1">AI Career Paths</h1>
+              <p className="text-slate-400 text-sm mb-8">Ranked by compatibility with your skills, interests, and AI safety</p>
+            </div>
 
             <div className="grid grid-cols-3 gap-6">
               {/* List */}
-              <div className="col-span-1 space-y-3">
+              <div data-tour="paths-list" className="col-span-1 space-y-3">
                 {paths.map((p, i) => (
                   <motion.button
                     key={p.id}
@@ -82,7 +85,7 @@ export default function PathsPage() {
               </div>
 
               {/* Detail */}
-              <div className="col-span-2">
+              <div data-tour="paths-detail" className="col-span-2">
                 {selected ? (
                   <motion.div
                     key={selected.id}
@@ -189,6 +192,11 @@ export default function PathsPage() {
               </div>
             </div>
           </div>
+        <PageTour id="paths" steps={[
+          { target: "[data-tour='paths-header']", title: "AI Career Paths", body: "Your top matched career paths, ranked by AI match score." },
+          { target: "[data-tour='paths-list']", title: "Pick a path", body: "Each path shows your match %, growth risk and salary outlook." },
+          { target: "[data-tour='paths-detail']", title: "Deep dive", body: "Required skills, industries, key tasks and future outlook — plan your next move." },
+        ]}/>
         </main>
       </div>
     </ErrorBoundary>

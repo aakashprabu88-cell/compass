@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, BarChart3, Award, Target, ChevronRight, Loader2 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 interface ScoreData {
   scores: { topic: string; score: number }[];
@@ -61,7 +62,7 @@ export default function PerformancePage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Aptitude
           </Link>
 
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <motion.div data-tour="prep-performance-header" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
                 <BarChart3 className="w-5 h-5 text-green-400" />
@@ -73,7 +74,7 @@ export default function PerformancePage() {
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+          <motion.div data-tour="prep-performance-readiness" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
             className="p-6 rounded-2xl border border-white/5 text-center mb-6" style={{ background: "rgba(17,17,24,0.5)" }}>
             <div className="text-4xl font-bold mb-1" style={{ color: overall >= 70 ? "#22c55e" : overall >= 50 ? "#f59e0b" : "#ef4444" }}>
               {overall}%
@@ -82,7 +83,7 @@ export default function PerformancePage() {
           </motion.div>
 
           {scores.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+            <motion.div data-tour="prep-performance-topics" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
               className="p-5 rounded-2xl border border-white/5 mb-6" style={{ background: "rgba(17,17,24,0.5)" }}>
               <h2 className="font-semibold text-sm mb-4">Topic-wise Estimate</h2>
               <div className="space-y-3">
@@ -144,6 +145,15 @@ export default function PerformancePage() {
             </div>
           </motion.div>
         </div>
+
+        <PageTour
+          id="prep-performance"
+          steps={[
+            { target: "[data-tour='prep-performance-header']", title: "Performance Analytics", body: "Your estimated aptitude readiness, updated from every quiz and test." },
+            { target: "[data-tour='prep-performance-readiness']", title: "Readiness score", body: "A single number showing how placement-ready your aptitude is." },
+            { target: "[data-tour='prep-performance-topics']", title: "Topic-wise estimate", body: "See strong areas and focus areas to plan your practice." },
+          ]}
+        />
       </main>
     </div>
   );

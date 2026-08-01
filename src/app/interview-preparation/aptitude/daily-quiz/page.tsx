@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Zap, CheckCircle2, AlertTriangle, Clock, RefreshCw, TrendingUp } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 const QUESTIONS = [
   { q: "What is 15% of 300?", options: ["35", "40", "45", "50"], correct: 2, topic: "Percentage" },
@@ -96,7 +97,7 @@ export default function DailyQuizPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Aptitude
           </Link>
 
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
+          <motion.div data-tour="prep-daily-header" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
                 <Zap className="w-5 h-5 text-amber-400" />
@@ -113,7 +114,7 @@ export default function DailyQuizPage() {
             )}
           </motion.div>
 
-          <div className="space-y-4">
+          <div data-tour="prep-daily-questions" className="space-y-4">
             {quiz.map((q, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
                 className="p-4 rounded-xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
@@ -146,6 +147,7 @@ export default function DailyQuizPage() {
 
           {!submitted ? (
             <motion.button onClick={() => setSubmitted(true)}
+              data-tour="prep-daily-submit"
               className="mt-6 w-full py-3 rounded-xl bg-indigo-500 hover:bg-indigo-400 font-semibold text-sm transition-all">
               Submit Quiz
             </motion.button>
@@ -170,6 +172,15 @@ export default function DailyQuizPage() {
             </motion.div>
           )}
         </div>
+
+        <PageTour
+          id="prep-daily"
+          steps={[
+            { target: "[data-tour='prep-daily-header']", title: "Daily Quiz", body: "Ten fresh aptitude questions every day to build a streak." },
+            { target: "[data-tour='prep-daily-questions']", title: "Answer on the go", body: "Pick an option per question — your score updates live." },
+            { target: "[data-tour='prep-daily-submit']", title: "Submit & review", body: "See your score, review answers, and check your analytics." },
+          ]}
+        />
       </main>
     </div>
   );

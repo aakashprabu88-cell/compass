@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, MessageSquare, HelpCircle, CheckCircle2, AlertCircle, Lightbulb, ChevronRight, Send, Sparkles, RefreshCw } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 const HR_QUESTIONS = [
   { q: "Tell me about yourself.", tip: "Keep it professional — education, experience, skills, career goals. 60 seconds max." },
@@ -97,7 +98,7 @@ export default function HRInterviewPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Interview Prep
           </Link>
 
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <motion.div data-tour="prep-hr-header" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
             <div className="flex items-center gap-3 mb-1">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center">
                 <MessageSquare className="w-5 h-5 text-white" />
@@ -110,7 +111,7 @@ export default function HRInterviewPage() {
           </motion.div>
 
           {/* Red Flags Alert */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+          <motion.div data-tour="prep-hr-flags" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
             className="p-4 rounded-xl border border-rose-500/20 mb-6" style={{ background: "rgba(244,63,94,0.05)" }}>
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="w-4 h-4 text-rose-400" />
@@ -133,7 +134,7 @@ export default function HRInterviewPage() {
             </button>
           </div>
 
-          <div className="space-y-2">
+          <div data-tour="prep-hr-list" className="space-y-2">
             {sessionQuestions.map((q, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}>
                 <button onClick={() => setSelectedQ(selectedQ === i ? null : i)}
@@ -168,6 +169,15 @@ export default function HRInterviewPage() {
             ))}
           </div>
         </div>
+
+        <PageTour
+          id="prep-hr"
+          steps={[
+            { target: "[data-tour='prep-hr-header']", title: "HR Interview", body: "Common HR rounds, from 'Tell me about yourself' to salary negotiation." },
+            { target: "[data-tour='prep-hr-flags']", title: "Avoid the red flags", body: "Things candidates say that cost them the offer — learn to sidestep them." },
+            { target: "[data-tour='prep-hr-list']", title: "Practice each answer", body: "Expand a question, draft your answer, and get AI feedback." },
+          ]}
+        />
       </main>
     </div>
   );

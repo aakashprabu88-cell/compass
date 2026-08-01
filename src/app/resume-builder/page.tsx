@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import { toast } from "@/components/Toast";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import PageTour from "@/components/PageTour";
 
 interface ExperienceItem { company: string; role: string; dates: string; description: string; }
 interface ProjectItem { name: string; tech: string; description: string; }
@@ -305,7 +306,7 @@ export default function ResumeBuilderPage() {
                 </div>
 
                 {/* Contact & Target */}
-                <div className="p-5 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
+                <div className="p-5 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }} data-tour="resume-target">
                   <div className="flex items-center gap-2 mb-4">
                     <Target className="w-4 h-4 text-indigo-400" />
                     <span className="text-sm font-semibold">Target &amp; Contact</span>
@@ -372,7 +373,7 @@ export default function ResumeBuilderPage() {
                 </div>
 
                 {/* Skills */}
-                <div className="p-5 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
+                <div className="p-5 rounded-2xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }} data-tour="resume-skills">
                   <div className="flex items-center gap-2 mb-3">
                     <BadgeCheck className="w-4 h-4 text-indigo-400" />
                     <span className="text-sm font-semibold">Skills</span>
@@ -543,7 +544,7 @@ export default function ResumeBuilderPage() {
                   </div>
                 </div>
 
-                <button onClick={generate} disabled={generating}
+                <button onClick={generate} disabled={generating} data-tour="resume-generate"
                   className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm">
                   {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   {generating ? "Analyzing profile & writing your resume..." : "Generate First-Class Resume"}
@@ -553,7 +554,7 @@ export default function ResumeBuilderPage() {
             ) : (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                 {/* Recruiter analysis */}
-                <div className="p-5 rounded-2xl border border-white/10" style={{ background: "rgba(17,17,24,0.6)" }}>
+                <div className="p-5 rounded-2xl border border-white/10" style={{ background: "rgba(17,17,24,0.6)" }} data-tour="resume-analysis">
                   <div className="flex items-start gap-5 flex-wrap">
                     <ScoreRing score={result.matchScore} />
                     <div className="flex-1 min-w-[240px]">
@@ -623,7 +624,7 @@ export default function ResumeBuilderPage() {
                 )}
 
                 {/* Resume document */}
-                <div className="p-5 rounded-2xl border border-white/10" style={{ background: "rgba(17,17,24,0.6)" }}>
+                <div className="p-5 rounded-2xl border border-white/10" style={{ background: "rgba(17,17,24,0.6)" }} data-tour="resume-doc">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-indigo-400" />
@@ -767,6 +768,13 @@ export default function ResumeBuilderPage() {
           </div>
         </main>
       </div>
+      <PageTour id="resume" steps={[
+        { target: "[data-tour='resume-target']", title: "Target & contact", body: "Enter your target role and contact details — the AI builds your entire resume around it." },
+        { target: "[data-tour='resume-skills']", title: "Skills that matter", body: "Pick the exact skills ATS systems look for; the AI fills in the rest." },
+        { target: "[data-tour='resume-generate']", title: "Generate", body: "One click produces a first-class resume with recruiter-grade analysis." },
+        { target: "[data-tour='resume-analysis']", title: "Recruiter analysis", body: "See your health score, strengths, red flags and missing keywords instantly." },
+        { target: "[data-tour='resume-doc']", title: "Print, PDF, copy", body: "Export the polished document as PDF, print it, or copy the full text." },
+      ]}/>
     </ErrorBoundary>
   );
 }

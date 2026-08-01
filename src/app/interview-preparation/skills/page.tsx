@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Target, Search, ChevronRight, Star, BookOpen, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 const SKILLS = [
   { name: "React", category: "Frontend", level: "Advanced", questions: "500+", projects: "50+" },
@@ -64,11 +65,13 @@ export default function SkillsPracticePage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Interview Prep
           </Link>
 
-          <h1 className="text-2xl font-bold mb-1">Skill-Based Practice</h1>
-          <p className="text-slate-400 text-sm mb-6">Practice by skill — React, Python, Java, SQL, AWS, and 100+ more</p>
+          <div data-tour="prep-skills-header">
+            <h1 className="text-2xl font-bold mb-1">Skill-Based Practice</h1>
+            <p className="text-slate-400 text-sm mb-6">Practice by skill — React, Python, Java, SQL, AWS, and 100+ more</p>
+          </div>
 
           {/* Search */}
-          <div className="relative mb-4">
+          <div className="relative mb-4" data-tour="prep-skills-search">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search skills..."
@@ -89,7 +92,7 @@ export default function SkillsPracticePage() {
           </div>
 
           {/* Skills Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-tour="prep-skills-grid">
             {filtered.map((skill, i) => {
               const skillLink
                 = skill.category === "Database" ? "/interview-preparation/company/oracle"
@@ -126,6 +129,11 @@ export default function SkillsPracticePage() {
             })}
           </div>
         </div>
+        <PageTour id="prep-skills" steps={[
+          { target: "[data-tour='prep-skills-header']", title: "Skill-Based Practice", body: "Interview sets organized by the exact skill you want to master." },
+          { target: "[data-tour='prep-skills-search']", title: "Search & filter", body: "Find any skill fast, or browse by category." },
+          { target: "[data-tour='prep-skills-grid']", title: "Pick a skill", body: "Each skill opens a full practice session." }
+        ]} />
       </main>
     </div>
   );

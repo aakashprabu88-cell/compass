@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { toast } from "@/components/Toast";
+import PageTour from "@/components/PageTour";
 
 interface Internship {
   id: string; title: string; company: string; companyLogo: string;
@@ -202,7 +203,7 @@ export default function InternshipsPage() {
         <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
           <div className="max-w-6xl mx-auto">
             {/* Header */}
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6" data-tour="internships-header">
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-2xl font-bold flex items-center gap-3">
@@ -248,7 +249,7 @@ export default function InternshipsPage() {
             </motion.div>
 
             {/* Search + Sort */}
-            <div className="flex gap-3 mb-4">
+            <div className="flex gap-3 mb-4" data-tour="internships-search">
               <div className="flex-1 relative">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
@@ -303,7 +304,7 @@ export default function InternshipsPage() {
                 <p className="text-sm text-slate-500">Try adjusting your search or filters</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" data-tour="internships-list">
                 {internships.map((internship, idx) => (
                   <InternshipCard
                     key={internship.id}
@@ -349,6 +350,12 @@ export default function InternshipsPage() {
             />
           )}
         </AnimatePresence>
+
+        <PageTour id="internships" steps={[
+          { target: "[data-tour='internships-header']", title: "Internship Intelligence", body: "Live internships from real boards, matched to your skills — track them straight from here." },
+          { target: "[data-tour='internships-search']", title: "Search, filter, sort", body: "Filter by domain, work mode and type, then sort by match, stipend or date." },
+          { target: "[data-tour='internships-list']", title: "Your shortlist", body: "Save internships, open details, and send a tailored AI outreach email for each one." },
+        ]}/>
       </div>
     </ErrorBoundary>
   );

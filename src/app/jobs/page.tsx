@@ -10,6 +10,7 @@ import Sidebar from "@/components/Sidebar";
 import ApplyModal from "@/components/ApplyModal";
 import { toast } from "@/components/Toast";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import PageTour from "@/components/PageTour";
 
 interface Job {
   id: string; title: string; company: string; location: string; city: string;
@@ -122,7 +123,7 @@ export default function JobsPage() {
         <Sidebar user={user} onLogout={logout} />
         <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
           <div className="max-w-6xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6" data-tour="jobs-header">
               <div>
                 <h1 className="text-2xl font-bold mb-1">
                   {hasRealData ? `Jobs across Tamil Nadu (${realJobCount}+ live)` : "Job Listings"}
@@ -136,7 +137,7 @@ export default function JobsPage() {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-wrap gap-3 mb-6">
+            <div className="flex flex-wrap gap-3 mb-6" data-tour="jobs-filter">
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
@@ -162,7 +163,7 @@ export default function JobsPage() {
                 <p className="text-sm text-slate-500">Try adjusting your filters or check back later — only live openings are shown</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-tour="jobs-list">
                 {jobs.map((job, i) => (
                   <motion.div key={job.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
                     className="p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-all flex flex-col" style={{ background: "rgba(17,17,24,0.5)" }}>
@@ -231,6 +232,11 @@ export default function JobsPage() {
           loading={applying === applyModalJob.id}
         />
       )}
+      <PageTour id="jobs" steps={[
+        { target: "[data-tour='jobs-header']", title: "Live jobs across India", body: "Tamil Nadu first: live openings ranked by your profile — the count updates in real time." },
+        { target: "[data-tour='jobs-filter']", title: "Search & filter", body: "Search by skill or role, and filter by city and job type to narrow your hunt." },
+        { target: "[data-tour='jobs-list']", title: "Apply in one click", body: "Every card is matched to your profile. Open it for a full view and one-click apply with your AI resume." },
+      ]}/>
     </ErrorBoundary>
   );
 }

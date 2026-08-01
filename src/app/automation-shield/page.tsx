@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/components/LanguageProvider";
 import Sidebar from "@/components/Sidebar";
 import { CAREER_DATABASE } from "@/lib/careers";
+import PageTour from "@/components/PageTour";
 
 export default function AutomationShieldPage() {
   const { t, locale } = useLanguage();
@@ -73,13 +74,13 @@ export default function AutomationShieldPage() {
       <Sidebar user={user} onLogout={logout} />
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+          <motion.div data-tour="shield-header" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
             <h1 className="text-2xl font-bold mb-1">{(t as any).shield?.title || "Automation Shield"}</h1>
             <p className="text-slate-400 text-sm mb-6">{(t as any).shield?.subtitle || "Career automation risk analysis"}</p>
           </motion.div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          <div data-tour="shield-stats" className="grid grid-cols-3 gap-3 mb-6">
             <div className="p-4 rounded-xl bg-green-500/5 border border-green-500/20 text-center">
               <div className="text-2xl font-bold text-green-400">{safeCount}</div>
               <div className="text-xs text-green-400/70">{(t as any).shield?.safe || "AI-Safe"}</div>
@@ -107,7 +108,7 @@ export default function AutomationShieldPage() {
           </div>
 
           {/* Career Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div data-tour="shield-grid" className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {sorted.map((career, i) => (
               <motion.div key={career.slug} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
                 className={`p-5 rounded-2xl border transition-all hover:scale-[1.02] ${riskColor(career.riskLevel).split(" ").slice(1).join(" ")}`}>
@@ -144,7 +145,7 @@ export default function AutomationShieldPage() {
           </div>
 
           {/* CTA */}
-          <div className="mt-8 p-6 rounded-2xl border border-indigo-500/20 text-center" style={{ background: "rgba(99,102,241,0.05)" }}>
+          <div data-tour="shield-cta" className="mt-8 p-6 rounded-2xl border border-indigo-500/20 text-center" style={{ background: "rgba(99,102,241,0.05)" }}>
             <Shield className="w-8 h-8 mx-auto mb-3 text-indigo-400" />
             <h3 className="font-semibold mb-2">{isHi ? "अपने करियर की AI जोखिम जांचें" : "Check Your Career's AI Risk"}</h3>
             <p className="text-sm text-slate-400 mb-4">{isHi ? "जानें आपका चुना हुआ करियर AI सुरक्षित है या नहीं।" : "Find out if your chosen career is AI-safe."}</p>
@@ -152,6 +153,13 @@ export default function AutomationShieldPage() {
               {isHi ? "करियर पाथ देखें" : "View Career Paths"} <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
+
+          <PageTour id="shield" steps={[
+            { target: "[data-tour='shield-header']", title: "Automation Shield", body: "See how AI will reshape each career over the next decade." },
+            { target: "[data-tour='shield-stats']", title: "Risk overview", body: "Safe, risky and critical careers at a glance." },
+            { target: "[data-tour='shield-grid']", title: "Explore careers", body: "Every card shows the AI risk score, growth outlook and salary range." },
+            { target: "[data-tour='shield-cta']", title: "Check your own", body: "Find your own career's AI risk in the career paths explorer." },
+          ]} />
         </div>
       </main>
     </div>

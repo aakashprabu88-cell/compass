@@ -24,13 +24,15 @@ export default function Tour({
   const [rect, setRect] = useState<Rect | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const [ready, setReady] = useState(false);
+  const [missing, setMissing] = useState(false);
 
   const step = steps[Math.min(index, steps.length - 1)];
 
   const recompute = useCallback(() => {
-    if (!step.target) { setRect(null); setTooltipPos({ top: 20, left: 20 }); return; }
+    if (!step.target) { setRect(null); setMissing(false); setTooltipPos({ top: 20, left: 20 }); setReady(true); return; }
     const el = document.querySelector(step.target);
-    if (!el) { setRect(null); setTooltipPos({ top: 20, left: 20 }); return; }
+    if (!el) { setRect(null); setMissing(true); setTooltipPos({ top: 20, left: 20 }); setReady(true); return; }
+    setMissing(false);
     const r = getRect(el);
     setRect(r);
     // Place tooltip below by default, above if too close to bottom
@@ -59,6 +61,18 @@ export default function Tour({
       window.removeEventListener("scroll", recompute, true);
     };
   }, [open, recompute]);
+
+  // Keep polling until a late-rendering target appears (async content)
+  useEffect(() => {
+    if (!open || !missing || !step.target) return;
+    let tries = 0;
+    const t = setInterval(() => {
+      tries++;
+      if (document.querySelector(step.target!)) { recompute(); clearInterval(t); }
+      else if (tries > 60) clearInterval(t);
+    }, 150);
+    return () => clearInterval(t);
+  }, [open, missing, step.target, recompute]);
 
   useEffect(() => {
     if (!open) return;
@@ -108,9 +122,12 @@ export default function Tour({
                 <span className={`text-[9px] px-2 py-0.5 rounded-full bg-gradient-to-r ${grad} text-white font-bold tracking-wider`}>
                   STEP {index + 1}/{steps.length}
                 </span>
-                <button onClick={onClose} className="p-1 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-colors">
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center gap-1.5">
+                  {missing && <span className="flex items-center gap-1 text-[9px] text-slate-500"><motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2 }} className="w-1 h-1 rounded-full bg-indigo-400 inline-block" /> locating…</span>}
+                  <button onClick={onClose} className="p-1 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-colors">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
               <h4 className="text-sm font-bold mb-1 text-white">{step.title}</h4>
               <p className="text-xs text-slate-400 leading-relaxed mb-3">{step.body}</p>

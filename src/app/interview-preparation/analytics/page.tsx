@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, BarChart3, TrendingUp, Target, Award, Radar, Brain, Code2, BookOpen, Mic, Users, Zap, ChevronRight, Clock, CheckCircle2, AlertTriangle } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 const MODULE_SCORES = [
   { name: "Aptitude", score: 78, icon: Brain, color: "text-indigo-400", bg: "rgba(99,102,241,0.1)" },
@@ -74,7 +75,7 @@ export default function AnalyticsPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Interview Prep
           </Link>
 
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <motion.div data-tour="prep-analytics-header" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
             <div className="flex items-center gap-3 mb-1">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center">
                 <BarChart3 className="w-5 h-5 text-white" />
@@ -87,7 +88,7 @@ export default function AnalyticsPage() {
           </motion.div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 mb-6">
+          <div data-tour="prep-analytics-stats" className="grid grid-cols-3 lg:grid-cols-6 gap-2 mb-6">
             {INSIGHTS.map((s, i) => (
               <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
                 className="p-3 rounded-xl border border-white/5 text-center" style={{ background: "rgba(17,17,24,0.5)" }}>
@@ -146,7 +147,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Recent Activity */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }}
+          <motion.div data-tour="prep-analytics-activity" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }}
             className="p-4 rounded-xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
             <h2 className="text-sm font-semibold mb-3 flex items-center gap-2"><Clock className="w-4 h-4 text-indigo-400" /> Recent Activity</h2>
             <div className="space-y-2">
@@ -167,6 +168,15 @@ export default function AnalyticsPage() {
             </div>
           </motion.div>
         </div>
+
+        <PageTour
+          id="prep-analytics"
+          steps={[
+            { target: "[data-tour='prep-analytics-header']", title: "Smart Analytics", body: "Your complete interview-prep performance across every module." },
+            { target: "[data-tour='prep-analytics-stats']", title: "Key insights", body: "Questions answered, accuracy, streaks and more at a glance." },
+            { target: "[data-tour='prep-analytics-activity']", title: "Recent activity", body: "Every practice session logged — see your momentum." },
+          ]}
+        />
       </main>
     </div>
   );

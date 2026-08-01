@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Building2, Search, Star, TrendingUp, Users, ChevronRight, BookOpen, Award, BarChart3 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 const COMPANIES = [
   { name: "Google", tier: "FAANG", color: "rgba(66,133,244,0.15)", icon: "G" },
@@ -79,7 +80,7 @@ export default function CompanyPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Interview Prep
           </Link>
 
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6" data-tour="prep-company-header">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
                 <Building2 className="w-5 h-5 text-white" />
@@ -110,7 +111,7 @@ export default function CompanyPage() {
             </div>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3" data-tour="prep-company-grid">
             {filtered.map((company, i) => (
               <motion.div key={company.name} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.015 * i }}>
                 <Link href={`/interview-preparation/company/${company.name.toLowerCase()}`}
@@ -133,6 +134,10 @@ export default function CompanyPage() {
             ))}
           </div>
         </div>
+        <PageTour id="prep-company" steps={[
+          { target: "[data-tour='prep-company-header']", title: "Company-Specific Prep", body: "Search companies or filter by FAANG, Product or Service firms." },
+          { target: "[data-tour='prep-company-grid']", title: "24 top companies", body: "Open any company for its culture, hiring process and common questions." }
+        ]} />
       </main>
     </div>
   );

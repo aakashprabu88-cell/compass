@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Sparkles, MessageSquare, Lightbulb, Target, Bookmark, Zap, ChevronRight, Send, TrendingUp, Clock, Award, Star, BarChart3, GraduationCap } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 const QUICK_ACTIONS = [
   { label: "Review Weak Areas", desc: "Focus on areas needing improvement", color: "rgba(244,63,94,0.1)", textColor: "text-rose-400" },
@@ -66,7 +67,7 @@ export default function MentorPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Interview Prep
           </Link>
 
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6" data-tour="prep-mentor-header">
             <div className="flex items-center gap-3 mb-1">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
                 <Sparkles className="w-6 h-6 text-white" />
@@ -82,7 +83,7 @@ export default function MentorPage() {
           </motion.div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-6" data-tour="prep-mentor-actions">
             {QUICK_ACTIONS.map((a, i) => (
               <motion.button key={a.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
                 className="p-3 rounded-xl border border-white/5 hover:border-white/10 transition-all text-left"
@@ -93,7 +94,7 @@ export default function MentorPage() {
             ))}
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-4">
+          <div className="grid lg:grid-cols-2 gap-4" data-tour="prep-mentor-cards">
             {/* Today's Plan */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
               className="p-4 rounded-xl border border-white/5" style={{ background: "rgba(17,17,24,0.5)" }}>
@@ -161,6 +162,15 @@ export default function MentorPage() {
             )}
           </motion.div>
         </div>
+
+        <PageTour
+          id="prep-mentor"
+          steps={[
+            { target: "[data-tour='prep-mentor-header']", title: "AI Mentor", body: "Your personal coach, planning today's work and your long-term roadmap." },
+            { target: "[data-tour='prep-mentor-actions']", title: "Quick actions", body: "Ask for a topic, doubt, or a fresh challenge anytime." },
+            { target: "[data-tour='prep-mentor-cards']", title: "Daily plan & roadmap", body: "A structured path from where you are to interview-ready." },
+          ]}
+        />
       </main>
     </div>
   );

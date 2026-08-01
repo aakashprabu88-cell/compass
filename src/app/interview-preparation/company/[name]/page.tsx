@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Building2, Briefcase, Star, TrendingUp, Users, ChevronRight, BookOpen, Award, Clock, Globe, Mail, MapPin, Loader2, ExternalLink, Lightbulb, CheckCircle2 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import PageTour from "@/components/PageTour";
 
 const COMPANY_INFO: Record<string, { fullName: string; tier: string; hiringProcess: string[]; culture: string; tips: string[] }> = {
   google: {
@@ -330,7 +331,7 @@ export default function CompanyDetailPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Companies
           </Link>
 
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6" data-tour="prep-company-header">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-xl font-bold">
                 {displayName[0]}
@@ -350,7 +351,7 @@ export default function CompanyDetailPage() {
             <>
               {/* Culture */}
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-                className="p-5 rounded-2xl border border-white/5 mb-4" style={{ background: "rgba(17,17,24,0.5)" }}>
+                className="p-5 rounded-2xl border border-white/5 mb-4" style={{ background: "rgba(17,17,24,0.5)" }} data-tour="prep-company-culture">
                 <div className="flex items-center gap-2 mb-2">
                   <Building2 className="w-4 h-4 text-indigo-400" />
                   <h2 className="font-semibold text-sm">Culture</h2>
@@ -419,7 +420,7 @@ export default function CompanyDetailPage() {
 
           {/* Common Questions */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
-            className="p-5 rounded-2xl border border-white/5 mb-6" style={{ background: "rgba(17,17,24,0.5)" }}>
+            className="p-5 rounded-2xl border border-white/5 mb-6" style={{ background: "rgba(17,17,24,0.5)" }} data-tour="prep-company-questions">
             <div className="flex items-center gap-2 mb-3">
               <Star className="w-4 h-4 text-yellow-400" />
               <h2 className="font-semibold text-sm">Common Interview Questions</h2>
@@ -438,6 +439,15 @@ export default function CompanyDetailPage() {
             )}
           </motion.div>
         </div>
+
+        <PageTour
+          id="prep-company-detail"
+          steps={[
+            { target: "[data-tour='prep-company-header']", title: "Company deep dive", body: "Everything you need to know about this company's interview process." },
+            { target: "[data-tour='prep-company-culture']", title: "Culture & process", body: "What the company values, and how its hiring actually works." },
+            { target: "[data-tour='prep-company-questions']", title: "Likely questions", body: "Real questions asked at this company, with prep guidance." },
+          ]}
+        />
       </main>
     </div>
   );

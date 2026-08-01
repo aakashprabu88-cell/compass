@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import PageTour from "@/components/PageTour";
 
 interface SpeechRecognitionAPI {
   continuous: boolean;
@@ -381,6 +382,7 @@ export default function PanelInterviewPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-lg"
+          data-tour="panel-setup"
         >
           <div className="text-center mb-8">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/20 flex items-center justify-center mx-auto mb-4">
@@ -434,11 +436,16 @@ export default function PanelInterviewPage() {
           <button
             onClick={startInterview}
             className="w-full py-3 bg-indigo-500 hover:bg-indigo-400 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+            data-tour="panel-start"
           >
             Start Interview <ArrowRight className="w-4 h-4" />
           </button>
           <p className="text-center text-xs text-slate-600 mt-3">~10 minutes. You can type or use voice input.</p>
         </motion.div>
+        <PageTour id="panel" steps={[
+          { target: "[data-tour='panel-setup']", title: "Set the stage", body: "Tell the AI your target role and company — a 3-person panel forms around you." },
+          { target: "[data-tour='panel-start']", title: "Your panel", body: "Review your interviewers, then hit Start to face them one question at a time." },
+        ]}/>
       </div>
     );
   }
@@ -460,7 +467,7 @@ export default function PanelInterviewPage() {
 
     return (
       <div className="h-screen overflow-y-auto p-6">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto" data-tour="panel-results">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold mb-2">Panel Decision</h1>
@@ -520,6 +527,9 @@ export default function PanelInterviewPage() {
             </button>
           </motion.div>
         </div>
+        <PageTour id="panel" steps={[
+          { target: "[data-tour='panel-results']", title: "Panel decision", body: "Your final score with per-interviewer feedback, strengths and improvements." },
+        ]}/>
       </div>
     );
   }
@@ -554,7 +564,7 @@ export default function PanelInterviewPage() {
       </div>
 
       {/* Chat */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4" data-tour="panel-chat">
         <AnimatePresence>
           {messages.map((msg, i) => {
             const interviewer = getInterviewer(msg.interviewerId);
@@ -665,7 +675,7 @@ export default function PanelInterviewPage() {
       )}
 
       {/* Input */}
-      <div className="shrink-0 p-4 border-t border-white/5">
+      <div className="shrink-0 p-4 border-t border-white/5" data-tour="panel-input">
         <div className="flex items-center gap-3">
           <button
             onClick={toggleVoice}
@@ -691,6 +701,10 @@ export default function PanelInterviewPage() {
           </button>
         </div>
       </div>
+      <PageTour id="panel" steps={[
+        { target: "[data-tour='panel-chat']", title: "Face the panel", body: "Answer each interviewer in turn — every response is scored live by AI." },
+        { target: "[data-tour='panel-input']", title: "Speak or type", body: "Type your answer or use voice. The panel responds, gives feedback, and grades you." },
+      ]}/>
     </div>
   );
 }
