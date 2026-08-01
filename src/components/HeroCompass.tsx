@@ -41,45 +41,72 @@ function makeCardTexture() {
   ctx.fillStyle = "#b08a3e";
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(512, 512, 476, 0, Math.PI * 2);
+  ctx.arc(512, 512, 478, 0, Math.PI * 2);
   ctx.fillStyle = "#f2ead4";
   ctx.fill();
-  ctx.beginPath();
-  ctx.arc(512, 512, 368, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(20,20,20,0.35)";
-  ctx.lineWidth = 2;
-  ctx.stroke();
   for (let a = 0; a < 360; a += 2) {
     const rad = (a * Math.PI) / 180;
     const long = a % 30 === 0;
     const med = a % 10 === 0;
     ctx.beginPath();
     ctx.moveTo(512 + Math.sin(rad) * 470, 512 - Math.cos(rad) * 470);
-    ctx.lineTo(512 + Math.sin(rad) * (long ? 408 : med ? 448 : 466), 512 - Math.cos(rad) * (long ? 408 : med ? 448 : 466));
+    ctx.lineTo(512 + Math.sin(rad) * (long ? 400 : med ? 448 : 464), 512 - Math.cos(rad) * (long ? 400 : med ? 448 : 464));
     ctx.strokeStyle = long ? "#1a1a1a" : med ? "#3a3a3a" : "#6a6a6a";
-    ctx.lineWidth = long ? 10 : med ? 6 : 3;
+    ctx.lineWidth = long ? 9 : med ? 5 : 2;
     ctx.stroke();
   }
-  ctx.font = "900 64px Georgia, 'Times New Roman', serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  [["N", 512, 512 - 342, "#c0392b"], ["E", 512 + 342, 512, "#1a1a1a"], ["S", 512, 512 + 342, "#1a1a1a"], ["W", 512 - 342, 512, "#1a1a1a"]].forEach(([t, x, y, col]) => {
-    ctx.fillStyle = col as string;
-    ctx.fillText(t as string, x as number, y as number);
-  });
-  ctx.font = "700 40px Georgia, serif";
-  ctx.fillStyle = "rgba(26,26,26,0.75)";
-  [["NE", 512 + 246, 512 - 246], ["SE", 512 + 246, 512 + 246], ["SW", 512 - 246, 512 + 246], ["NW", 512 - 246, 512 - 246]].forEach(([t, x, y]) => {
-    ctx.fillText(t as string, x as number, y as number);
-  });
   ctx.beginPath();
-  ctx.arc(512, 512, 40, 0, Math.PI * 2);
+  ctx.arc(512, 512, 360, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(20,20,20,0.35)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(512, 512, 150, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(20,20,20,0.28)";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  const rose = (a: number) => {
+    const rad = (a * Math.PI) / 180;
+    ctx.beginPath();
+    ctx.moveTo(512, 512);
+    ctx.lineTo(512 + Math.sin(rad) * 150, 512 - Math.cos(rad) * 150);
+    ctx.strokeStyle = "rgba(26,26,26,0.55)";
+    ctx.lineWidth = 6;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(512, 512);
+    ctx.lineTo(512 + Math.sin(rad) * 62, 512 - Math.cos(rad) * 62);
+    ctx.strokeStyle = "rgba(26,26,26,0.25)";
+    ctx.lineWidth = 12;
+    ctx.stroke();
+  };
+  [0, 45, 90, 135, 180, 225, 270, 315].forEach(rose);
+  ctx.beginPath();
+  ctx.arc(512, 512, 34, 0, Math.PI * 2);
   ctx.fillStyle = "#b08a3e";
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(512, 512, 16, 0, Math.PI * 2);
+  ctx.arc(512, 512, 12, 0, Math.PI * 2);
   ctx.fillStyle = "#1a1a1a";
   ctx.fill();
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+
+function makeLetterTexture(ch: string) {
+  const c = document.createElement("canvas");
+  c.width = c.height = 128;
+  const ctx = c.getContext("2d")!;
+  ctx.clearRect(0, 0, 128, 128);
+  ctx.font = "900 92px Georgia, 'Times New Roman', serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#2b1d0a";
+  ctx.fillText(ch, 67, 67);
+  ctx.fillStyle = "#fdf6e0";
+  ctx.fillText(ch, 64, 64);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
@@ -237,12 +264,22 @@ function makeBokeh() {
   }));
 }
 
-function HeroInner({ slide }: { slide: number }) {
+const LETTERS = [
+  { ch: "N", x: 0, y: 0.62 },
+  { ch: "E", x: 0.62, y: 0 },
+  { ch: "S", x: 0, y: -0.62 },
+  { ch: "W", x: -0.62, y: 0 },
+];
+
+type SlideInput = number | { current: number };
+
+function HeroInner({ slide }: { slide: SlideInput }) {
   const { gl, scene } = useThree();
   const mouse = useRef({ x: 0, y: 0 });
-  const disp = useRef(slide);
+  const disp = useRef(typeof slide === "number" ? slide : slide.current);
   const spin = useRef<THREE.Group>(null!);
   const tilt = useRef<THREE.Group>(null!);
+  const card = useRef<THREE.Group>(null!);
   const needle = useRef<THREE.Group>(null!);
   const light = useRef<THREE.PointLight>(null!);
   const aura = useRef<THREE.Sprite>(null!);
@@ -257,15 +294,21 @@ function HeroInner({ slide }: { slide: number }) {
   const nebula = useRef<THREE.Mesh>(null!);
   const rings = useRef<THREE.Group>(null!);
   const rays = useRef<THREE.Group>(null!);
-  const hudRing = useRef<THREE.Line>(null!);  const glowDisc = useRef<THREE.Mesh>(null!);
+  const hudRing = useRef<THREE.Line>(null!);
+  const glowDisc = useRef<THREE.Mesh>(null!);
   const streak = useRef<THREE.Sprite>(null!);
   const bokehGroup = useRef<THREE.Group>(null!);
+  const sweepRing = useRef<THREE.Mesh>(null!);
   const lastInt = useRef(-1);
   const punch = useRef(0);
 
   const bokeh = useMemo(() => makeBokeh(), []);
   const cardTex = useMemo(() => makeCardTexture(), []);
-  const cardGeo = useMemo(() => new THREE.CircleGeometry(1.3, 96), []);
+  const cardGeo = useMemo(() => new THREE.CircleGeometry(1.0, 96), []);
+  const nTex = useMemo(() => makeLetterTexture("N"), []);
+  const eTex = useMemo(() => makeLetterTexture("E"), []);
+  const sTex = useMemo(() => makeLetterTexture("S"), []);
+  const wTex = useMemo(() => makeLetterTexture("W"), []);
   const auraTex = useMemo(() => makeGlowTexture("rgba(255,255,255,0.9)", "rgba(255,255,255,0.22)"), []);
   const shadowTex = useMemo(() => makeShadowTexture(), []);
   const dustGeo = useMemo(() => makeDust(130, 2.4, 6.4), []);
@@ -279,9 +322,15 @@ function HeroInner({ slide }: { slide: number }) {
   const ringGeo2 = useMemo(() => new THREE.TorusGeometry(2.7, 0.01, 8, 128), []);
   const hudRingGeo = useMemo(() => makeCircleLine(96, 2.9), []);
   const discGeo = useMemo(() => new THREE.CircleGeometry(3.4, 48), []);
+  const letterGeo = useMemo(() => new THREE.PlaneGeometry(0.22, 0.22), []);
+  const cardCylGeo = useMemo(() => new THREE.CylinderGeometry(1.0, 1.0, 0.07, 96, 1, true), []);
+  const bowlGeo = useMemo(() => new THREE.CylinderGeometry(1.14, 0.72, 0.52, 64, 1, true), []);
+  const bowlCapGeo = useMemo(() => new THREE.CircleGeometry(0.72, 48), []);
+  const pedGeo = useMemo(() => new THREE.CylinderGeometry(0.52, 0.74, 0.42, 48), []);
+  const baseGeo = useMemo(() => new THREE.CylinderGeometry(0.96, 1.0, 0.09, 48), []);
 
-  const brassMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#b08a3e", metalness: 1, roughness: 0.3 }), []);
-  const brassDarkMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#8a6a2f", metalness: 1, roughness: 0.42 }), []);
+  const brassMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#b08a3e", metalness: 1, roughness: 0.26 }), []);
+  const brassDarkMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#7d5f28", metalness: 1, roughness: 0.45 }), []);
   const steelMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#e8e8e8", metalness: 0.95, roughness: 0.22 }), []);
   const redMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#c0392b", metalness: 0.6, roughness: 0.32 }), []);
   const glassMat = useMemo(() => new THREE.MeshPhysicalMaterial({
@@ -309,6 +358,10 @@ function HeroInner({ slide }: { slide: number }) {
   const streakMat = useMemo(() => new THREE.SpriteMaterial({ map: auraTex, color: "#f59e0b", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), [auraTex]);
   const bokehMat = useMemo(() => new THREE.SpriteMaterial({ map: auraTex, color: "#ffffff", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), [auraTex]);
   const glowDiscMat = useMemo(() => new THREE.MeshBasicMaterial({ map: auraTex, color: "#f59e0b", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), [auraTex]);
+  const sweepMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#a5c8ff", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), []);
+  const letterMats = useMemo(() => [nTex, eTex, sTex, wTex].map(tex => new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 1, side: THREE.DoubleSide })), [nTex, eTex, sTex, wTex]);
+  const tickMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#c9a861", metalness: 0.9, roughness: 0.32 }), []);
+
   const careerMats = useMemo(() => ["#22d3ee", "#a855f7", "#f59e0b", "#f472b6", "#34d399"].map(col => new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.6, metalness: 0.4, roughness: 0.3, transparent: true, opacity: 1 })), []);
   const riskMats = useMemo(() => [
     new THREE.MeshStandardMaterial({ color: "#ef4444", emissive: "#ef4444", emissiveIntensity: 0.5, metalness: 0.4, roughness: 0.4, transparent: true, opacity: 1 }),
@@ -386,7 +439,11 @@ function HeroInner({ slide }: { slide: number }) {
       holoBeamGeo.dispose(); jobLineGeo.dispose(); ringPointsGeo.dispose(); burst.g.dispose();
       nebulaTex.dispose(); rayTex.dispose(); nebulaGeo.dispose(); rayGeo.dispose();
       ringGeo.dispose(); ringGeo2.dispose(); hudRingGeo.dispose(); discGeo.dispose();
-      [brassMat, brassDarkMat, steelMat, redMat, glassMat, coreMat, auraMat, dustMat, starsMat, burstMat, gridMat, trailMat, trailLineMat, holoMat, jobMat, jobLineMat, pulseMatA, pulseMatB, holoBeamMat, ringMat, hudRingMat, rayMat, nebulaMat, streakMat, bokehMat, glowDiscMat].forEach(m => m.dispose());
+      cardCylGeo.dispose(); bowlGeo.dispose(); bowlCapGeo.dispose(); pedGeo.dispose(); baseGeo.dispose();
+      letterGeo.dispose();
+      [nTex, eTex, sTex, wTex].forEach(t => t.dispose());
+      [brassMat, brassDarkMat, steelMat, redMat, glassMat, coreMat, auraMat, dustMat, starsMat, burstMat, gridMat, trailMat, trailLineMat, holoMat, jobMat, jobLineMat, pulseMatA, pulseMatB, holoBeamMat, ringMat, hudRingMat, rayMat, nebulaMat, streakMat, bokehMat, glowDiscMat, sweepMat, tickMat].forEach(m => m.dispose());
+      letterMats.forEach(m => m.dispose());
       careerMats.forEach(m => m.dispose());
       riskMats.forEach(m => m.dispose());
     };
@@ -395,7 +452,8 @@ function HeroInner({ slide }: { slide: number }) {
 
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
-    disp.current += (slide - disp.current) * Math.min(1, delta * 2.2);
+    const s = typeof slide === "number" ? slide : slide.current;
+    disp.current += (s - disp.current) * Math.min(1, delta * 2.2);
     const d = disp.current;
 
     const i0 = Math.max(0, Math.min(6, Math.floor(d)));
@@ -413,7 +471,7 @@ function HeroInner({ slide }: { slide: number }) {
     }
 
     if (spin.current) {
-      spin.current.rotation.y = t * 0.22;
+      spin.current.rotation.y = Math.sin(t * 0.24) * 0.12;
       spin.current.position.y = 0.15 + Math.sin(t * 1.3) * 0.06;
       spin.current.scale.setScalar(1 + punch.current * 0.05);
     }
@@ -421,7 +479,9 @@ function HeroInner({ slide }: { slide: number }) {
       tilt.current.rotation.x += (mouse.current.y * 0.12 - tilt.current.rotation.x) * 0.04;
       tilt.current.rotation.z += (-mouse.current.x * 0.16 - tilt.current.rotation.z) * 0.04;
     }
-    if (needle.current) needle.current.rotation.z = t * 0.16 + Math.sin(t * 0.4) * 0.03;
+    if (card.current) card.current.rotation.z = t * 0.14;
+    if (needle.current) needle.current.rotation.z = Math.sin(t * 0.8) * 0.18 + Math.sin(t * 1.7) * 0.05;
+    if (sweepRing.current) sweepRing.current.rotation.z = t * 0.5;
 
     if (nebula.current) nebula.current.rotation.y += delta * 0.006;
     if (rings.current) {
@@ -435,6 +495,7 @@ function HeroInner({ slide }: { slide: number }) {
     ringMat.opacity = 0.28 + 0.2 * Math.sin(t * 0.5);
     hudRingMat.opacity = 0.22 + 0.16 * Math.sin(t * 0.8);
     rayMat.opacity = 0.1 + 0.05 * Math.sin(t * 0.9);
+    sweepMat.opacity = 0.35;
     glowDiscMat.color.copy(col);
     if (glowDisc.current) glowDisc.current.scale.setScalar(1 + Math.sin(t * 0.9) * 0.05);
     streakMat.color.copy(col);
@@ -445,12 +506,12 @@ function HeroInner({ slide }: { slide: number }) {
     }
     bokehMat.opacity = 0.34 + 0.1 * Math.sin(t * 0.7);
     if (bokehGroup.current) {
-      bokehGroup.current.children.forEach((s, i) => {
+      bokehGroup.current.children.forEach((sprite, i) => {
         const b = bokeh[i];
-        s.position.y += Math.sin(t * b.v + b.ph) * delta * 0.09;
-        s.position.x += Math.cos(t * b.v * 0.8 + b.ph) * delta * 0.05;
+        sprite.position.y += Math.sin(t * b.v + b.ph) * delta * 0.09;
+        sprite.position.x += Math.cos(t * b.v * 0.8 + b.ph) * delta * 0.05;
         const tw = 0.7 + 0.3 * Math.sin(t * 3 + b.ph);
-        s.scale.setScalar(b.s * (1 + tw * 0.25));
+        sprite.scale.setScalar(b.s * (1 + tw * 0.25));
       });
     }
 
@@ -623,40 +684,115 @@ function HeroInner({ slide }: { slide: number }) {
         <meshBasicMaterial map={shadowTex} transparent opacity={0.9} depthWrite={false} />
       </mesh>
 
-      <group ref={spin}>
+      <group ref={spin} position={[0, 0.15, 0]}>
         <group ref={tilt}>
-          <mesh>
-            <torusGeometry args={[1.36, 0.14, 24, 96]} />
-            <primitive object={brassMat} attach="material" />
-          </mesh>
-          <mesh>
-            <torusGeometry args={[1.22, 0.05, 16, 96]} />
-            <primitive object={brassDarkMat} attach="material" />
-          </mesh>
-          <mesh position={[0, 0, -0.12]}>
-            <cylinderGeometry args={[1.36, 1.36, 0.34, 96, 1, true]} />
-            <primitive object={brassDarkMat} attach="material" />
-            <primitive object={brassMat} attach="material" />
-          </mesh>
-          <mesh geometry={cardGeo} position={[0, 0, -0.06]}>
-            <meshBasicMaterial map={cardTex} />
-          </mesh>
-          <group ref={needle}>
-            <mesh position={[0, 0.52, 0.02]}><boxGeometry args={[0.1, 1.04, 0.02]} /><primitive object={redMat} attach="material" /></mesh>
-            <mesh position={[0, -0.52, 0.02]}><boxGeometry args={[0.1, 1.04, 0.02]} /><primitive object={steelMat} attach="material" /></mesh>
-            <mesh position={[0, 0, 0.04]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[0.09, 0.09, 0.12, 20]} /><primitive object={brassDarkMat} attach="material" /></mesh>
+          <group position={[0, -0.72, 0]}>
+            <mesh position={[0, -0.3, 0]} geometry={pedGeo}>
+              <primitive object={brassDarkMat} attach="material" />
+            </mesh>
+            <mesh position={[0, -0.62, 0]} geometry={baseGeo}>
+              <primitive object={brassDarkMat} attach="material" />
+            </mesh>
+            <mesh position={[0, -0.62, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[0.98, 0.035, 12, 64]} />
+              <primitive object={brassMat} attach="material" />
+            </mesh>
           </group>
-          <mesh position={[0, 0, 0.1]}><sphereGeometry args={[0.1, 20, 16]} /><primitive object={coreMat} attach="material" /></mesh>
-          <mesh position={[0, 0, 0.05]}>
-            <sphereGeometry args={[1.34, 48, 32]} />
+
+          <mesh position={[0, -0.26, 0]} geometry={bowlGeo}>
+            <primitive object={brassMat} attach="material" />
+          </mesh>
+          <mesh position={[0, -0.52, 0]} rotation={[Math.PI, 0, 0]} geometry={bowlCapGeo}>
+            <primitive object={brassDarkMat} attach="material" />
+          </mesh>
+
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[1.16, 0.075, 20, 96]} />
+            <primitive object={brassMat} attach="material" />
+          </mesh>
+          <mesh>
+            <torusGeometry args={[1.16, 0.075, 20, 96]} />
+            <primitive object={brassMat} attach="material" />
+          </mesh>
+
+          {Array.from({ length: 12 }, (_, i) => {
+            const a = (i / 12) * Math.PI * 2;
+            return (
+              <mesh key={i} position={[Math.sin(a) * 1.17, Math.cos(a) * 1.17, 0.14]} rotation={[0, 0, -a]}>
+                <boxGeometry args={[0.05, 0.11, 0.06]} />
+                <primitive object={tickMat} attach="material" />
+              </mesh>
+            );
+          })}
+
+          <group ref={card} position={[0, 0, 0]}>
+            <mesh geometry={cardCylGeo}>
+              <primitive object={brassDarkMat} attach="material" />
+            </mesh>
+            <mesh geometry={cardGeo} position={[0, 0, 0.035]}>
+              <meshBasicMaterial map={cardTex} />
+            </mesh>
+            <mesh position={[0, 0, 0.035]}>
+              <torusGeometry args={[1.0, 0.03, 12, 96]} />
+              <primitive object={brassMat} attach="material" />
+            </mesh>
+            {Array.from({ length: 36 }, (_, i) => {
+              const a = (i / 36) * Math.PI * 2;
+              const major = i % 9 === 0;
+              return (
+                <mesh key={i} position={[Math.sin(a) * (major ? 0.94 : 0.92), Math.cos(a) * (major ? 0.94 : 0.92), 0.05]} rotation={[0, 0, -a]}>
+                  <boxGeometry args={[major ? 0.022 : 0.014, major ? 0.07 : 0.045, 0.018]} />
+                  <primitive object={tickMat} attach="material" />
+                </mesh>
+              );
+            })}
+          </group>
+
+          {LETTERS.map((l, i) => (
+            <group key={l.ch} position={[l.x, l.y, 0.07]}>
+              <mesh geometry={letterGeo}>
+                <primitive object={letterMats[i]} attach="material" />
+              </mesh>
+              <sprite scale={[0.5, 0.5, 1]} position={[0, 0, -0.02]}>
+                <primitive object={auraMat} attach="material" />
+              </sprite>
+            </group>
+          ))}
+
+          <mesh ref={sweepRing} position={[0, 0, 0.04]}>
+            <torusGeometry args={[1.0, 0.012, 8, 96]} />
+            <primitive object={sweepMat} attach="material" />
+          </mesh>
+
+          <group ref={needle} position={[0, 0, 0.08]}>
+            <mesh position={[0, 0.28, 0]}>
+              <coneGeometry args={[0.05, 0.56, 6]} />
+              <primitive object={redMat} attach="material" />
+            </mesh>
+            <mesh position={[0, -0.28, 0]} rotation={[Math.PI, 0, 0]}>
+              <coneGeometry args={[0.05, 0.56, 6]} />
+              <primitive object={steelMat} attach="material" />
+            </mesh>
+            <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.06, 0.06, 0.1, 20]} />
+              <primitive object={brassDarkMat} attach="material" />
+            </mesh>
+            <mesh position={[0, 0, 0.03]}>
+              <sphereGeometry args={[0.07, 20, 16]} />
+              <primitive object={coreMat} attach="material" />
+            </mesh>
+          </group>
+
+          <mesh position={[0, 0, 0.12]}>
+            <sphereGeometry args={[1.18, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2]} />
             <primitive object={glassMat} attach="material" />
           </mesh>
 
-          <mesh ref={pulseA} position={[0, 0, 0.12]}>
+          <mesh ref={pulseA} position={[0, 0, 0.1]}>
             <torusGeometry args={[1.0, 0.02, 8, 64]} />
             <primitive object={pulseMatA} attach="material" />
           </mesh>
-          <mesh ref={pulseB} position={[0, 0, 0.13]}>
+          <mesh ref={pulseB} position={[0, 0, 0.11]}>
             <torusGeometry args={[1.0, 0.02, 8, 64]} />
             <primitive object={pulseMatB} attach="material" />
           </mesh>
@@ -755,7 +891,7 @@ class HeroBoundary extends Component<{ children: React.ReactNode }, { failed: bo
   }
 }
 
-export default function HeroCompass({ slide }: { slide: number }) {
+export default function HeroCompass({ slide }: { slide: SlideInput }) {
   return (
     <HeroBoundary>
       <Canvas camera={{ position: [0, 0.5, 7.6], fov: 42 }} dpr={[1, 2]}

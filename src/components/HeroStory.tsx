@@ -4,7 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useSpring } from "framer-motion";
 import { ChevronLeft, ChevronRight, Compass, Loader2, Play, UserPlus, Zap } from "lucide-react";
 
 const HeroCompass = dynamic(() => import("@/components/HeroCompass"), { ssr: false, loading: () => null });
@@ -33,45 +33,43 @@ const SLIDES: Slide[] = [
 
 const AUTO_MS = 4300;
 const LAST = SLIDES.length - 1;
+const clamp01 = (v: number) => Math.max(0, Math.min(LAST, v));
 
 export default function HeroStory() {
   const router = useRouter();
   const reduced = useReducedMotion();
-  const [slide, setSlide] = useState(0);
+  const target = useMotionValue(0);
+  const pos = useSpring(target, { stiffness: 110, damping: 26, mass: 0.9 });
+  const posRef = useRef(0);
+  const [active, setActive] = useState(0);
+  const activeRef = useRef(0);
   const [hovering, setHovering] = useState(false);
   const [busy, setBusy] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
-  const slideRef = useRef(0);
-  const lock = useRef(0);
   const wheelLock = useRef(0);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const rx = useSpring(useMotionValue(0), { stiffness: 140, damping: 22 });
   const ry = useSpring(useMotionValue(0), { stiffness: 140, damping: 22 });
 
-  const goTo = useCallback((i: number) => {
-    const target = Math.max(0, Math.min(LAST, i));
-    if (target === slideRef.current) return;
-    if (Date.now() - lock.current < 850) return;
-    lock.current = Date.now();
-    setBusy(true);
-    setSlide(target);
-  }, []);
+  useMotionValueEvent(pos, "change", (v) => {
+    posRef.current = v;
+    const r = Math.round(v);
+    if (r !== activeRef.current) {
+      activeRef.current = r;
+      setActive(r);
+      setBusy(true);
+      setTimeout(() => setBusy(false), 850);
+    }
+  });
 
-  const goNext = useCallback(() => goTo(slideRef.current + 1), [goTo]);
-  const goPrev = useCallback(() => goTo(slideRef.current - 1), [goTo]);
-
-  useEffect(() => { slideRef.current = slide; }, [slide]);
-
-  useEffect(() => {
-    if (!busy) return;
-    const t = setTimeout(() => setBusy(false), 850);
-    return () => clearTimeout(t);
-  }, [busy]);
+  const goNext = useCallback(() => target.set(clamp01(Math.round(target.get()) + 1)), [target]);
+  const goPrev = useCallback(() => target.set(clamp01(Math.round(target.get()) - 1)), [target]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight" || e.key === " " || e.key === "Enter") { e.preventDefault(); goNext(); }
-      else if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); goNext(); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
+      else if (e.key === "Enter") { e.preventDefault(); goNext(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -79,20 +77,20 @@ export default function HeroStory() {
 
   useEffect(() => {
     const onWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) < 24) return;
-      if (Date.now() - wheelLock.current < 1100) return;
+      if (Math.abs(e.deltaY) < 16) return;
+      if (Date.now() - wheelLock.current < 260) return;
       wheelLock.current = Date.now();
-      if (e.deltaY > 0) goNext(); else goPrev();
+      target.set(clamp01(target.get() + e.deltaY / 420));
     };
     window.addEventListener("wheel", onWheel, { passive: true });
     return () => window.removeEventListener("wheel", onWheel);
-  }, [goNext, goPrev]);
+  }, [target]);
 
   useEffect(() => {
-    if (slide === LAST || reduced || hovering) return;
-    const t = setTimeout(() => goNext(), AUTO_MS);
+    if (active >= LAST || reduced || hovering) return;
+    const t = setTimeout(() => target.set(clamp01(target.get() + 1)), AUTO_MS);
     return () => clearTimeout(t);
-  }, [slide, reduced, hovering, goNext]);
+  }, [active, reduced, hovering, target]);
 
   const startDemo = async () => {
     setDemoLoading(true);
@@ -103,7 +101,7 @@ export default function HeroStory() {
     finally { setDemoLoading(false); }
   };
 
-  const ch = SLIDES[slide];
+  const ch = SLIDES[active];
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#04040a] text-slate-200 select-none"
@@ -120,30 +118,30 @@ export default function HeroStory() {
         const dx = e.changedTouches[0].clientX - touch.current.x;
         const dy = e.changedTouches[0].clientY - touch.current.y;
         touch.current = null;
-        if (Math.abs(dx) > 64 && Math.abs(dx) > Math.abs(dy)) { if (dx < 0) goNext(); else goPrev(); }
-        else if (Math.abs(dy) > 64) { if (dy < 0) goNext(); else goPrev(); }
+        if (Math.abs(dx) > 56 && Math.abs(dx) > Math.abs(dy)) { if (dx < 0) goNext(); else goPrev(); }
+        else if (Math.abs(dy) > 56) { if (dy < 0) goNext(); else goPrev(); }
       }}>
 
       <AnimatePresence>
-        <motion.div key={slide} className="absolute inset-0 z-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 1.1 }}
+        <motion.div key={active} className="absolute inset-0 z-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 1.1 }}
           style={{ background: `radial-gradient(60% 60% at 62% 46%, ${ch.color}30, transparent 70%), radial-gradient(40% 40% at 80% 15%, ${ch.color}16, transparent 70%), radial-gradient(30% 30% at 12% 82%, ${ch.color}12, transparent 70%)` }} />
       </AnimatePresence>
 
       <div className="absolute inset-0 z-0">
-        <HeroCompass slide={slide} />
+        <HeroCompass slide={posRef} />
       </div>
 
       <div className="absolute inset-0 z-[5] pointer-events-none" style={{ background: "radial-gradient(120% 90% at 50% 40%, transparent 48%, rgba(0,0,0,0.6) 100%)" }} />
 
       <div className="absolute inset-0 z-[5] pointer-events-none mix-blend-overlay" style={{ backgroundImage: GRAIN, opacity: 0.07, animation: "storyGrain 0.6s steps(3) infinite" }} />
 
-      <motion.div key={`vig-${slide}`} className="absolute inset-0 z-[6] pointer-events-none"
+      <motion.div key={`vig-${active}`} className="absolute inset-0 z-[6] pointer-events-none"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.2 }}
         style={{ boxShadow: `inset 0 0 26vmax ${ch.color}14, inset 0 0 22vmax rgba(0,0,0,0.78), inset 0 0 6vmax rgba(0,0,0,0.9)` }} />
 
       <AnimatePresence>
         {!reduced && (
-          <motion.div key={`sweep-${slide}`} className="pointer-events-none absolute inset-y-0 z-[7] w-[45%] -skew-x-12"
+          <motion.div key={`sweep-${active}`} className="pointer-events-none absolute inset-y-0 z-[7] w-[45%] -skew-x-12"
             style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.04), rgba(255,255,255,0.09), rgba(255,255,255,0.04), transparent)" }}
             initial={{ left: "-50%" }} animate={{ left: "115%" }} exit={{ left: "115%" }} transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }} />
         )}
@@ -171,25 +169,25 @@ export default function HeroStory() {
           <span className="hidden sm:flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] uppercase text-slate-500">
             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> Rec
           </span>
-          <span className="text-[11px] tracking-[0.25em] text-slate-500 tabular-nums hidden sm:block">{String(slide + 1).padStart(2, "0")} / {String(SLIDES.length).padStart(2, "0")}</span>
+          <span className="text-[11px] tracking-[0.25em] text-slate-500 tabular-nums hidden sm:block">{String(active + 1).padStart(2, "0")} / {String(SLIDES.length).padStart(2, "0")}</span>
           <Link href="/register" className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-colors">Skip →</Link>
         </div>
       </div>
 
       <div className="absolute top-0 inset-x-0 z-40 h-[3px] bg-white/5">
-        <motion.div key={slide} className="h-full origin-left" style={{ background: `linear-gradient(90deg, ${ch.color}, #a78bfa)` }}
-          initial={{ scaleX: 0 }} animate={{ scaleX: slide === LAST || reduced || hovering ? 0 : 1 }} transition={{ duration: AUTO_MS / 1000, ease: "linear" }} />
+        <motion.div key={active} className="h-full origin-left" style={{ background: `linear-gradient(90deg, ${ch.color}, #a78bfa)` }}
+          initial={{ scaleX: 0 }} animate={{ scaleX: active === LAST || reduced || hovering ? 0 : 1 }} transition={{ duration: AUTO_MS / 1000, ease: "linear" }} />
       </div>
 
       <div className="absolute left-0 right-0 z-20 bottom-0 pb-32 sm:pb-28 sm:left-auto sm:max-w-2xl sm:pl-0 sm:pr-12 lg:pr-16 px-6 sm:flex sm:items-center sm:justify-start sm:top-0 sm:pt-0">
         <motion.div className="relative max-w-xl" style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}>
-          <motion.div key={`ghost-${slide}`} initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          <motion.div key={`ghost-${active}`} initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
             className="pointer-events-none absolute -left-6 -top-14 sm:-left-16 sm:-top-20 text-[clamp(8rem,24vw,20rem)] font-black leading-none select-none"
             style={{ color: `${ch.color}0f`, WebkitTextStroke: `1px ${ch.color}26` }}>
             {ch.no}
           </motion.div>
           <AnimatePresence mode="wait">
-            <motion.div key={slide} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}>
+            <motion.div key={active} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-[10px] tracking-[0.45em] uppercase" style={{ color: ch.color }}>{ch.tag}</span>
                 <span className="h-px w-12" style={{ background: ch.color }} />
@@ -235,7 +233,7 @@ export default function HeroStory() {
       </div>
 
       <div className="absolute left-6 bottom-24 z-30 text-[9px] tracking-[0.4em] uppercase text-slate-600 hidden sm:block pointer-events-none">
-        Compass · A career story in 7 scenes
+        Scroll to move · Compass finds your direction
       </div>
 
       <div className="absolute inset-x-0 z-30 flex items-center justify-center gap-4 px-6 bottom-[6vh]">
@@ -245,9 +243,9 @@ export default function HeroStory() {
         </button>
         <div className="flex items-center gap-2">
           {SLIDES.map((s, i) => (
-            <button key={s.no} onClick={() => goTo(i)} aria-label={`Slide ${i + 1}`}
-              className={`h-1.5 rounded-full transition-all ${i === slide ? "w-7" : "w-3 bg-white/15 hover:bg-white/30"}`}
-              style={i === slide ? { background: s.color } : undefined} />
+            <button key={s.no} onClick={() => target.set(i)} aria-label={`Slide ${i + 1}`}
+              className={`h-1.5 rounded-full transition-all ${i === active ? "w-7" : "w-3 bg-white/15 hover:bg-white/30"}`}
+              style={i === active ? { background: s.color } : undefined} />
           ))}
         </div>
         <button onClick={goNext} aria-label="Next slide"
@@ -256,7 +254,7 @@ export default function HeroStory() {
         </button>
       </div>
 
-      {slide < LAST && (
+      {active < LAST && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="absolute right-6 top-1/2 -translate-y-1/2 z-40 hidden lg:flex items-center gap-2 text-[10px] tracking-[0.35em] uppercase text-slate-500">
           Scroll <Play className="w-3 h-3 rotate-90" />
         </motion.div>
