@@ -1,12 +1,15 @@
 ﻿"use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, useScroll, useTransform, useSpring, useMotionValue } from "framer-motion";
+import { motion, useScroll, useTransform, useSpring, useMotionValue, useMotionValueEvent } from "framer-motion";
 import { Compass, ArrowRight, Brain, Shield, Mic, Briefcase, Loader2, Zap, Globe, LogIn, UserPlus } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import PageTour from "@/components/PageTour";
+
+const CompassCanvas = dynamic(() => import("@/components/Compass3D"), { ssr: false, loading: () => null });
 
 const FEATURES = [
   { icon: Brain, titleKey: "landing.feature1Title", descKey: "landing.feature1Desc", color: "rgba(99,102,241,0.15)" },
@@ -140,15 +143,16 @@ export default function LandingPage() {
   const heroY = useTransform(heroP, [0, 1], [0, -130]);
   const heroScale = useTransform(heroP, [0, 1], [1, 0.85]);
   const heroOpacity = useTransform(heroP, [0, 0.65], [1, 0]);
-  const heroOrbit = useTransform(heroP, [0, 1], [0, 90]);
   const cueO = useTransform(heroP, [0.04, 0.25], [1, 0]);
+  const heroScroll = useRef(0);
+  useMotionValueEvent(heroP, "change", (v) => { heroScroll.current = v; });
 
   const sceneRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress: sceneP } = useScroll({ target: sceneRef, offset: ["start start", "end end"] });
-  const spin = useTransform(sceneP, [0, 1], [0, 360]);
-  const tilt = useTransform(sceneP, [0, 0.5, 1], [72, 12, 72]);
   const sceneScale = useTransform(sceneP, [0, 1], [0.72, 1.08]);
   const sceneOpacity = useTransform(sceneP, [0, 0.06, 0.94, 1], [0.3, 1, 1, 0.3]);
+  const sceneScroll = useRef(0);
+  useMotionValueEvent(sceneP, "change", (v) => { sceneScroll.current = v; });
   const s1o = useTransform(sceneP, [0.0, 0.1, 0.25, 0.33], [0, 1, 1, 0]);
   const s2o = useTransform(sceneP, [0.34, 0.46, 0.6, 0.68], [0, 1, 1, 0]);
   const s3o = useTransform(sceneP, [0.69, 0.82, 1], [0, 1, 1]);
@@ -196,9 +200,9 @@ export default function LandingPage() {
 
         <motion.div style={{ rotateX: heroRotateX, y: heroY, scale: heroScale, opacity: heroOpacity, transformStyle: "preserve-3d", transformPerspective: 1200 }}
           className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
-          <motion.div style={{ rotate: heroOrbit }} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(88vw,56rem)] h-[min(88vw,56rem)] opacity-40">
-            <Orrery />
-          </motion.div>
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(100vw,60rem)] h-[min(100vw,60rem)] opacity-90">
+            <CompassCanvas scrollRef={heroScroll} tumble={0.35} />
+          </div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="relative inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 text-indigo-400 text-xs font-medium mb-6" style={{ transform: "translateZ(60px)" }}>
@@ -252,9 +256,8 @@ export default function LandingPage() {
             <div className="absolute bottom-1/4 right-1/4 w-[520px] h-[520px] rounded-full opacity-10" style={{ background: "radial-gradient(circle, rgba(168,85,247,0.35), transparent 70%)" }} />
           </div>
 
-          <motion.div style={{ rotateY: spin, rotateX: tilt, scale: sceneScale, opacity: sceneOpacity, transformPerspective: 1400 }}
-            className="absolute w-[min(84vw,54rem)] h-[min(84vw,54rem)]">
-            <Orrery />
+          <motion.div style={{ scale: sceneScale, opacity: sceneOpacity }} className="absolute w-[min(88vw,52rem)] h-[min(88vw,52rem)]">
+            <CompassCanvas scrollRef={sceneScroll} tumble={1} />
           </motion.div>
 
           {STEPS.map((step, i) => {
