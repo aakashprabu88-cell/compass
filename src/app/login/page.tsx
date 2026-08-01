@@ -3,34 +3,48 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Loader2, Eye, EyeOff, Mail, Lock, ArrowRight, ArrowUpRight, ShieldCheck } from "lucide-react";
+import {
+  motion, useMotionValue, useSpring, useTransform
+} from "framer-motion";
+import { Loader2, Eye, EyeOff, Mail, Lock, ArrowRight, ArrowUpRight, ShieldCheck, Zap, BrainCircuit, FileText, TrendingUp } from "lucide-react";
 
-const HEADLINE = ["Your", "career,", "plotted."];
+const CHIPS = [
+  { text: "AI interview coach", icon: BrainCircuit, color: "text-purple-400", x: "72%", y: "18%", z: 70, delay: 0.4 },
+  { text: "97% path match", icon: Zap, color: "text-amber-400", x: "58%", y: "68%", z: 90, delay: 0.8 },
+  { text: "Resume ready", icon: FileText, color: "text-emerald-400", x: "84%", y: "52%", z: 110, delay: 1.2 },
+  { text: "Live TN jobs", icon: TrendingUp, color: "text-indigo-400", x: "40%", y: "30%", z: 60, delay: 1.6 },
+];
 
-function OrbitMark() {
+function OrbitRing({ size, duration, border, dotColor, tilt, dotDelay = 0 }: { size: number; duration: number; border: string; dotColor: string; tilt: string; dotDelay?: number }) {
   return (
-    <div className="absolute -right-40 top-1/2 -translate-y-1/2 w-[42rem] h-[42rem] opacity-[0.22] pointer-events-none" aria-hidden>
-      <svg viewBox="0 0 400 400" className="w-full h-full">
-        <defs>
-          <linearGradient id="orbGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#818cf8" />
-            <stop offset="100%" stopColor="#a855f7" />
-          </linearGradient>
-        </defs>
-        <motion.g initial={{ rotate: 0 }} animate={{ rotate: 360 }} transition={{ duration: 60, repeat: Infinity, ease: "linear" }} style={{ transformOrigin: "200px 200px" }}>
-          <circle cx="200" cy="200" r="150" fill="none" stroke="url(#orbGrad)" strokeWidth="1" strokeDasharray="4 10" opacity="0.6" />
-        </motion.g>
-        <motion.g initial={{ rotate: 360 }} animate={{ rotate: 0 }} transition={{ duration: 80, repeat: Infinity, ease: "linear" }} style={{ transformOrigin: "200px 200px" }}>
-          <circle cx="200" cy="200" r="110" fill="none" stroke="rgba(99,102,241,0.5)" strokeWidth="1" strokeDasharray="40 14 4 14" />
-        </motion.g>
-        <motion.g initial={{ rotate: 0 }} animate={{ rotate: -360 }} transition={{ duration: 45, repeat: Infinity, ease: "linear" }} style={{ transformOrigin: "200px 200px" }}>
-          <circle cx="200" cy="200" r="70" fill="none" stroke="rgba(52,211,153,0.45)" strokeWidth="1" />
-          <circle cx="200" cy="130" r="3.5" fill="#818cf8" />
-        </motion.g>
-        <circle cx="200" cy="200" r="8" fill="url(#orbGrad)" />
-        <circle cx="200" cy="200" r="26" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1" />
-      </svg>
+    <motion.div className="absolute inset-0" style={{ transform: tilt, transformStyle: "preserve-3d" }}
+      animate={{ rotate: 360 }} transition={{ duration, repeat: Infinity, ease: "linear" }}>
+      <div className="absolute rounded-full" style={{ inset: (500 - size) / 2, border }} />
+      <div className="absolute w-2.5 h-2.5 rounded-full" style={{ left: "50%", top: (500 - size) / 2, transform: "translate(-50%,-50%)", background: dotColor, boxShadow: `0 0 16px ${dotColor}` }} />
+      <motion.div className="absolute rounded-full" style={{ left: "50%", top: (500 - size) / 2 + size - 12, transform: "translate(-50%,-50%)" }}
+        animate={{ opacity: [0, 0.9, 0] }} transition={{ duration: 3, repeat: Infinity, delay: dotDelay }} />
+    </motion.div>
+  );
+}
+
+function Orrery() {
+  return (
+    <div className="absolute right-[-14%] top-1/2 -translate-y-1/2 w-[34rem] h-[34rem] xl:w-[40rem] xl:h-[40rem] pointer-events-none" style={{ perspective: 1100 }} aria-hidden>
+      <div className="relative w-full h-full" style={{ transformStyle: "preserve-3d", transform: "rotateX(16deg)" }}>
+        <OrbitRing size={500} duration={28} tilt="rotateX(70deg)" border="1px dashed rgba(129,140,248,0.35)" dotColor="#818cf8" dotDelay={0.5} />
+        <OrbitRing size={380} duration={38} tilt="rotateY(72deg)" border="1px solid rgba(52,211,153,0.28)" dotColor="#34d399" dotDelay={1.4} />
+        <OrbitRing size={270} duration={22} tilt="rotateX(-64deg)" border="1px solid rgba(232,121,249,0.3)" dotColor="#e879f9" dotDelay={2.1} />
+
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <motion.div animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-fuchsia-500 flex items-center justify-center"
+            style={{ boxShadow: "0 0 60px rgba(129,140,248,0.6)" }}>
+            <CompassIcon className="w-9 h-9 text-white" />
+          </motion.div>
+          <motion.div animate={{ scale: [1, 1.25, 1], opacity: [0.5, 0.15, 0.5] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-0 rounded-full border border-indigo-400/40" style={{ inset: "-14px" }} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -41,6 +55,17 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [show, setShow] = useState(false);
+
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const rotateX = useSpring(useTransform(my, [-0.5, 0.5], [9, -9]), { stiffness: 70, damping: 18 });
+  const rotateY = useSpring(useTransform(mx, [-0.5, 0.5], [-11, 11]), { stiffness: 70, damping: 18 });
+
+  const onMove = (e: React.MouseEvent) => {
+    const w = window.innerWidth, h = window.innerHeight;
+    mx.set(e.clientX / w - 0.5);
+    my.set(e.clientY / h - 0.5);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,18 +92,32 @@ export default function LoginPage() {
   const inputCls = "w-full pl-11 pr-4 py-3 rounded-lg bg-white/[0.03] border border-white/10 text-sm text-slate-200 outline-none focus:border-indigo-500/60 focus:bg-white/[0.05] focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-slate-600";
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[#07070f] text-slate-200 overflow-hidden">
-      {/* ambient background */}
+    <div onMouseMove={onMove} className="min-h-screen flex flex-col lg:flex-row bg-[#07070f] text-slate-200 overflow-hidden">
       <div className="fixed inset-0 pointer-events-none" aria-hidden>
         <div className="absolute -top-56 -left-40 w-[46rem] h-[46rem] rounded-full bg-indigo-600/[0.10] blur-3xl" />
         <div className="absolute bottom-0 right-1/4 w-[36rem] h-[36rem] rounded-full bg-purple-600/[0.07] blur-3xl" />
       </div>
 
-      {/* ── Hero / statement ───────────────────────────── */}
-      <section className="relative flex-1 flex flex-col justify-between p-8 sm:p-12 lg:p-16 min-h-[52vh] lg:min-h-screen overflow-hidden">
-        <OrbitMark />
+      {/* ── 3D hero ─────────────────────────────────────── */}
+      <section className="relative flex-1 flex flex-col justify-between p-8 sm:p-12 lg:p-16 min-h-[54vh] lg:min-h-screen overflow-hidden" style={{ perspective: 1200 }}>
+        <motion.div className="absolute inset-0" style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}>
+          <div className="absolute inset-0" style={{ transform: "translateZ(-80px)" }}>
+            <Orrery />
+          </div>
 
-        <div className="relative flex items-center justify-between">
+          {CHIPS.map((chip, i) => (
+            <motion.div key={i} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.9 + i * 0.15 }}
+              className="absolute hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md text-xs text-slate-300 shadow-xl shadow-black/40"
+              style={{ left: chip.x, top: chip.y, transform: `translateZ(${chip.z}px)` }}>
+              <motion.span animate={{ y: [0, -8, 0] }} transition={{ duration: 4 + i, repeat: Infinity, ease: "easeInOut", delay: i }}>
+                <chip.icon className={`w-3.5 h-3.5 ${chip.color}`} />
+              </motion.span>
+              {chip.text}
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <div className="relative flex items-center justify-between" style={{ transform: "translateZ(50px)" }}>
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-950/50">
               <CompassIcon className="w-5 h-5 text-white" />
@@ -90,20 +129,20 @@ export default function LoginPage() {
           </span>
         </div>
 
-        <div className="relative max-w-3xl">
+        <div className="relative max-w-3xl" style={{ transformStyle: "preserve-3d" }}>
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-            className="text-[11px] sm:text-xs tracking-[0.3em] uppercase text-indigo-300/90 mb-6">
+            className="text-[11px] sm:text-xs tracking-[0.3em] uppercase text-indigo-300/90 mb-6" style={{ transform: "translateZ(70px)" }}>
             From assessment to offer letter
           </motion.p>
 
-          <h1 className="font-extrabold tracking-tight leading-[0.95] text-[13vw] sm:text-7xl lg:text-[5.5rem] xl:text-[6.5rem] text-white">
-            {HEADLINE.map((word, i) => (
-              <span key={i} className="block overflow-hidden">
+          <h1 className="font-extrabold tracking-tight leading-[0.95] text-[13vw] sm:text-7xl lg:text-[5.5rem] xl:text-[6.5rem] text-white" style={{ transformStyle: "preserve-3d" }}>
+            {["Your", "career,", "plotted."].map((word, i) => (
+              <span key={i} className="block overflow-hidden" style={{ transform: `translateZ(${40 + i * 30}px)` }}>
                 <motion.span
                   initial={{ y: "110%" }}
                   animate={{ y: 0 }}
                   transition={{ duration: 0.7, delay: 0.3 + i * 0.12, ease: [0.22, 1, 0.36, 1] }}
-                  className={`block ${i === 2 ? "bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400 bg-clip-text text-transparent" : ""}`}>
+                  className={`block drop-shadow-[0_10px_30px_rgba(99,102,241,0.35)] ${i === 2 ? "bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400 bg-clip-text text-transparent" : ""}`}>
                   {word}
                 </motion.span>
               </span>
@@ -111,47 +150,39 @@ export default function LoginPage() {
           </h1>
 
           <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.8, delay: 0.75, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-8 h-px bg-gradient-to-r from-indigo-500/60 via-purple-500/40 to-transparent w-72" />
+            className="mt-8 h-px bg-gradient-to-r from-indigo-500/60 via-purple-500/40 to-transparent w-72" style={{ transform: "translateZ(60px)" }} />
 
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.85 }}
-            className="mt-7 text-sm sm:text-base text-slate-400 max-w-md leading-relaxed">
+            className="mt-7 text-sm sm:text-base text-slate-400 max-w-md leading-relaxed" style={{ transform: "translateZ(45px)" }}>
             Discover the right path, build the skills employers demand, and land real opportunities across Tamil Nadu — all in one place.
           </motion.p>
-
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }}
-            className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-3 text-[11px] text-slate-500">
-            <span className="flex items-center gap-2"><span className="text-indigo-400 font-semibold">40+</span> career paths</span>
-            <span className="flex items-center gap-2"><span className="text-indigo-400 font-semibold">AI</span> interview coach</span>
-            <span className="flex items-center gap-2"><span className="text-indigo-400 font-semibold">Live</span> TN jobs</span>
-          </motion.div>
         </div>
 
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}
-          className="relative hidden lg:flex items-center gap-2 text-[11px] text-slate-600">
+          className="relative hidden lg:flex items-center gap-2 text-[11px] text-slate-600" style={{ transform: "translateZ(40px)" }}>
           <ShieldCheck className="w-4 h-4 text-emerald-500" /> Enterprise-grade security · Your data stays private
         </motion.p>
       </section>
 
-      {/* ── Sign-in panel ──────────────────────────────── */}
+      {/* ── Sign-in panel ───────────────────────────────── */}
       <section className="relative w-full lg:w-[460px] xl:w-[500px] border-t lg:border-t-0 lg:border-l border-white/[0.06] bg-white/[0.015] flex flex-col p-8 sm:p-12 lg:p-14">
-        <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
-          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.35 }}>
-            <p className="text-[11px] tracking-[0.25em] uppercase text-slate-600 mb-2">Sign in</p>
-            <h2 className="text-3xl font-bold text-white tracking-tight mb-1.5">Welcome back</h2>
-            <p className="text-sm text-slate-500 mb-8">Enter your credentials to continue</p>
-          </motion.div>
+        <motion.div initial={{ opacity: 0, rotateY: 10 }} animate={{ opacity: 1, rotateY: 0 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          style={{ perspective: 900 }} className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
+          <p className="text-[11px] tracking-[0.25em] uppercase text-slate-600 mb-2">Sign in</p>
+          <h2 className="text-3xl font-bold text-white tracking-tight mb-1.5">Welcome back</h2>
+          <p className="text-sm text-slate-500 mb-8">Enter your credentials to continue</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
+            <div>
               <label className="text-xs font-medium text-slate-400 mb-1.5 block">Email</label>
               <div className="relative">
                 <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
                   type="email" placeholder="you@example.com" required autoFocus className={inputCls} />
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.52 }}>
+            <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-medium text-slate-400">Password</label>
                 <button type="button" className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors">Forgot password?</button>
@@ -165,33 +196,32 @@ export default function LoginPage() {
                   {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-            </motion.div>
+            </div>
 
             {error && (
               <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg p-2.5">{error}</p>
             )}
 
-            <motion.button type="submit" disabled={loading || !form.email || !form.password}
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
+            <button type="submit" disabled={loading || !form.email || !form.password}
               className="group w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 text-sm font-semibold text-white transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-950/50">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Sign in <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" /></>}
-            </motion.button>
+            </button>
           </form>
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="flex items-center gap-3 my-7">
+          <div className="flex items-center gap-3 my-7">
             <div className="flex-1 h-px bg-white/[0.08]" />
             <span className="text-[10px] text-slate-600 uppercase tracking-wider">or</span>
             <div className="flex-1 h-px bg-white/[0.08]" />
-          </motion.div>
+          </div>
 
-          <motion.button onClick={fillDemo} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.75 }}
+          <button onClick={fillDemo}
             className="group w-full py-3 rounded-lg bg-white/[0.04] border border-white/10 hover:border-white/20 hover:bg-white/[0.06] text-xs text-slate-300 transition-colors flex items-center justify-center gap-2">
             Use demo account
             <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-          </motion.button>
-        </div>
+          </button>
+        </motion.div>
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.85 }} className="max-w-sm mx-auto w-full">
+        <div className="max-w-sm mx-auto w-full">
           <p className="text-sm text-slate-500 text-center">
             Don&apos;t have an account?{" "}
             <Link href="/register" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">Create one</Link>
@@ -199,7 +229,7 @@ export default function LoginPage() {
           <Link href="/" className="block text-center mt-4 text-xs text-slate-600 hover:text-slate-400 transition-colors">
             ← Back to Home
           </Link>
-        </motion.div>
+        </div>
       </section>
     </div>
   );
