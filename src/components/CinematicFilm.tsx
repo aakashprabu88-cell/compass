@@ -10,6 +10,8 @@ const PHASES = [
   { color: "#a855f7", cam: [0, 0.4, 5.4] },
   { color: "#10b981", cam: [0, 0.95, 5.7] },
   { color: "#22d3ee", cam: [0, 0.1, 4.7] },
+  { color: "#f59e0b", cam: [0, 0.5, 6.0] },
+  { color: "#f472b6", cam: [0, 0.6, 5.8] },
 ] as const;
 
 const smooth = (x: number) => {
@@ -87,13 +89,17 @@ function FilmInner({ phase }: { phase: number }) {
   const g2 = useRef<THREE.Group>(null!);
   const g3 = useRef<THREE.Group>(null!);
   const g4 = useRef<THREE.Group>(null!);
+  const g5 = useRef<THREE.Group>(null!);
+  const g6 = useRef<THREE.Group>(null!);
   const sweep = useRef<THREE.Mesh>(null!);
   const chips = useRef<THREE.Group>(null!);
   const nodesG = useRef<THREE.Group>(null!);
   const pathG = useRef<THREE.Mesh>(null!);
   const burstG = useRef<THREE.Points>(null!);
+  const reachG = useRef<THREE.Points>(null!);
+  const panelG = useRef<THREE.Group>(null!);
 
-  const groupRefs = [g0, g1, g2, g3, g4];
+  const groupRefs = [g0, g1, g2, g3, g4, g5, g6];
 
   const glowMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#818cf8", transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }), []);
 
@@ -127,6 +133,8 @@ function FilmInner({ phase }: { phase: number }) {
   const dustGeo = useMemo(() => makeDust(150), []);
   const chipGeo = useMemo(() => new THREE.OctahedronGeometry(0.16, 0), []);
   const nodeGeo = useMemo(() => new THREE.IcosahedronGeometry(0.28, 0), []);
+  const panelGeo = useMemo(() => new THREE.BoxGeometry(0.05, 3.3, 1.35), []);
+  const panelPos = useMemo(() => [-1.15, 0, 1.15].map(x => new THREE.Vector3(x * 1.7, 0, -1.4 - Math.abs(x) * 0.45)), []);
 
   const curve = useMemo(() => {
     const pts: THREE.Vector3[] = [];
@@ -155,6 +163,7 @@ function FilmInner({ phase }: { phase: number }) {
 
   const webGeo = useMemo(() => makeWeb(), []);
   const burst = useMemo(() => makeBurst(170), []);
+  const reach = useMemo(() => makeBurst(90), []);
 
   const chipsArr = useMemo(() =>
     Array.from({ length: 8 }, (_, i) => {
@@ -178,12 +187,16 @@ function FilmInner({ phase }: { phase: number }) {
     const sparkMat = new THREE.PointsMaterial({ color: "#10b981", size: 0.06, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
     const webMat = new THREE.LineBasicMaterial({ color: "#22d3ee", transparent: true, opacity: 0.35, depthWrite: false });
     const burstMat = new THREE.PointsMaterial({ color: "#22d3ee", size: 0.09, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
+    const reachMat = new THREE.PointsMaterial({ color: "#f59e0b", size: 0.07, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
+    const panelMat = new THREE.MeshStandardMaterial({ color: "#f472b6", emissive: "#f472b6", emissiveIntensity: 0.85, metalness: 0.2, roughness: 0.4, transparent: true, opacity: 1 });
     return [
       { mats: [{ mat: shardMat, base: 0.95 }], group: 0 },
       { mats: [{ mat: sweepMat, base: 0.85 }, { mat: chipMat, base: 1 }], group: 1 },
       { mats: [{ mat: nodeMat, base: 1 }], group: 2 },
       { mats: [{ mat: pathMat, base: 0.9 }, { mat: sparkMat, base: 0.9 }], group: 3 },
       { mats: [{ mat: webMat, base: 0.35 }, { mat: burstMat, base: 0.95 }], group: 4 },
+      { mats: [{ mat: reachMat, base: 0.9 }], group: 5 },
+      { mats: [{ mat: panelMat, base: 1 }], group: 6 },
     ];
   }, []);
 
@@ -195,6 +208,8 @@ function FilmInner({ phase }: { phase: number }) {
   const sparkMat = phaseMeta[3].mats[1].mat as THREE.PointsMaterial;
   const webMat = phaseMeta[4].mats[0].mat as THREE.LineBasicMaterial;
   const burstMat = phaseMeta[4].mats[1].mat as THREE.PointsMaterial;
+  const reachMat = phaseMeta[5].mats[0].mat as THREE.PointsMaterial;
+  const panelMat = phaseMeta[6].mats[0].mat as THREE.MeshStandardMaterial;
 
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
@@ -208,16 +223,16 @@ function FilmInner({ phase }: { phase: number }) {
   useEffect(() => {
     return () => {
       shardGeo.dispose(); dustGeo.dispose(); chipGeo.dispose(); nodeGeo.dispose();
-      pathGeo.dispose(); pathSparksGeo.dispose(); webGeo.dispose(); burst.g.dispose();
-      [shardMat, sweepMat, chipMat, nodeMat, pathMat, sparkMat, webMat, burstMat, glowMat].forEach(m => m.dispose());
+      panelGeo.dispose(); pathGeo.dispose(); pathSparksGeo.dispose(); webGeo.dispose(); burst.g.dispose();
+      [shardMat, sweepMat, chipMat, nodeMat, pathMat, sparkMat, webMat, burstMat, reachMat, panelMat, glowMat].forEach(m => m.dispose());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
-    const i0 = Math.min(4, Math.floor(phase));
-    const i1 = Math.min(4, i0 + 1);
+    const i0 = Math.min(6, Math.floor(phase));
+    const i1 = Math.min(6, i0 + 1);
     const f = Math.max(0, Math.min(1, phase - i0));
     const col = new THREE.Color(PHASES[i0].color).lerp(new THREE.Color(PHASES[i1].color), f);
 
@@ -280,6 +295,27 @@ function FilmInner({ phase }: { phase: number }) {
         }
       }
       (burstG.current.geometry.getAttribute("position") as THREE.BufferAttribute).needsUpdate = true;
+    }
+
+    if (reachG.current) {
+      const pos = (reachG.current.geometry.getAttribute("position") as THREE.BufferAttribute).array as Float32Array;
+      for (let i = 0; i < 90; i++) {
+        pos[i * 3] += reach.vel[i * 3] * delta * 0.85;
+        pos[i * 3 + 1] += reach.vel[i * 3 + 1] * delta * 0.85;
+        pos[i * 3 + 2] += reach.vel[i * 3 + 2] * delta * 0.85;
+        const r2 = pos[i * 3] ** 2 + pos[i * 3 + 1] ** 2 + pos[i * 3 + 2] ** 2;
+        if (r2 > 58) {
+          pos[i * 3] = 0; pos[i * 3 + 1] = 0; pos[i * 3 + 2] = 0;
+        }
+      }
+      (reachG.current.geometry.getAttribute("position") as THREE.BufferAttribute).needsUpdate = true;
+    }
+
+    if (panelG.current) {
+      panelG.current.rotation.y = Math.sin(t * 0.12) * 0.25;
+      panelG.current.children.forEach((p, i) => {
+        p.position.y = Math.sin(t * 1.4 + i * 2.1) * 0.12;
+      });
     }
 
     const cam = state.camera;
@@ -360,6 +396,24 @@ function FilmInner({ phase }: { phase: number }) {
           <points ref={burstG} geometry={burst.g}>
             <primitive object={burstMat} attach="material" />
           </points>
+        </group>
+
+        <group ref={g5}>
+          <points ref={reachG} geometry={reach.g}>
+            <primitive object={reachMat} attach="material" />
+          </points>
+        </group>
+
+        <group ref={g6}>
+          <group ref={panelG}>
+            {panelPos.map((p, i) => (
+              <mesh key={i} geometry={panelGeo} material={panelMat} position={p} />
+            ))}
+          </group>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 3.4, -1.4]} scale={[1.6, 1.6, 1]}>
+            <cylinderGeometry args={[0.001, 1.15, 4.4, 4, 1, true]} />
+            <meshBasicMaterial color="#f472b6" transparent opacity={0.12} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} />
+          </mesh>
         </group>
       </group>
     </>

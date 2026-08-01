@@ -18,8 +18,10 @@ const CHAPTERS: Chapter[] = [
   { no: "01", tag: "STEP 01 · ASSESS", color: "#818cf8", title: ["Map your", "strengths"], body: "An AI-guided assessment builds a precise graph of your skills, interests and ideal career paths in minutes." },
   { no: "02", tag: "STEP 02 · UPSKILL", color: "#a855f7", title: ["Close every", "gap"], body: "Courses, aptitude drills and interview prep — sequenced exactly to your gaps, powered by a personal coach." },
   { no: "03", tag: "STEP 03 · LAND", color: "#10b981", title: ["Real offers", "faster"], body: "Matched openings, AI-drafted outreach and mock interviews until you get hired." },
-  { no: "04", tag: "THE CORE", color: "#22d3ee", title: ["Compass AI", "is alive"], body: "One living career OS that thinks with you — from first assessment to accepted offer." },
-  { no: "05", tag: "YOUR MOVE", color: "#f59e0b", title: ["Your career,", "mapped"], body: "Join Compass and let your true north find you.", cta: true },
+  { no: "04", tag: "THE CORE", color: "#22d3ee", title: ["Compass AI", "is alive"], body: "One living career OS that thinks with you — a neural core mapping every skill to every opportunity." },
+  { no: "05", tag: "TOOL · EMAIL STUDIO", color: "#f59e0b", title: ["Open every", "door"], body: "AI-drafted, recruiter-ready outreach that gets replies — your pitch, sharpened by real data." },
+  { no: "06", tag: "TOOL · PANEL INTERVIEW", color: "#f472b6", title: ["Face the", "panel"], body: "Train against an AI interview panel across technical, HR and behavioral rounds — scored live." },
+  { no: "07", tag: "YOUR MOVE", color: "#f59e0b", title: ["Your career,", "mapped"], body: "Join Compass and let your true north find you.", cta: true },
 ];
 
 const AUTO_MS = 9000;
@@ -32,8 +34,15 @@ export default function CinematicManualPage() {
   const [hovering, setHovering] = useState(false);
   const [busy, setBusy] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
+  const [title, setTitle] = useState(true);
   const slideRef = useRef(0);
   const lock = useRef(0);
+
+  useEffect(() => {
+    if (reduced) { setTitle(false); return; }
+    const t = setTimeout(() => setTitle(false), 2600);
+    return () => clearTimeout(t);
+  }, [reduced]);
 
   const goTo = useCallback((i: number) => {
     const target = Math.max(0, Math.min(CHAPTERS.length - 1, i));
@@ -81,11 +90,47 @@ export default function CinematicManualPage() {
   };
 
   const ch = CHAPTERS[slide];
-  const phase = Math.min(4, slide);
+  const phase = slide === CHAPTERS.length - 1 ? 4 : Math.min(6, slide);
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#04040a] text-slate-200 select-none"
       onPointerEnter={() => setHovering(true)} onPointerLeave={() => setHovering(false)}>
+      <AnimatePresence>
+        {title && (
+          <motion.div className="absolute inset-0 z-[70] flex flex-col items-center justify-center bg-[#04040a]" exit={{ opacity: 0 }} transition={{ duration: 0.6 }} style={{ perspective: 1000 }}>
+            <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6 }} className="text-[11px] tracking-[0.55em] uppercase text-slate-400 mb-8">
+              Compass presents
+            </motion.p>
+            <motion.div initial={{ scale: 0.92, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="relative w-72 sm:w-96">
+              <div className="relative h-44 sm:h-52 rounded-xl border border-white/15 overflow-hidden shadow-[0_30px_80px_-20px_rgba(99,102,241,0.45)]"
+                style={{ background: "linear-gradient(135deg, #171339, #2a1060)" }}>
+                <div className="absolute inset-0 opacity-25" style={{ background: "repeating-linear-gradient(-45deg, #ffffff 0 14px, transparent 14px 28px)" }} />
+                <div className="absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_100%,rgba(129,140,248,0.35),transparent_70%)]" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
+                  <span className="text-[9px] tracking-[0.5em] text-slate-300/80">A CAREER OS IN</span>
+                  <span className="text-2xl sm:text-3xl font-black tracking-tight text-white">THE FILM</span>
+                  <span className="text-[10px] tracking-[0.32em] text-slate-400">FROM FIRST ASSESSMENT TO ACCEPTED OFFER</span>
+                </div>
+                <motion.div className="absolute top-0 inset-x-0 h-[34%] origin-top border-b border-black/40"
+                  style={{ background: "repeating-linear-gradient(-45deg, rgba(255,255,255,0.5) 0 14px, rgba(255,255,255,0.12) 14px 28px), linear-gradient(135deg, #6366f1, #a855f7)" }}
+                  initial={{ rotateX: 0 }}
+                  animate={{ rotateX: [0, 0, -108] }}
+                  transition={{ duration: 0.55, times: [0, 0.55, 1], delay: 0.55, ease: "easeInOut" }} />
+                <div className="absolute inset-x-0 top-1/2 flex items-center justify-center gap-3 text-white font-mono text-sm -translate-y-[34%]">
+                  <span className="bg-black/30 px-3 py-1 rounded">COMPASS</span>
+                  <span className="bg-black/30 px-3 py-1 rounded">01 / FILM</span>
+                </div>
+              </div>
+            </motion.div>
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8, duration: 0.5 }} className="mt-8 text-xs tracking-[0.25em] uppercase text-slate-500">
+              Chapter 01 · The Gap
+            </motion.p>
+            <div className="mt-5 w-44 h-[2px] bg-white/10 overflow-hidden rounded-full">
+              <motion.div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500" style={{ transformOrigin: "left" }} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 2.2, ease: "linear" }} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         <motion.div key={slide} className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 1.1 }}
           style={{ background: `radial-gradient(60% 58% at 50% 46%, ${ch.color}26, transparent 68%), radial-gradient(42% 42% at 78% 18%, ${ch.color}12, transparent 70%), radial-gradient(34% 34% at 18% 82%, ${ch.color}0e, transparent 70%)` }} />
