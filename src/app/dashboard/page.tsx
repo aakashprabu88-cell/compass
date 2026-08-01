@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  Sparkles, ChevronRight, Target, FileText, UsersRound, Mail, Zap, TrendingUp,
-  AlertTriangle, BrainCircuit, Rocket, GraduationCap, Send, CheckCircle2, Clock,
-  Activity, Layers, BarChart3, ListChecks, Flame, Award
+  ChevronRight, Target, FileText, Mail, Zap, TrendingUp,
+  AlertTriangle, BrainCircuit, Rocket, GraduationCap, Send, CheckCircle2,
+  Activity, Layers, BarChart3, ListChecks, Flame, Award, ArrowUpRight, UsersRound
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,11 +19,11 @@ interface PipelineStats { saved: number; applied: number; shortlisted: number; a
 
 const container = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.06 } },
+  show: { transition: { staggerChildren: 0.05 } },
 };
 const item = {
-  hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as any } },
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as any } },
 };
 
 function CountUp({ value, suffix = "" }: { value: number; suffix?: string }) {
@@ -54,7 +54,7 @@ function Ring({ value, label, color }: { value: number; label: string; color: st
           strokeDasharray={c} initial={{ strokeDashoffset: c }} animate={{ strokeDashoffset: c - (pct / 100) * c }} transition={{ duration: 1.1, ease: "easeOut" }} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-extrabold text-lg" style={{ color }}><CountUp value={pct} suffix="%" /></span>
+        <span className="font-extrabold text-lg tabular-nums" style={{ color }}><CountUp value={pct} suffix="%" /></span>
       </div>
       <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-slate-500 uppercase tracking-wider whitespace-nowrap">{label}</span>
     </div>
@@ -131,7 +131,7 @@ export default function DashboardPage() {
       <Sidebar user={user} onLogout={logout} />
       <main className="flex-1 p-8">
         <div className="max-w-6xl mx-auto space-y-4">
-          <div className="h-8 w-64 bg-white/5 rounded-xl animate-pulse" />
+          <div className="h-8 w-64 bg-white/5 rounded-lg animate-pulse" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-28 bg-white/[0.02] border border-white/5 rounded-2xl animate-pulse" />)}
           </div>
@@ -163,6 +163,9 @@ export default function DashboardPage() {
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
+
+  const card = "rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5";
 
   return (
     <div className="h-screen flex overflow-hidden bg-[#0a0a12]">
@@ -174,11 +177,10 @@ export default function DashboardPage() {
           <motion.div variants={container} initial="hidden" animate="show" className="mb-6">
             <motion.div variants={item} className="flex flex-wrap items-end justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-extrabold tracking-tight">
+                <p className="text-[11px] text-slate-500 mb-1">{today}</p>
+                <h1 className="text-2xl font-bold tracking-tight text-white">
                   {v("dashboard.welcome", "Welcome back")},{" "}
-                  <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400 bg-clip-text text-transparent">
-                    {user?.name?.split(" ")[0] || "there"}
-                  </span>
+                  <span className="text-indigo-400">{user?.name?.split(" ")[0] || "there"}</span>
                 </h1>
                 <p className="text-sm text-slate-500 mt-1">{greeting} — here&apos;s your career command center.</p>
               </div>
@@ -192,24 +194,23 @@ export default function DashboardPage() {
           {/* KPI cards */}
           <motion.div data-tour="kpis" variants={container} initial="hidden" animate="show" className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             {[
-              { label: v("dashboard.topMatch", "Top Career Match"), value: <span className="truncate">{topPath?.careerPath?.title?.split(" ").slice(0, 2).join(" ") || "—"}</span>, icon: Target, tone: "from-indigo-500/25 to-purple-500/10 text-indigo-300", bar: "from-indigo-500 to-purple-500" },
-              { label: v("dashboard.avgMatch", "Average Match"), value: <><CountUp value={avgMatch} suffix="%" /></>, icon: Activity, tone: "from-emerald-500/25 to-teal-500/10 text-emerald-300", bar: "from-emerald-500 to-teal-500" },
-              { label: v("dashboard.skillGaps", "High-Priority Gaps"), value: <CountUp value={highGaps} />, icon: AlertTriangle, tone: "from-amber-500/25 to-orange-500/10 text-amber-300", bar: "from-amber-500 to-orange-500" },
-              { label: "Interview Readiness", value: <><CountUp value={readiness} suffix="%" /></>, icon: Rocket, tone: "from-purple-500/25 to-fuchsia-500/10 text-purple-300", bar: "from-purple-500 to-fuchsia-500" },
+              { label: v("dashboard.topMatch", "Top Career Match"), value: <span className="truncate">{topPath?.careerPath?.title?.split(" ").slice(0, 2).join(" ") || "—"}</span>, icon: Target, text: "text-indigo-400", bg: "bg-indigo-500/10", bar: "bg-indigo-500" },
+              { label: v("dashboard.avgMatch", "Average Match"), value: <><CountUp value={avgMatch} suffix="%" /></>, icon: Activity, text: "text-emerald-400", bg: "bg-emerald-500/10", bar: "bg-emerald-500" },
+              { label: v("dashboard.skillGaps", "High-Priority Gaps"), value: <CountUp value={highGaps} />, icon: AlertTriangle, text: "text-amber-400", bg: "bg-amber-500/10", bar: "bg-amber-500" },
+              { label: "Interview Readiness", value: <><CountUp value={readiness} suffix="%" /></>, icon: Rocket, text: "text-purple-400", bg: "bg-purple-500/10", bar: "bg-purple-500" },
             ].map((s, i) => (
-              <motion.div key={i} variants={item} whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="relative overflow-hidden p-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] group">
-                <div className={`absolute -top-8 -right-8 w-24 h-24 rounded-full bg-gradient-to-br ${s.tone.replace(" text-", " ") } opacity-30 blur-2xl group-hover:opacity-50 transition-opacity`} />
+              <motion.div key={i} variants={item} whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300, damping: 22 }}
+                className="relative p-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] transition-colors">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[10px] text-slate-500 uppercase tracking-wider">{s.label}</span>
-                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${s.tone} bg-clip-padding flex items-center justify-center`}>
-                    <s.icon className="w-4 h-4" />
+                  <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center`}>
+                    <s.icon className={`w-4 h-4 ${s.text}`} />
                   </div>
                 </div>
-                <div className="text-xl font-extrabold">{s.value}</div>
-                <div className="mt-2 h-1 rounded-full bg-white/5 overflow-hidden">
-                  <motion.div className={`h-full bg-gradient-to-r ${s.bar}`} initial={{ width: 0 }}
-                    animate={{ width: i === 0 ? "70%" : i === 1 ? `${avgMatch}%` : i === 2 ? `${Math.min(100, highGaps * 20)}%` : `${readiness}%` }} transition={{ duration: 1, delay: 0.3 + i * 0.1 }} />
+                <div className="text-xl font-bold text-white tabular-nums leading-none mb-3">{s.value}</div>
+                <div className="h-1 rounded-full bg-white/5 overflow-hidden">
+                  <motion.div className={`h-full ${s.bar}`} initial={{ width: 0 }}
+                    animate={{ width: i === 0 ? "70%" : i === 1 ? `${avgMatch}%` : i === 2 ? `${Math.min(100, highGaps * 20)}%` : `${readiness}%` }} transition={{ duration: 0.9, delay: 0.2 + i * 0.1, ease: "easeOut" }} />
                 </div>
               </motion.div>
             ))}
@@ -217,16 +218,15 @@ export default function DashboardPage() {
 
           {/* AI insights banner */}
           <motion.div variants={container} initial="hidden" animate="show" className="mb-6">
-            <motion.div variants={item} data-tour="insights" className="relative overflow-hidden rounded-2xl border border-indigo-500/25 p-5" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.10), rgba(168,85,247,0.05))" }}>
-              <div className="absolute -top-20 right-0 w-64 h-64 rounded-full bg-indigo-500/20 blur-3xl" />
+            <motion.div variants={item} data-tour="insights" className="relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/[0.07] to-purple-500/[0.03] p-5">
               <div className="relative flex flex-wrap items-start gap-4">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/30">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0">
                   <BrainCircuit className="w-5.5 h-5.5 text-white" />
                 </div>
                 <div className="flex-1 min-w-[240px]">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <h2 className="font-bold text-sm">{v("dashboard.aiAnalysis", "AI Career Insights")}</h2>
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold tracking-wider">AI POWERED</span>
+                    <h2 className="font-semibold text-sm text-white">{v("dashboard.aiAnalysis", "AI Career Insights")}</h2>
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-semibold tracking-wider">AI POWERED</span>
                   </div>
                   <p className="text-sm text-slate-400 leading-relaxed">
                     {aiAdvice?.summary || "Complete your assessment to unlock personalized AI career insights, skill-gap roadmaps and hiring strategies."}
@@ -234,14 +234,14 @@ export default function DashboardPage() {
                   <div className="flex flex-wrap gap-2 mt-3">
                     {(aiAdvice?.recommendedPaths || []).slice(0, 3).map((p: any, i: number) => (
                       <span key={i} className="px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[11px] text-slate-300">
-                        {p.title} <span className="text-indigo-400 font-bold">{p.matchScore}%</span>
+                        {p.title} <span className="text-indigo-400 font-semibold">{p.matchScore}%</span>
                       </span>
                     ))}
                   </div>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                  <Link href="/assessment" className="px-3 py-2 rounded-xl bg-white/[0.05] border border-white/10 text-[11px] text-slate-300 hover:text-white transition-colors">Re-assess</Link>
-                  <Link href="/agent" className="px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-[11px] font-semibold text-white shadow-lg shadow-indigo-500/25 flex items-center gap-1.5 hover:from-indigo-400 hover:to-purple-400">Ask AI Coach <ChevronRight className="w-3 h-3" /></Link>
+                  <Link href="/assessment" className="px-3 py-2 rounded-lg bg-white/[0.05] border border-white/10 text-[11px] text-slate-300 hover:text-white transition-colors">Re-assess</Link>
+                  <Link href="/agent" className="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-[11px] font-semibold text-white transition-colors flex items-center gap-1.5">Ask AI Coach <ChevronRight className="w-3 h-3" /></Link>
                 </div>
               </div>
             </motion.div>
@@ -250,23 +250,23 @@ export default function DashboardPage() {
           {/* Main grid */}
           <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
             {/* Pipeline */}
-            <motion.div variants={item} data-tour="pipeline" className="lg:col-span-2 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-sm flex items-center gap-2"><Layers className="w-4 h-4 text-indigo-400" /> Internship Pipeline</h2>
-                <Link href="/internships" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Manage <ChevronRight className="w-3 h-3" /></Link>
+            <motion.div variants={item} data-tour="pipeline" className={`lg:col-span-2 ${card}`}>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="font-semibold text-sm text-white flex items-center gap-2"><Layers className="w-4 h-4 text-indigo-400" /> Internship Pipeline</h2>
+                <Link href="/internships" className="text-xs text-slate-500 hover:text-indigo-300 flex items-center gap-1 transition-colors">Manage <ChevronRight className="w-3 h-3" /></Link>
               </div>
               {pipelineTotal > 0 ? (
                 <>
-                  <div className="flex items-end h-36 gap-1.5 mb-3">
+                  <div className="flex items-end h-32 gap-1.5 mb-4">
                     {stageDefs.map((st, i) => {
                       const val = pipeline[st.key] || 0;
                       const maxVal = Math.max(1, ...stageDefs.map(s => pipeline[s.key] || 0));
-                      const h = val === 0 ? 4 : Math.max(12, (val / maxVal) * 120);
+                      const h = val === 0 ? 4 : Math.max(12, (val / maxVal) * 110);
                       return (
                         <div key={st.key} className="flex-1 flex flex-col items-center gap-1.5 group" title={`${st.label}: ${val}`}>
-                          <span className="text-[10px] font-bold text-slate-400">{val}</span>
-                          <motion.div initial={{ height: 0 }} animate={{ height: h }} transition={{ duration: 0.7, delay: 0.2 + i * 0.06, ease: "easeOut" }}
-                            className={`w-full rounded-t-lg ${st.color} ${val === 0 ? "opacity-20" : "opacity-90 group-hover:opacity-100"} transition-all`} style={{ boxShadow: "0 0 14px rgba(99,102,241,0.15)" }} />
+                          <span className="text-[10px] font-semibold text-slate-400 tabular-nums">{val}</span>
+                          <motion.div initial={{ height: 0 }} animate={{ height: h }} transition={{ duration: 0.7, delay: 0.2 + i * 0.05, ease: "easeOut" }}
+                            className={`w-full rounded-t-md ${st.color} ${val === 0 ? "opacity-15" : "opacity-80 group-hover:opacity-100"} transition-opacity`} />
                           <span className="text-[9px] text-slate-600 uppercase tracking-wider truncate w-full text-center">{st.label}</span>
                         </div>
                       );
@@ -283,50 +283,52 @@ export default function DashboardPage() {
                   <Rocket className="w-10 h-10 text-slate-700 mx-auto mb-3" />
                   <p className="text-sm text-slate-500 mb-1">Your internship pipeline is empty</p>
                   <p className="text-xs text-slate-600 mb-4">Track internships to see your progress here.</p>
-                  <Link href="/internships" className="inline-flex px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-xs font-semibold text-white">Browse internships</Link>
+                  <Link href="/internships" className="inline-flex px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white transition-colors">Browse internships</Link>
                 </div>
               )}
             </motion.div>
 
             {/* Daily goals */}
-            <motion.div variants={item} className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 flex flex-col">
+            <motion.div variants={item} className={`${card} flex flex-col`}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-sm flex items-center gap-2"><ListChecks className="w-4 h-4 text-emerald-400" /> Daily Goals</h2>
-                <button onClick={addGoal} className="text-xs text-indigo-400 hover:text-indigo-300">+ Add</button>
+                <h2 className="font-semibold text-sm text-white flex items-center gap-2"><ListChecks className="w-4 h-4 text-emerald-400" /> Daily Goals</h2>
+                <button onClick={addGoal} className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">+ Add</button>
               </div>
               <div className="space-y-2 flex-1">
                 {goals.map(g => (
                   <button key={g.id} onClick={() => toggleGoal(g.id)}
-                    className={`w-full flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${g.done ? "bg-emerald-500/[0.06] border-emerald-500/25" : "bg-white/[0.02] border-white/[0.07] hover:border-white/20"}`}>
-                    <div className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center shrink-0 ${g.done ? "bg-emerald-500 border-emerald-500" : "border-white/25"}`}>
+                    className={`w-full flex items-center gap-2.5 p-2.5 rounded-lg border text-left transition-all ${g.done ? "bg-emerald-500/[0.06] border-emerald-500/25" : "bg-white/[0.02] border-white/[0.07] hover:border-white/20"}`}>
+                    <div className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ${g.done ? "bg-emerald-500 border-emerald-500" : "border-white/25"}`}>
                       {g.done && <CheckCircle2 className="w-3 h-3 text-white" />}
                     </div>
                     <span className={`text-xs ${g.done ? "text-slate-500 line-through" : "text-slate-300"}`}>{g.text}</span>
                   </button>
                 ))}
               </div>
-              <div className="mt-3 h-1.5 rounded-full bg-white/5 overflow-hidden">
-                <motion.div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"
-                  animate={{ width: `${goals.length ? (goals.filter(g => g.done).length / goals.length) * 100 : 0}%` }} />
+              <div className="mt-4">
+                <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                  <motion.div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"
+                    animate={{ width: `${goals.length ? (goals.filter(g => g.done).length / goals.length) * 100 : 0}%` }} />
+                </div>
+                <p className="text-[10px] text-slate-600 text-center mt-2 tabular-nums">{goals.filter(g => g.done).length}/{goals.length} complete</p>
               </div>
-              <p className="text-[10px] text-slate-600 text-center mt-2">{goals.filter(g => g.done).length}/{goals.length} complete</p>
             </motion.div>
           </motion.div>
 
           {/* Bottom grid */}
           <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Skill analytics */}
-            <motion.div variants={item} className="lg:col-span-1 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
+            <motion.div variants={item} className={`${card} lg:col-span-1`}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-sm flex items-center gap-2"><BarChart3 className="w-4 h-4 text-amber-400" /> Skill Analytics</h2>
-                <Link href="/skills" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Fix gaps <ChevronRight className="w-3 h-3" /></Link>
+                <h2 className="font-semibold text-sm text-white flex items-center gap-2"><BarChart3 className="w-4 h-4 text-amber-400" /> Skill Analytics</h2>
+                <Link href="/skills" className="text-xs text-slate-500 hover:text-indigo-300 flex items-center gap-1 transition-colors">Fix gaps <ChevronRight className="w-3 h-3" /></Link>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-3.5">
                 {(gaps.length > 0 ? gaps : (aiAdvice?.skillGaps || []).map((g: any, i: number) => ({ id: String(i), skillName: g.skill, currentLevel: 3, gap: g.gap || 4, priority: g.priority === "High" ? "high" : "medium" }))).slice(0, 5).map((g: any) => (
                   <div key={g.id}>
-                    <div className="flex justify-between text-xs mb-1">
+                    <div className="flex justify-between text-xs mb-1.5">
                       <span className="text-slate-300">{g.skillName}</span>
-                      <span className={g.priority === "high" ? "text-red-400 font-medium" : "text-amber-400 font-medium"}>{g.gap} gap</span>
+                      <span className={g.priority === "high" ? "text-red-400 font-medium tabular-nums" : "text-amber-400 font-medium tabular-nums"}>{g.gap} gap</span>
                     </div>
                     <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
                       <motion.div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-400" initial={{ width: 0 }}
@@ -339,23 +341,23 @@ export default function DashboardPage() {
             </motion.div>
 
             {/* Resume health + progress */}
-            <motion.div variants={item} data-tour="resume" className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 flex flex-col items-center">
-              <h2 className="font-semibold text-sm mb-4 self-start flex items-center gap-2"><FileText className="w-4 h-4 text-emerald-400" /> Resume Health</h2>
+            <motion.div variants={item} data-tour="resume" className={`${card} flex flex-col items-center`}>
+              <h2 className="font-semibold text-sm text-white mb-5 self-start flex items-center gap-2"><FileText className="w-4 h-4 text-emerald-400" /> Resume Health</h2>
               <Ring value={resumeHealth} label="Health" color="#34d399" />
               <div className="grid grid-cols-3 gap-2 mt-5 w-full">
                 <Stat label="Paths" value={`${paths.length || aiAdvice?.recommendedPaths?.length || 0}`} sub="matched" />
                 <Stat label="Skills" value={`${gaps.length || aiAdvice?.skillGaps?.length || 0}`} sub="tracked" />
                 <Stat label="Emails" value={`${sentCount}`} sub="sent" />
               </div>
-              <Link href="/resume-builder" className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-xs font-semibold text-white flex items-center justify-center gap-1.5 hover:from-emerald-400 hover:to-teal-400 transition-colors">
+              <Link href="/resume-builder" className="mt-4 w-full py-2.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-colors">
                 <FileText className="w-3.5 h-3.5" /> Open Resume Builder
               </Link>
             </motion.div>
 
             {/* Recent activity timeline */}
-            <motion.div variants={item} className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-sm flex items-center gap-2"><Activity className="w-4 h-4 text-purple-400" /> Career Progress</h2>
+            <motion.div variants={item} className={card}>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="font-semibold text-sm text-white flex items-center gap-2"><Activity className="w-4 h-4 text-purple-400" /> Career Progress</h2>
               </div>
               <div className="space-y-0">
                 {[
@@ -383,21 +385,22 @@ export default function DashboardPage() {
           {/* Quick actions */}
           <motion.div data-tour="actions" variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
             {[
-              { href: "/panel-interview", label: v("dashboard.panelInterview", "Panel Interview"), icon: UsersRound, color: "from-indigo-500 to-purple-500" },
-              { href: "/resume-builder", label: v("dashboard.buildResume", "Resume Builder"), icon: FileText, color: "from-emerald-500 to-teal-500" },
-              { href: "/jobs", label: v("dashboard.findJobs", "Find Jobs"), icon: Zap, color: "from-amber-500 to-orange-500" },
-              { href: "/email-campaign", label: v("dashboard.emailOutreach", "Email Studio"), icon: Mail, color: "from-rose-500 to-pink-500" },
+              { href: "/panel-interview", label: v("dashboard.panelInterview", "Panel Interview"), icon: UsersRound, text: "text-indigo-400", bg: "bg-indigo-500/10" },
+              { href: "/resume-builder", label: v("dashboard.buildResume", "Resume Builder"), icon: FileText, text: "text-emerald-400", bg: "bg-emerald-500/10" },
+              { href: "/jobs", label: v("dashboard.findJobs", "Find Jobs"), icon: Zap, text: "text-amber-400", bg: "bg-amber-500/10" },
+              { href: "/email-campaign", label: v("dashboard.emailOutreach", "Email Studio"), icon: Mail, text: "text-rose-400", bg: "bg-rose-500/10" },
             ].map((action, i) => (
               <motion.div key={i} variants={item} whileHover={{ y: -3 }}>
                 <Link href={action.href}
                   className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.07] hover:border-white/20 transition-colors group">
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shrink-0 shadow-lg`}>
-                    <action.icon className="w-4.5 h-4.5 text-white" />
+                  <div className={`w-10 h-10 rounded-xl ${action.bg} flex items-center justify-center shrink-0`}>
+                    <action.icon className={`w-4 h-4 ${action.text}`} />
                   </div>
-                  <div className="min-w-0">
-                    <span className="text-sm font-medium group-hover:text-indigo-400 transition-colors block truncate">{action.label}</span>
-                    <span className="text-[10px] text-slate-600 flex items-center gap-1 mt-0.5">Launch <ChevronRight className="w-2.5 h-2.5" /></span>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-sm font-medium text-slate-200 group-hover:text-white transition-colors block truncate">{action.label}</span>
+                    <span className="text-[10px] text-slate-600 flex items-center gap-1 mt-0.5">Launch</span>
                   </div>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-indigo-400 transition-colors shrink-0" />
                 </Link>
               </motion.div>
             ))}
@@ -426,7 +429,7 @@ export default function DashboardPage() {
 function Stat({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-      <div className="text-sm font-bold">{value}</div>
+      <div className="text-sm font-bold text-white tabular-nums">{value}</div>
       <div className="text-[10px] text-slate-500">{label}</div>
       <div className="text-[9px] text-slate-600">{sub}</div>
     </div>
