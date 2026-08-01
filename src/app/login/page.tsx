@@ -89,7 +89,7 @@ export default function LoginPage() {
     setError("");
   };
 
-  const inputCls = "w-full pl-11 pr-4 py-3 rounded-lg bg-white/[0.03] border border-white/10 text-sm text-slate-200 outline-none focus:border-indigo-500/60 focus:bg-white/[0.05] focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-slate-600";
+  const inputCls = "w-full py-3 rounded-lg bg-white/[0.03] border border-white/10 text-sm text-slate-200 outline-none focus:border-indigo-500/60 focus:bg-white/[0.05] focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-slate-600";
 
   return (
     <div onMouseMove={onMove} className="min-h-screen flex flex-col lg:flex-row bg-[#07070f] text-slate-200 overflow-hidden">
@@ -135,14 +135,14 @@ export default function LoginPage() {
             From assessment to offer letter
           </motion.p>
 
-          <h1 className="font-extrabold tracking-tight leading-[0.95] text-[13vw] sm:text-7xl lg:text-[5.5rem] xl:text-[6.5rem] text-white" style={{ transformStyle: "preserve-3d" }}>
+          <h1 className="font-extrabold tracking-tight leading-[1.04] text-[13vw] sm:text-7xl lg:text-[5.5rem] xl:text-[6.5rem] text-white drop-shadow-[0_8px_24px_rgba(99,102,241,0.28)]" style={{ transformStyle: "preserve-3d" }}>
             {["Your", "career,", "plotted."].map((word, i) => (
-              <span key={i} className="block overflow-hidden" style={{ transform: `translateZ(${40 + i * 30}px)` }}>
+              <span key={i} className="block overflow-hidden pt-[0.06em] pb-[0.1em] -mt-[0.06em] -mb-[0.1em]" style={{ transform: `translateZ(${40 + i * 30}px)` }}>
                 <motion.span
                   initial={{ y: "110%" }}
                   animate={{ y: 0 }}
                   transition={{ duration: 0.7, delay: 0.3 + i * 0.12, ease: [0.22, 1, 0.36, 1] }}
-                  className={`block drop-shadow-[0_10px_30px_rgba(99,102,241,0.35)] ${i === 2 ? "bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400 bg-clip-text text-transparent" : ""}`}>
+                  className={`block ${i === 2 ? "bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400 bg-clip-text text-transparent" : ""}`}>
                   {word}
                 </motion.span>
               </span>
@@ -178,7 +178,7 @@ export default function LoginPage() {
               <div className="relative">
                 <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                  type="email" placeholder="you@example.com" required autoFocus className={inputCls} />
+                  type="email" placeholder="you@example.com" required autoFocus className={inputCls} style={{ paddingLeft: "2.75rem", paddingRight: "1rem" }} />
               </div>
             </div>
 
@@ -190,7 +190,7 @@ export default function LoginPage() {
               <div className="relative">
                 <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
-                  type={show ? "text" : "password"} placeholder="Enter your password" required className={`${inputCls} pr-11`} />
+                  type={show ? "text" : "password"} placeholder="Enter your password" required className={inputCls} style={{ paddingLeft: "2.75rem", paddingRight: "3rem" }} />
                 <button type="button" onClick={() => setShow(!show)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
                   {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
