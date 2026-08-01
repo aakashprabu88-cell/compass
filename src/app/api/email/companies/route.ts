@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { parseJsonArray } from "@/lib/careers";
-import { fetchRealCompanies, rankRealJobs } from "@/lib/jobs";
+import { fetchRealCompanies, rankRealJobs, isTamilNaduLocation } from "@/lib/jobs";
 import { deriveCompanyContact, isRealCompany, getEmailConfigStatus, buildProfessionalEmail } from "@/lib/email";
 
 function buildQueries(topTitles: string[], userSkills: string[], userInterests: string[]): string[] {
@@ -30,7 +30,7 @@ function buildQueries(topTitles: string[], userSkills: string[], userInterests: 
   return [...queries].slice(0, 7);
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const user = await getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -51,6 +51,9 @@ export async function GET() {
     const userInterests = assessment ? parseJsonArray(assessment.interests) : [];
     const topTitles = userPaths.map(up => up.careerPath.title);
 
+    const url = new URL(req.url);
+    const locationFilter = url.searchParams.get("location") || "all";
+
     const queries = buildQueries(topTitles, userSkills, userInterests);
     const { companies } = await fetchRealCompanies(queries, 25);
 
@@ -67,20 +70,24 @@ export async function GET() {
       topCareers: topTitles,
     };
 
-    const byCompany = new Map<string, { company: string; jobs: (typeof ranked)[number][] }>();
+    const byCompany = new Map<string, { company: string; jobs: (typeof ranked)[number][]; isTn: boolean }>();
     for (const job of ranked) {
       if (!isRealCompany(job.company)) continue;
+      const isTn = isTamilNaduLocation(job.location);
       const entry = byCompany.get(job.company);
       if (!entry) {
-        byCompany.set(job.company, { company: job.company, jobs: [job] });
+        byCompany.set(job.company, { company: job.company, jobs: [job], isTn });
       } else {
         entry.jobs.push(job);
+        if (isTn) entry.isTn = true;
       }
     }
 
     const matches = [...byCompany.values()]
+      .filter(entry => locationFilter === "tn" ? entry.isTn : true)
       .map(entry => {
-        const top = entry.jobs[0];
+        const tnJobs = entry.jobs.filter(j => isTamilNaduLocation(j.location));
+        const top = locationFilter === "tn" ? (tnJobs[0] || entry.jobs[0]) : entry.jobs[0];
         const contact = deriveCompanyContact({
           company: entry.company,
           role: top.title,
@@ -91,6 +98,7 @@ export async function GET() {
         const draft = buildProfessionalEmail({ profile, company: entry.company, role: top.title, location: top.location });
         return {
           ...contact,
+          isTn: entry.isTn,
           matchScore: top.matchScore,
           jobCount: entry.jobs.length,
           description: top.description,
@@ -101,16 +109,19 @@ export async function GET() {
         };
       })
       .filter((c): c is NonNullable<typeof c> => c !== null)
-      .sort((a, b) => b.matchScore - a.matchScore)
+      .sort((a, b) => (locationFilter === "all" ? Number(b.isTn) - Number(a.isTn) : 0) || b.matchScore - a.matchScore)
       .slice(0, 50);
+
+    const tnCount = [...byCompany.values()].filter(e => e.isTn).length;
 
     return NextResponse.json({
       companies: matches,
       config: getEmailConfigStatus(),
       totalHiring: byCompany.size,
+      tnHiring: tnCount,
     });
   } catch (e) {
     console.error("GET /api/email/companies", e);
-    return NextResponse.json({ companies: [], config: getEmailConfigStatus(), totalHiring: 0 });
+    return NextResponse.json({ companies: [], config: getEmailConfigStatus(), totalHiring: 0, tnHiring: 0 });
   }
 }

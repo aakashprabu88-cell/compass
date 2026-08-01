@@ -419,7 +419,7 @@ function parseCityFromLocation(location: string): string {
   return first ? first.charAt(0).toUpperCase() + first.slice(1) : "";
 }
 
-function isTamilNaduLocation(location: string): boolean {
+export function isTamilNaduLocation(location: string): boolean {
   const l = location.toLowerCase();
   if (l.includes("tamil nadu") || l.includes("tamilnadu")) return true;
   return TN_CITY_NAMES.some(c => l.includes(c));

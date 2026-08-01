@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Mail, Send, CheckCircle2, XCircle, Building2, Sparkles, Loader2,
-  ExternalLink, Copy, AlertTriangle, Check, History, ShieldCheck, PenLine
+  ExternalLink, Copy, AlertTriangle, Check, History, ShieldCheck, PenLine, MapPin
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
@@ -22,6 +22,7 @@ interface CompanyContact {
   isDerived: boolean;
   matchScore: number;
   jobCount: number;
+  isTn?: boolean;
   description: string;
   companyLogo: string;
   otherRoles: string[];
@@ -40,6 +41,8 @@ export default function EmailCampaignPage() {
   const [companies, setCompanies] = useState<CompanyContact[]>([]);
   const [config, setConfig] = useState<{ configured: boolean; host?: string }>({ configured: false });
   const [totalHiring, setTotalHiring] = useState(0);
+  const [tnHiring, setTnHiring] = useState(0);
+  const [locationFilter, setLocationFilter] = useState<"all" | "tn">("all");
   const [loading, setLoading] = useState(true);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -65,7 +68,7 @@ export default function EmailCampaignPage() {
     async function load() {
       try {
         const [cRes, hRes] = await Promise.all([
-          fetch("/api/email/companies"),
+          fetch(`/api/email/companies?location=${locationFilter}`),
           fetch("/api/email/send"),
         ]);
         const cData = await cRes.json();
@@ -74,6 +77,7 @@ export default function EmailCampaignPage() {
           setCompanies(Array.isArray(cData.companies) ? cData.companies : []);
           setConfig(cData.config || { configured: false });
           setTotalHiring(cData.totalHiring || 0);
+          setTnHiring(cData.tnHiring || 0);
           setHistory(Array.isArray(hData.emails) ? hData.emails : []);
           if (user) {
             setFromName(user.name || "");
@@ -94,7 +98,14 @@ export default function EmailCampaignPage() {
 
     load();
     return () => { cancelled = true; };
-  }, [authLoading, user]);
+  }, [authLoading, user, locationFilter]);
+
+  const setFilter = (f: "all" | "tn") => {
+    if (f === locationFilter) return;
+    setLoading(true);
+    setResult(null);
+    setLocationFilter(f);
+  };
 
   const selectedList = companies.filter(c => selected.has(c.company));
 
@@ -249,6 +260,17 @@ export default function EmailCampaignPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 p-1 rounded-xl bg-white/5 border border-white/10">
+                    <button onClick={() => setFilter("all")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${locationFilter === "all" ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/20" : "text-slate-400 hover:text-white"}`}>
+                      <Building2 className="w-3.5 h-3.5" /> All India
+                    </button>
+                    <button onClick={() => setFilter("tn")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${locationFilter === "tn" ? "bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-lg shadow-orange-500/20" : "text-slate-400 hover:text-white"}`}>
+                      <MapPin className="w-3.5 h-3.5" /> Tamil Nadu
+                      {tnHiring > 0 && <span className="text-[10px] font-bold">{tnHiring}</span>}
+                    </button>
+                  </div>
                   <button onClick={() => setShowHistory(!showHistory)}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-slate-400 hover:text-white transition-colors">
                     <History className="w-4 h-4" /> Sent ({history.length})
@@ -281,7 +303,7 @@ export default function EmailCampaignPage() {
             {/* Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
               {[
-                { label: "Companies Hiring", value: totalHiring, icon: Building2, color: "indigo" },
+                { label: locationFilter === "tn" ? "TN Companies Hiring" : "Companies Hiring", value: locationFilter === "tn" ? tnHiring : totalHiring, icon: Building2, color: "indigo" },
                 { label: "Matched to You", value: companies.length, icon: Sparkles, color: "emerald" },
                 { label: "Selected", value: selected.size, icon: Check, color: "purple" },
                 { label: "Emails Sent", value: history.filter(h => h.status === "sent").length, icon: Send, color: "amber" },
@@ -337,7 +359,14 @@ export default function EmailCampaignPage() {
                             )}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2">
-                                <span className="font-semibold text-sm truncate">{c.company}</span>
+                                <span className="font-semibold text-sm truncate flex items-center gap-1.5">
+                                  {c.company}
+                                  {c.isTn && (
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 font-bold flex items-center gap-0.5 shrink-0">
+                                      <MapPin className="w-2.5 h-2.5" /> TN
+                                    </span>
+                                  )}
+                                </span>
                                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold shrink-0">
                                   {c.matchScore}% match
                                 </span>
