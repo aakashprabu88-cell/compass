@@ -5,12 +5,13 @@ import Link from "next/link";
 import {
   Sparkles, ChevronRight, Target, FileText, UsersRound, Mail, Zap, TrendingUp,
   AlertTriangle, BrainCircuit, Rocket, GraduationCap, Send, CheckCircle2, Clock,
-  Activity, Layers, BarChart3, ListChecks, Flame, Award
+  Activity, Layers, BarChart3, ListChecks, Flame, Award, Play
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/components/LanguageProvider";
+import Tour from "@/components/Tour";
 
 interface PathData { id: string; matchScore: number; careerPath: any; }
 interface SkillGapData { id: string; skillName: string; currentLevel: number; requiredLevel: number; gap: number; priority: string; }
@@ -70,6 +71,7 @@ export default function DashboardPage() {
   const [appCount, setAppCount] = useState(0);
   const [sentCount, setSentCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [tourOpen, setTourOpen] = useState(false);
   const [goals, setGoals] = useState<{ id: number; text: string; done: boolean }[]>([
     { id: 1, text: "Apply to 3 matched internships", done: false },
     { id: 2, text: "Send 1 outreach email", done: false },
@@ -182,6 +184,9 @@ export default function DashboardPage() {
                 <p className="text-sm text-slate-500 mt-1">{greeting} — here&apos;s your career command center.</p>
               </div>
               <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                <button onClick={() => setTourOpen(true)} className="px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold flex items-center gap-1.5 hover:from-indigo-400 hover:to-purple-400 transition-all shadow-lg shadow-indigo-500/25" title="Start the demo tour">
+                  <Play className="w-3 h-3" /> Demo tour
+                </button>
                 <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-1.5"><Flame className="w-3 h-3" /> {applied + sentCount} actions this week</span>
                 <span className="px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/10 hidden sm:flex items-center gap-1.5"><BrainCircuit className="w-3 h-3 text-indigo-400" /> AI Coach active</span>
               </div>
@@ -189,7 +194,7 @@ export default function DashboardPage() {
           </motion.div>
 
           {/* KPI cards */}
-          <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          <motion.div data-tour="kpis" variants={container} initial="hidden" animate="show" className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             {[
               { label: v("dashboard.topMatch", "Top Career Match"), value: <span className="truncate">{topPath?.careerPath?.title?.split(" ").slice(0, 2).join(" ") || "—"}</span>, icon: Target, tone: "from-indigo-500/25 to-purple-500/10 text-indigo-300", bar: "from-indigo-500 to-purple-500" },
               { label: v("dashboard.avgMatch", "Average Match"), value: <><CountUp value={avgMatch} suffix="%" /></>, icon: Activity, tone: "from-emerald-500/25 to-teal-500/10 text-emerald-300", bar: "from-emerald-500 to-teal-500" },
@@ -216,7 +221,7 @@ export default function DashboardPage() {
 
           {/* AI insights banner */}
           <motion.div variants={container} initial="hidden" animate="show" className="mb-6">
-            <motion.div variants={item} className="relative overflow-hidden rounded-2xl border border-indigo-500/25 p-5" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.10), rgba(168,85,247,0.05))" }}>
+            <motion.div variants={item} data-tour="insights" className="relative overflow-hidden rounded-2xl border border-indigo-500/25 p-5" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.10), rgba(168,85,247,0.05))" }}>
               <div className="absolute -top-20 right-0 w-64 h-64 rounded-full bg-indigo-500/20 blur-3xl" />
               <div className="relative flex flex-wrap items-start gap-4">
                 <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/30">
@@ -249,7 +254,7 @@ export default function DashboardPage() {
           {/* Main grid */}
           <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
             {/* Pipeline */}
-            <motion.div variants={item} className="lg:col-span-2 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
+            <motion.div variants={item} data-tour="pipeline" className="lg:col-span-2 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-sm flex items-center gap-2"><Layers className="w-4 h-4 text-indigo-400" /> Internship Pipeline</h2>
                 <Link href="/internships" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Manage <ChevronRight className="w-3 h-3" /></Link>
@@ -338,7 +343,7 @@ export default function DashboardPage() {
             </motion.div>
 
             {/* Resume health + progress */}
-            <motion.div variants={item} className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 flex flex-col items-center">
+            <motion.div variants={item} data-tour="resume" className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 flex flex-col items-center">
               <h2 className="font-semibold text-sm mb-4 self-start flex items-center gap-2"><FileText className="w-4 h-4 text-emerald-400" /> Resume Health</h2>
               <Ring value={resumeHealth} label="Health" color="#34d399" />
               <div className="grid grid-cols-3 gap-2 mt-5 w-full">
@@ -380,7 +385,7 @@ export default function DashboardPage() {
           </motion.div>
 
           {/* Quick actions */}
-          <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+          <motion.div data-tour="actions" variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
             {[
               { href: "/panel-interview", label: v("dashboard.panelInterview", "Panel Interview"), icon: UsersRound, color: "from-indigo-500 to-purple-500" },
               { href: "/resume-builder", label: v("dashboard.buildResume", "Resume Builder"), icon: FileText, color: "from-emerald-500 to-teal-500" },
@@ -404,6 +409,20 @@ export default function DashboardPage() {
 
           <p className="text-center text-[10px] text-slate-700 mt-6">Compass Career OS · AI-powered career intelligence</p>
         </div>
+
+        {/* ── Guided demo tour ── */}
+        <Tour
+          accent="indigo"
+          open={tourOpen}
+          onClose={() => setTourOpen(false)}
+          steps={[
+            { target: "[data-tour='kpis']", title: "Your career at a glance", body: "Live AI match scores, priority skill gaps and interview readiness — animated the moment you log in." },
+            { target: "[data-tour='insights']", title: "AI Career Insights", body: "Every assessment feeds a personal AI coach. Review your top paths, skill gaps and hiring strategy — or ask the coach directly." },
+            { target: "[data-tour='pipeline']", title: "Internship pipeline", body: "Track every application across 7 stages — from saved to accepted — with your goals persisted daily." },
+            { target: "[data-tour='resume']", title: "Resume health", body: "A live health score based on your paths, tracked skills and outreach activity. One click opens the resume builder." },
+            { target: "[data-tour='actions']", title: "Jump anywhere", body: "Launch the Panel Interview, Resume Builder, Job Hunt or the flagship AI Email Studio from here." },
+          ]}
+        />
       </main>
     </div>
   );

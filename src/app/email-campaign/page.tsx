@@ -7,12 +7,13 @@ import {
   History, ShieldCheck, PenLine, MapPin, Wand2, Download, FileText, FileCode,
   RotateCcw, Bold, Italic, Underline, List, Link as LinkIcon, Undo2, Redo2, Eye, Gauge, Lightbulb,
   ChevronDown, ChevronRight, X, Settings2, TrendingUp, Save, Target, Users,
-  Clock, Bot, Check, RefreshCw, Globe
+  Clock, Bot, Check, RefreshCw, Globe, BrainCircuit, Play, Sparkle
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { toast } from "@/components/Toast";
+import Tour from "@/components/Tour";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -211,6 +212,8 @@ export default function EmailCampaignPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [versions, setVersions] = useState<{ label: string; subject: string; html: string; ts: number }[]>([]);
   const [versionsOpen, setVersionsOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+  const [culture, setCulture] = useState<{ values: string[]; focus: string; isStartup: boolean } | null>(null);
 
   const autoScored = useRef<Set<string>>(new Set());
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -275,6 +278,7 @@ export default function EmailCampaignPage() {
       const data = await res.json();
       if (res.ok) {
         setDrafts(prev => ({ ...prev, [key]: { subject: data.subject, body: data.body } }));
+        if (data.culture) setCulture(data.culture);
         if (style === activeStyle && company === activeCompany) {
           setEditorSubject(data.subject);
           setEditorHtml(textToHtml(data.body));
@@ -304,6 +308,17 @@ export default function EmailCampaignPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.company, activeStyle]);
+
+  // Auto-open the demo tour on first visit
+  useEffect(() => {
+    if (authLoading || loading) return;
+    try {
+      if (!localStorage.getItem("compass_tour_email")) {
+        const t = setTimeout(() => { setTourOpen(true); localStorage.setItem("compass_tour_email", "1"); }, 1200);
+        return () => clearTimeout(t);
+      }
+    } catch {}
+  }, [authLoading, loading]);
 
   // Auto-load subjects for active company
   useEffect(() => {
@@ -682,7 +697,7 @@ export default function EmailCampaignPage() {
 
           <div className="flex-1 min-h-0 flex">
             {/* ── Companies rail ── */}
-            <aside className="w-[300px] shrink-0 border-r border-white/[0.06] flex flex-col min-h-0 bg-white/[0.012]">
+            <aside data-tour="rail" className="w-[300px] shrink-0 border-r border-white/[0.06] flex flex-col min-h-0 bg-white/[0.012]">
               <div className="p-3 border-b border-white/[0.06] space-y-2">
                 <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.08]">
                   <button onClick={() => setLocationFilter("all")}
@@ -762,6 +777,17 @@ export default function EmailCampaignPage() {
                         <span className="text-slate-600"> · To:</span>
                         <span className="text-indigo-400"> {recipients[active.company] || active.toEmail}</span>
                       </div>
+                      {culture && (
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                          <span className="text-[9px] text-slate-600 uppercase tracking-wider flex items-center gap-1"><BrainCircuit className="w-3 h-3 text-purple-400" /> Company intel:</span>
+                          {culture.values.map((val, i) => (
+                            <span key={i} className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300">{val}</span>
+                          ))}
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${culture.isStartup ? "bg-orange-500/10 border border-orange-500/20 text-orange-300" : "bg-sky-500/10 border border-sky-500/20 text-sky-300"}`}>
+                            {culture.isStartup ? "Startup culture" : "Enterprise culture"}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
                       <button onClick={runScore} disabled={scoring}
@@ -815,7 +841,7 @@ export default function EmailCampaignPage() {
                           <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                             <Wand2 className="w-3 h-3 text-indigo-400" /> AI Email Version
                           </div>
-                          <div className="grid grid-cols-5 gap-1.5">
+                          <div data-tour="styles" className="grid grid-cols-5 gap-1.5">
                             {STYLES.map(s => {
                               const on = s.id === activeStyle;
                               return (
@@ -831,7 +857,7 @@ export default function EmailCampaignPage() {
                         </div>
 
                         {/* Subject line generator */}
-                        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] overflow-hidden">
+                        <div data-tour="subject" className="rounded-2xl border border-white/[0.07] bg-white/[0.02] overflow-hidden">
                           <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06]">
                             <span className="text-[10px] text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                               <Target className="w-3 h-3 text-rose-400" /> Subject line
@@ -864,7 +890,7 @@ export default function EmailCampaignPage() {
                         </div>
 
                         {/* Rich body editor */}
-                        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] overflow-hidden">
+                        <div data-tour="editor" className="rounded-2xl border border-white/[0.07] bg-white/[0.02] overflow-hidden">
                           <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] flex-wrap gap-2">
                             <span className="text-[10px] text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                               <PenLine className="w-3 h-3 text-emerald-400" /> Email body
@@ -916,10 +942,10 @@ export default function EmailCampaignPage() {
                     </div>
 
                     {/* ── AI panel column ── */}
-                    <aside className="w-[340px] shrink-0 border-l border-white/[0.06] flex flex-col min-h-0 bg-white/[0.012]">
+                    <aside data-tour="score" className="w-[340px] shrink-0 border-l border-white/[0.06] flex flex-col min-h-0 bg-white/[0.012]">
                       <div className="p-2 border-b border-white/[0.06] flex gap-1 shrink-0">
                         {[{ id: "score", label: "AI Score", icon: Gauge }, { id: "suggest", label: "Improve", icon: Lightbulb }, { id: "preview", label: "Recruiter View", icon: Eye }].map(t => (
-                          <button key={t.id} onClick={() => setPanelTab(t.id as any)}
+                          <button key={t.id} onClick={() => setPanelTab(t.id as any)} data-tour={t.id === "preview" ? "preview" : undefined}
                             className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all ${panelTab === t.id ? "bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-200 border border-indigo-500/25" : "text-slate-500 hover:text-slate-300 border border-transparent"}`}>
                             <t.icon className="w-3.5 h-3.5" /> {t.label}
                           </button>
@@ -1092,6 +1118,29 @@ export default function EmailCampaignPage() {
         <AnimatePresence>
           {profileOpen && <ProfileModal details={details} onClose={() => setProfileOpen(false)} onSave={saveProfile} />}
         </AnimatePresence>
+
+        {/* ── Floating demo tour button ── */}
+        <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 1.6 }}
+          onClick={() => setTourOpen(true)}
+          className="fixed bottom-5 right-5 z-[90] flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-xs font-semibold text-white shadow-xl shadow-indigo-500/30 hover:from-indigo-400 hover:to-purple-400 transition-all hover:-translate-y-0.5"
+          title="Start the demo tour">
+          <Play className="w-3.5 h-3.5" /> Demo tour
+        </motion.button>
+
+        {/* ── Guided demo tour ── */}
+        <Tour
+          accent="indigo"
+          open={tourOpen}
+          onClose={() => setTourOpen(false)}
+          steps={[
+            { target: "[data-tour='rail']", title: "Real companies, right now", body: "Hundreds of live, skill-matched companies across India. Filter by Tamil Nadu or search — pick one to start drafting." },
+            { target: "[data-tour='styles']", title: "Five AI versions", body: "The AI writes Formal, Friendly, Technical, Startup and Executive versions of the same email. Switch instantly — tone adapts to you." },
+            { target: "[data-tour='subject']", title: "Smart subject lines", body: "AI generates 4 subject options with predicted open rate, professionalism and recruiter appeal. Click one to apply." },
+            { target: "[data-tour='editor']", title: "Fully editable", body: "Every word is editable — bold, bullets, links, tokens. Auto-saves, keeps version history, and can reset to the AI original." },
+            { target: "[data-tour='score']", title: "Recruiter-grade scoring", body: "7-dimension AI score: professionalism, ATS match, personalization, grammar and more — with reasons and a selection probability." },
+            { target: "[data-tour='preview']", title: "See it through their eyes", body: "Preview the exact inbox view a recruiter sees, then send via Gmail, Outlook, PDF or Word." },
+          ]}
+        />
       </div>
 
       {/* Print view */}
