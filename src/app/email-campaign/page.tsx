@@ -147,12 +147,18 @@ export default function EmailCampaignPage() {
       toast.info("Select at least one company first");
       return;
     }
-    if (!config.configured) {
-      toast.info("Email service not configured - opening your mail app for a manual send");
-      openMailto(selectedList[0]);
-      return;
-    }
     setConfirmOpen(true);
+  };
+
+  const copyAllDrafts = async () => {
+    let all = "";
+    for (const c of selectedList) {
+      all += `To: ${recipientEmails[c.company] || c.toEmail}\nSubject: ${applyTokens(customSubject || c.draftSubject, c.company, c.role)}\n\n${applyTokens(customBody || c.draftBody, c.company, c.role)}\n\n${"-".repeat(48)}\n\n`;
+    }
+    try {
+      await navigator.clipboard.writeText(all);
+      toast.success("All drafts copied to clipboard");
+    } catch { toast.error("Could not copy"); }
   };
 
   const handleSend = async () => {
@@ -498,12 +504,20 @@ export default function EmailCampaignPage() {
                 className="w-full max-w-lg max-h-[85vh] overflow-y-auto glass rounded-2xl border border-white/10 p-6"
                 style={{ background: "rgba(17,17,24,0.98)" }}>
                 <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
-                  <Send className="w-5 h-5 text-emerald-400" /> Confirm sending
+                  <Send className="w-5 h-5 text-emerald-400" /> {config.configured ? "Confirm sending" : "Send via your mail app"}
                 </h3>
-                <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 mb-4">
-                  <p className="text-sm text-amber-300 font-medium mb-1">You are about to send {selectedList.length} real email{selectedList.length !== 1 ? "s" : ""}.</p>
-                  <p className="text-xs text-amber-200/60">These go out immediately from your configured email account. Compass cannot unsend them.</p>
-                </div>
+
+                {config.configured ? (
+                  <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 mb-4">
+                    <p className="text-sm text-amber-300 font-medium mb-1">You are about to send {selectedList.length} real email{selectedList.length !== 1 ? "s" : ""}.</p>
+                    <p className="text-xs text-amber-200/60">These go out immediately from your configured email account. Compass cannot unsend them.</p>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 mb-4">
+                    <p className="text-sm text-indigo-300 font-medium mb-1">Email service isn&apos;t connected yet.</p>
+                    <p className="text-xs text-indigo-200/60">Open each recipient in your mail app (Gmail / Outlook) to send manually, or copy all drafts at once.</p>
+                  </div>
+                )}
 
                 <div className="mb-4 space-y-1.5 max-h-40 overflow-y-auto">
                   {selectedList.map(c => (
@@ -511,6 +525,18 @@ export default function EmailCampaignPage() {
                       <Building2 className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                       <span className="font-medium truncate">{c.company}</span>
                       <span className="text-slate-500 truncate">{recipientEmails[c.company] || c.toEmail}</span>
+                      {!config.configured && (
+                        <span className="ml-auto flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                          <button onClick={() => copyDraft(c)} title="Copy draft"
+                            className="p-1 rounded text-slate-500 hover:text-emerald-400 transition-colors">
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => openMailto(c)} title="Open in mail app"
+                            className="p-1 rounded text-slate-500 hover:text-indigo-400 transition-colors">
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </button>
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -523,12 +549,19 @@ export default function EmailCampaignPage() {
                 <div className="flex gap-3">
                   <button onClick={() => setConfirmOpen(false)} disabled={sending}
                     className="flex-1 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-slate-400 hover:text-white transition-colors">
-                    Cancel
+                    Close
                   </button>
-                  <button onClick={handleSend} disabled={sending}
-                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50">
-                    {sending ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</> : <><Send className="w-4 h-4" /> Confirm &amp; Send</>}
-                  </button>
+                  {config.configured ? (
+                    <button onClick={handleSend} disabled={sending}
+                      className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50">
+                      {sending ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</> : <><Send className="w-4 h-4" /> Confirm &amp; Send</>}
+                    </button>
+                  ) : (
+                    <button onClick={copyAllDrafts}
+                      className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-sm font-semibold text-white flex items-center justify-center gap-2">
+                      <Copy className="w-4 h-4" /> Copy all drafts
+                    </button>
+                  )}
                 </div>
               </motion.div>
             </motion.div>

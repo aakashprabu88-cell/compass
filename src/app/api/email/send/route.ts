@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendEmail, isEmailConfigured, buildProfessionalEmail } from "@/lib/email";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function GET() {
   try {
@@ -36,6 +37,10 @@ export async function POST(req: Request) {
   try {
     const user = await getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    if (!checkRateLimit(`email-send:${user.id}`, 20, 60000)) {
+      return NextResponse.json({ error: "Too many emails sent. Try again in a minute." }, { status: 429 });
+    }
 
     const body = await req.json().catch(() => ({}));
     const recipients: Recipient[] = Array.isArray(body.recipients) ? body.recipients : [];
