@@ -8,6 +8,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Compass, ChevronLeft, ChevronRight, Play, Pause, Loader2, Zap, UserPlus, RotateCcw } from "lucide-react";
 
 const CinematicFilm = dynamic(() => import("@/components/CinematicFilm"), { ssr: false, loading: () => null });
+const CinematicIntro = dynamic(() => import("@/components/CinematicIntro"), { ssr: false, loading: () => null });
 
 const GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E")`;
 
@@ -40,10 +41,14 @@ export default function CinematicManualPage() {
   const slideRef = useRef(0);
   const lock = useRef(0);
 
+  const beginFilm = useCallback(() => {
+    setTitle(false);
+    setBusy(true);
+    setTimeout(() => setBusy(false), 900);
+  }, []);
+
   useEffect(() => {
     if (reduced) { setTitle(false); return; }
-    const t = setTimeout(() => setTitle(false), 3050);
-    return () => clearTimeout(t);
   }, [reduced]);
 
   const goTo = useCallback((i: number) => {
@@ -68,19 +73,20 @@ export default function CinematicManualPage() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (title) return;
       if (e.key === "ArrowRight") goNext();
       else if (e.key === "ArrowLeft") goPrev();
       else if (e.key === " ") { e.preventDefault(); setPlaying(p => !p); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [goNext, goPrev]);
+  }, [goNext, goPrev, title]);
 
   useEffect(() => {
-    if (!playing || hovering || reduced) return;
+    if (title || !playing || hovering || reduced) return;
     const t = setTimeout(() => goNext(), AUTO_MS);
     return () => clearTimeout(t);
-  }, [playing, hovering, reduced, slide, goNext]);
+  }, [title, playing, hovering, reduced, slide, goNext]);
 
   const startDemo = async () => {
     setDemoLoading(true);
@@ -99,51 +105,8 @@ export default function CinematicManualPage() {
       onPointerEnter={() => setHovering(true)} onPointerLeave={() => setHovering(false)}>
       <AnimatePresence>
         {title && (
-          <motion.div className="absolute inset-0 z-[70] flex flex-col items-center justify-center bg-black overflow-hidden" exit={{ opacity: 0 }} transition={{ duration: 0.7 }}>
-            <div className="absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_40%,rgba(99,102,241,0.16),transparent_70%)]" />
-            <motion.div className="absolute inset-0 m-auto w-[52vmin] h-[52vmin] rounded-full border border-white/10"
-              animate={{ rotate: 360 }} transition={{ duration: 26, repeat: Infinity, ease: "linear" }} />
-            <motion.div className="absolute inset-0 m-auto w-[36vmin] h-[36vmin] rounded-full border border-dashed border-white/10"
-              animate={{ rotate: -360 }} transition={{ duration: 19, repeat: Infinity, ease: "linear" }} />
-            <motion.div className="absolute inset-y-0 w-[38%] -left-[42%] bg-gradient-to-r from-transparent via-white/15 to-transparent"
-              animate={{ x: ["0%", "320%"] }} transition={{ duration: 1.7, delay: 0.2, ease: "easeInOut" }} />
-
-            <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.7 }}
-              className="relative text-[11px] sm:text-xs tracking-[0.6em] uppercase text-slate-400 mb-4">
-              Compass presents
-            </motion.p>
-
-            <h1 className="relative flex text-[clamp(3.4rem,17vw,12rem)] font-black leading-none tracking-tight" aria-label="COMPASS">
-              {"COMPASS".split("").map((ch, i) => (
-                <span key={i} className="inline-block overflow-hidden pb-[0.04em] -mb-[0.04em]">
-                  <motion.span
-                    initial={{ y: "112%" }}
-                    animate={{ y: 0 }}
-                    transition={{ delay: 0.32 + i * 0.06, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-                    className="inline-block"
-                    style={{ backgroundImage: "linear-gradient(180deg,#ffffff 30%,#b6bdf9 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                    {ch}
-                  </motion.span>
-                </span>
-              ))}
-            </h1>
-
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.15, duration: 0.6 }}
-              className="relative mt-3 text-[11px] sm:text-sm tracking-[0.45em] uppercase text-slate-400 text-center">
-              The career OS · told in <span className="text-white font-semibold">{CHAPTERS.length} moves</span>
-            </motion.p>
-
-            <motion.div initial={{ opacity: 0, scaleX: 0 }} animate={{ opacity: 1, scaleX: 1 }} transition={{ delay: 1.4, duration: 0.5 }}
-              className="relative mt-7 w-64 sm:w-80 h-px bg-white/15 origin-left" />
-
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6, duration: 0.5 }}
-              className="relative mt-4 text-[10px] tracking-[0.4em] uppercase text-slate-500">
-              Now screening · Chapter 01
-            </motion.p>
-
-            <div className="relative mt-6 w-44 h-[2px] bg-white/10 overflow-hidden rounded-full">
-              <motion.div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500" style={{ transformOrigin: "left" }} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 2.8, ease: "linear" }} />
-            </div>
+          <motion.div className="absolute inset-0 z-[70]" exit={{ opacity: 0 }} transition={{ duration: 0.7 }}>
+            <CinematicIntro onEnter={beginFilm} />
           </motion.div>
         )}
       </AnimatePresence>
