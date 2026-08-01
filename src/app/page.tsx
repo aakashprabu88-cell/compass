@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useScroll, useTransform, useSpring, useMotionValue, useMotionValueEvent, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Compass, ArrowRight, Brain, Shield, Mic, Briefcase, Loader2, Zap, Globe, LogIn, UserPlus } from "lucide-react";
+import { Compass, ArrowRight, Brain, Shield, Mic, Briefcase, Loader2, Zap, Globe, LogIn, UserPlus, Clapperboard } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import PageTour from "@/components/PageTour";
 
@@ -259,6 +259,9 @@ export default function LandingPage() {
               <Globe className="w-3.5 h-3.5" />
               {locale === "en" ? "हिंदी" : "EN"}
             </button>
+            <Link href="/manual" className="hidden md:flex items-center gap-1.5 px-4 py-2 text-sm bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg font-medium transition-colors">
+              <Clapperboard className="w-3.5 h-3.5 text-indigo-400" /> The Film
+            </Link>
             <button onClick={startDemo} disabled={demoLoading}
               className="flex items-center gap-2 px-4 py-2 text-sm bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg font-medium transition-colors disabled:opacity-50">
               {demoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5 text-amber-400" />}
@@ -479,7 +482,10 @@ export default function LandingPage() {
       <footer className="py-6 px-6 border-t border-white/5">
         <div className="max-w-6xl mx-auto flex items-center justify-between text-xs text-slate-600">
           <div className="flex items-center gap-2"><Compass className="w-3.5 h-3.5" /> Compass</div>
-          <div>{getVal("landing.footer")}</div>
+          <div className="flex items-center gap-4">
+            <Link href="/manual" className="hover:text-slate-400 transition-colors flex items-center gap-1"><Clapperboard className="w-3.5 h-3.5" /> The Film</Link>
+            <span>{getVal("landing.footer")}</span>
+          </div>
         </div>
       </footer>
 

@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useSpring } from "framer-motion";
-import { X, ChevronRight, ChevronLeft, Play, Check, ChevronsUpDown } from "lucide-react";
+import { X, ChevronRight, ChevronLeft, Play, Check, ChevronsUpDown, Compass } from "lucide-react";
+
+const GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E")`;
 
 export interface TourStep {
   target?: string;
@@ -28,6 +30,7 @@ export default function Tour({
   const [paused, setPaused] = useState(false);
   const [progressPct, setProgressPct] = useState(0);
   const [givenUp, setGivenUp] = useState(false);
+  const [film, setFilm] = useState(false);
 
   const step = steps[Math.min(index, steps.length - 1)];
 
@@ -122,6 +125,14 @@ export default function Tour({
   useEffect(() => {
     if (!open) return;
     setIndex(0); setReady(false); setProgressPct(0); setGivenUp(false); tipH.current = 250;
+  }, [open]);
+
+  // Cinematic intro on open
+  useEffect(() => {
+    if (!open) return;
+    setFilm(true);
+    const t = setTimeout(() => setFilm(false), 1300);
+    return () => clearTimeout(t);
   }, [open]);
 
   // Give up state is per-step
@@ -231,15 +242,31 @@ export default function Tour({
   const onTiltLeave = () => { tiltX.set(0); tiltY.set(0); };
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100]">
-          {/* Click blocker + swipe capture (under the spotlight cutout) */}
-          <motion.div
-            className="absolute inset-0"
-            onTouchStart={onTouchStart}
-            onTouchEnd={onTouchEnd}
-          />
+    <>
+      <AnimatePresence>
+        {open && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100]">
+            {film ? (
+              <motion.div className="absolute inset-0 flex flex-col items-center justify-center bg-[#05050d]" exit={{ opacity: 0 }} transition={{ duration: 0.5 }}>
+                <div className="absolute inset-0" style={{ background: "radial-gradient(50% 50% at 50% 42%, rgba(99,102,241,0.18), transparent 70%)" }} />
+                <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                  className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center" style={{ boxShadow: "0 0 60px rgba(129,140,248,0.5)" }}>
+                  <Compass className="w-8 h-8 text-white" />
+                </motion.div>
+                <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="mt-6 text-[11px] tracking-[0.5em] uppercase text-indigo-300/80">Compass · Guided Film</motion.p>
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }} className="mt-2 text-sm text-slate-400">Chapter 01 · The map</motion.p>
+                <div className="mt-8 w-44 h-[2px] rounded-full bg-white/10 overflow-hidden">
+                  <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 1.25, ease: "easeInOut" }} className="h-full origin-left bg-gradient-to-r from-indigo-500 via-purple-400 to-emerald-400" />
+                </div>
+              </motion.div>
+            ) : (
+              <>
+                {/* Click blocker + swipe capture (under the spotlight cutout) */}
+                <motion.div
+                  className="absolute inset-0"
+                  onTouchStart={onTouchStart}
+                  onTouchEnd={onTouchEnd}
+                />
 
           {/* Fallback dim when the target is missing */}
           {ready && missing && <motion.div className="absolute inset-0 bg-black/50" />}
@@ -366,9 +393,14 @@ export default function Tour({
                 </motion.div>
               </motion.div>
             </motion.div>
-          )}
-        </motion.div>
-      )}
-    </AnimatePresence>
+              )}
+              </>
+            )}
+            <div className="absolute inset-0 pointer-events-none mix-blend-overlay opacity-[0.05]" style={{ backgroundImage: GRAIN, animation: "tourGrain 0.7s steps(3) infinite" }} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <style>{`@keyframes tourGrain { 0%{transform:translate(0,0)} 25%{transform:translate(-2px,3px)} 50%{transform:translate(3px,-2px)} 75%{transform:translate(-1px,-3px)} 100%{transform:translate(2px,2px)} }`}</style>
+    </>
   );
 }
