@@ -1,5 +1,5 @@
-﻿import FilmExperience from "@/components/FilmExperience";
+﻿import HeroStory from "@/components/HeroStory";
 
 export default function HomePage() {
-  return <FilmExperience />;
+  return <HeroStory />;
 }
