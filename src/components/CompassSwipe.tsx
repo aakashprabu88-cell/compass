@@ -22,31 +22,34 @@ const FROM = [
 ];
 
 function Burst({ color }: { color: string }) {
-  const particles = useMemo(() => Array.from({ length: 26 }, (_, i) => {
-    const a = (i / 26) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
-    const d = 16 + Math.random() * 34;
-    return { x: Math.cos(a) * d, y: Math.sin(a) * d, s: 3 + Math.random() * 6, delay: Math.random() * 0.1 };
+  const motes = useMemo(() => Array.from({ length: 12 }, (_, i) => {
+    const a = (i / 12) * Math.PI * 2 + (Math.random() - 0.5) * 0.8;
+    const d = 3 + Math.random() * 9;
+    return { x: Math.cos(a) * d, y: Math.sin(a) * d, s: 2 + Math.random() * 3, delay: Math.random() * 0.8 };
   }), []);
   return (
     <>
-      {[0, 0.12, 0.24].map((delay, i) => (
+      {[0, 0.45, 0.9].map((delay, i) => (
         <motion.div key={i}
           className="absolute rounded-full pointer-events-none"
-          style={{ left: "50%", top: "50%", width: 36, height: 36, marginLeft: -18, marginTop: -18, border: `2px solid ${color}`, boxShadow: `0 0 50px ${color}77, inset 0 0 24px ${color}33` }}
-          initial={{ scale: 0, opacity: 0.9 }}
-          animate={{ scale: 8 + i * 3.2, opacity: 0 }}
-          transition={{ delay, duration: 1.15, ease: "easeOut" }} />
+          style={{ left: "50%", top: "50%", width: 40, height: 40, marginLeft: -20, marginTop: -20, border: `1.5px solid ${color}55`, boxShadow: `0 0 60px ${color}44, inset 0 0 30px ${color}22` }}
+          initial={{ scale: 0.05, opacity: 0.65 }}
+          animate={{ scale: 12 + i * 3.5, opacity: 0 }}
+          transition={{ delay, duration: 2.4, ease: [0.16, 1, 0.3, 1] }} />
       ))}
-      {particles.map((p, i) => (
+      <motion.div className="absolute inset-0 pointer-events-none"
+        style={{ background: `radial-gradient(52% 52% at 50% 50%, ${color}2a, transparent 70%)` }}
+        initial={{ opacity: 0, scale: 0.4 }}
+        animate={{ opacity: [0, 0.9, 0], scale: 1.6 }}
+        transition={{ duration: 2.2, times: [0, 0.3, 1], ease: "easeInOut" }} />
+      {motes.map((m, i) => (
         <motion.span key={i}
           className="absolute rounded-full pointer-events-none"
-          style={{ left: "50%", top: "50%", width: p.s, height: p.s, marginLeft: -p.s / 2, marginTop: -p.s / 2, background: color, boxShadow: `0 0 14px ${color}` }}
-          initial={{ x: 0, y: 0, opacity: 1 }}
-          animate={{ x: `${p.x}vw`, y: `${p.y}vh`, opacity: 0 }}
-          transition={{ delay: p.delay, duration: 1.05, ease: [0.16, 1, 0.3, 1] }} />
+          style={{ left: "50%", top: "50%", width: m.s, height: m.s, marginLeft: -m.s / 2, marginTop: -m.s / 2, background: color, boxShadow: `0 0 12px ${color}66` }}
+          initial={{ x: 0, y: 0, opacity: 0 }}
+          animate={{ x: `${m.x}vw`, y: `${m.y}vh`, opacity: [0, 0.8, 0] }}
+          transition={{ delay: m.delay, duration: 2.6, ease: "easeInOut" }} />
       ))}
-      <motion.div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(45% 45% at 50% 50%, ${color}22, transparent 70%)` }}
-        initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: 1, scale: 1.6 }} transition={{ duration: 1.0, ease: "easeOut" }} />
     </>
   );
 }
