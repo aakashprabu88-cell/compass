@@ -24,6 +24,7 @@ model User {
   internships   UserInternship[]
   analysis    CareerAnalysis?
   panelQuestions PanelQuestion[]
+  sentEmails  SentEmail[]
 }
 
 model PanelQuestion {
@@ -129,6 +130,24 @@ model Resume {
 
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   applications JobApplication[]
+}
+
+model SentEmail {
+  id         String   @id @default(cuid())
+  userId     String
+  toEmail    String
+  toName     String   @default("")
+  company    String
+  role       String   @default("")
+  subject    String
+  body       String   @default("")
+  status     String   @default("sent") // sent, failed
+  source     String   @default("email-center")
+  sentAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model JobApplication {

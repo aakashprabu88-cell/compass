@@ -380,7 +380,7 @@ export async function fetchRealJobs(params: {
       const skills = ["javascript", "typescript", "react", "angular", "vue", "python", "java", "node.js", "node", "go", "rust", "php", "c#", "c++", ".net", "aws", "azure", "gcp", "docker", "kubernetes", "terraform", "sql", "mongodb", "postgresql", "mysql", "oracle", "flutter", "react native", "android", "ios", "swift", "kotlin", "machine learning", "deep learning", "data science", "statistics", "tensorflow", "pytorch", "nlp", "excel", "power bi", "tableau", "html", "css", "git", "linux", "devops", "cybersecurity", "network security", "salesforce", "sap", "communication", "sales", "marketing", "seo", "accounting", "tally", "finance", "banking", "nursing", "healthcare", "patient care", "pharmacology", "teaching", "research", "writing", "content writing", "design", "figma", "ui", "ux", "autocad", "solidworks", "mechanical", "electrical", "civil"];
       const jobs: RealJob[] = (data.results || []).map((r: any) => ({
         id: `adz_${r.id}`, title: r.title || "",
-        company: r.company?.display_name || "Unknown", companyLogo: r.company?.logo_url || "",
+        company: cleanCompanyName(r.company?.display_name || "Unknown"), companyLogo: r.company?.logo_url || "",
         location: r.location?.display_name || "",
         city: parseCityFromLocation(r.location?.display_name || ""),
         type: r.contract_type || "full_time",
@@ -398,6 +398,17 @@ export async function fetchRealJobs(params: {
 // === Tamil Nadu real-jobs aggregation ===
 
 const TN_CITY_NAMES = ["chennai", "coimbatore", "madurai", "salem", "trichy", "tiruchirappalli", "vellore", "tirunelveli", "erode", "hosur", "tuticorin", "thoothukudi", "karur", "thanjavur", "kumbakonam", "nagercoil", "pollachi", "tiruppur", "kanyakumari", "dindigul", "ramanathapuram", "villupuram", "cuddalore", "nagapattinam"];
+
+function cleanCompanyName(raw: string): string {
+  let name = (raw || "").trim();
+  const pipeIdx = name.indexOf("|");
+  if (pipeIdx > 0) name = name.slice(0, pipeIdx);
+  const dashIdx = name.search(/ - /);
+  if (dashIdx > 3) name = name.slice(0, dashIdx);
+  name = name.replace(/^\s*-\s*/, "").trim();
+  if (name.length > 40) name = name.slice(0, 40);
+  return name;
+}
 
 function parseCityFromLocation(location: string): string {
   const parts = location.split(",").map(p => p.trim().toLowerCase());
@@ -460,6 +471,56 @@ export async function fetchTNInternJobs(queries: string[], resultsPerPage = 20):
     }
   }
   return { jobs, totalCount };
+}
+
+// === All-India real internships (Adzuna) — wider net, more listings ===
+
+export async function fetchAllIndiaInternJobs(queries: string[], resultsPerPage = 20, maxJobs = 60): Promise<{ jobs: RealJob[]; totalCount: number }> {
+  const unique = [...new Set(queries.map(q => q.trim()).filter(q => q.length > 1))].slice(0, 5);
+  if (unique.length === 0) return { jobs: [], totalCount: 0 };
+
+  const calls = unique.flatMap(q => [1, 2].map(page => fetchRealJobs({ query: q, country: "in", resultsPerPage, page })));
+  const results = await Promise.all(calls);
+
+  const seen = new Set<string>();
+  const jobs: RealJob[] = [];
+  let totalCount = 0;
+  for (const r of results) {
+    totalCount += r.totalCount;
+    for (const j of r.jobs) {
+      if (seen.has(j.id)) continue;
+      seen.add(j.id);
+      const text = `${j.title} ${j.description}`;
+      const isIntern = /\binterns?hips?\b/i.test(j.title) || /\bintern\b/i.test(text);
+      if (!isIntern) continue;
+      jobs.push(j);
+      if (jobs.length >= maxJobs) return { jobs, totalCount };
+    }
+  }
+  return { jobs, totalCount };
+}
+
+// === Real companies hiring now (all-India, any contract type) ===
+
+export async function fetchRealCompanies(queries: string[], resultsPerPage = 25): Promise<{ companies: RealJob[]; totalCount: number }> {
+  const unique = [...new Set(queries.map(q => q.trim()).filter(q => q.length > 1))].slice(0, 5);
+  if (unique.length === 0) return { companies: [], totalCount: 0 };
+
+  const calls = unique.flatMap(q => [1, 2].map(page => fetchRealJobs({ query: q, country: "in", resultsPerPage, page })));
+  const results = await Promise.all(calls);
+
+  const seen = new Set<string>();
+  const companies: RealJob[] = [];
+  let totalCount = 0;
+  for (const r of results) {
+    totalCount += r.totalCount;
+    for (const j of r.jobs) {
+      if (seen.has(j.id)) continue;
+      seen.add(j.id);
+      companies.push(j);
+    }
+  }
+  return { companies, totalCount };
 }
 
 export interface RealInternship {

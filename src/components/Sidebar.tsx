@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Compass, LogOut, LayoutDashboard, Route, Sparkles, UsersRound,
   FileText, Briefcase, TrendingUp, Mic, Menu, X, GraduationCap,
-  Shield
+  Shield, Mail
 } from "lucide-react";
 import { CommandPalette } from "./CommandPalette";
 import { LanguageSwitcher } from "./LanguageSwitcher";
@@ -22,6 +22,7 @@ const NAV = [
   { href: "/internships", label: "nav.internships", icon: GraduationCap, badge: "AI" },
   { href: "/panel-interview", label: "nav.panelInterview", icon: UsersRound, badge: "AI" },
   { href: "/automation-shield", label: "nav.automationShield", icon: Shield },
+  { href: "/email-campaign", label: "nav.emailCampaign", icon: Mail, badge: "AI" },
   { href: "/resume-builder", label: "nav.resumeBuilder", icon: FileText },
   { href: "/skills", label: "nav.skills", icon: TrendingUp },
 ];

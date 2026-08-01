@@ -2,19 +2,19 @@ import { NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { parseJsonArray } from "@/lib/careers";
-import { fetchTNInternJobs, rankRealJobs, mapToInternship } from "@/lib/jobs";
+import { fetchAllIndiaInternJobs, rankRealJobs, mapToInternship } from "@/lib/jobs";
 
 function buildInternQueries(topTitles: string[], userSkills: string[], userInterests: string[]): string[] {
   const queries = new Set<string>();
   const clean = (t: string) => t.replace(/\//g, " ").replace(/\b(Professional|Specialist|Engineer|Analyst)\b/g, "").replace(/\s+/g, " ").trim();
 
-  for (const t of topTitles.slice(0, 2)) {
+  for (const t of topTitles.slice(0, 3)) {
     const c = clean(t);
     if (c && c.length > 2) queries.add(`${c} intern`);
   }
 
-  for (const s of userSkills.slice(0, 3)) {
-    if (queries.size >= 4) break;
+  for (const s of userSkills.slice(0, 4)) {
+    if (queries.size >= 5) break;
     const q = s.trim();
     if (q.length >= 3) queries.add(`${q} intern`);
   }
@@ -26,7 +26,7 @@ function buildInternQueries(topTitles: string[], userSkills: string[], userInter
 
   if (queries.size === 0) queries.add("intern");
 
-  return [...queries].slice(0, 4);
+  return [...queries].slice(0, 5);
 }
 
 export async function GET() {
@@ -53,10 +53,10 @@ export async function GET() {
 
     const topTitles = userPaths.map(up => up.careerPath.title);
     const queries = buildInternQueries(topTitles, userSkills, userInterests);
-    const { jobs, totalCount } = await fetchTNInternJobs(queries, 20);
+    const { jobs, totalCount } = await fetchAllIndiaInternJobs(queries, 20, 60);
 
     const ranked = rankRealJobs(jobs, userSkills, userInterests, topTitles);
-    const internships = ranked.slice(0, 40).map(j => mapToInternship(j));
+    const internships = ranked.slice(0, 60).map(j => mapToInternship(j));
 
     return NextResponse.json({ internships, totalReal: totalCount });
   } catch (e) {

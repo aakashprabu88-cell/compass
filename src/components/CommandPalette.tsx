@@ -23,6 +23,7 @@ const COMMANDS: CommandItem[] = [
   { id: "resume-builder", label: "Resume Builder", href: "/resume-builder", category: "AI Tools" },
   { id: "agent", label: "AI Career Agent", href: "/agent", category: "AI Tools" },
   { id: "panel-interview", label: "Panel Interview", href: "/panel-interview", category: "AI Tools" },
+  { id: "email-campaign", label: "Email Outreach", href: "/email-campaign", category: "AI Tools" },
   { id: "internships", label: "Internships", href: "/internships", category: "AI Tools" },
 ];
 

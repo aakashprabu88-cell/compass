@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Target, Shield, AlertTriangle, ArrowRight, FileText, TrendingUp, UsersRound, Zap } from "lucide-react";
+import { Target, Shield, AlertTriangle, ArrowRight, FileText, TrendingUp, UsersRound, Zap, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
@@ -76,6 +76,7 @@ export default function DashboardPage() {
               { href: "/panel-interview", label: getVal("dashboard.panelInterview"), icon: UsersRound, color: "from-indigo-500 to-purple-500" },
               { href: "/resume-builder", label: getVal("dashboard.buildResume"), icon: FileText, color: "from-emerald-500 to-teal-500" },
               { href: "/jobs", label: getVal("dashboard.findJobs"), icon: Zap, color: "from-amber-500 to-orange-500" },
+              { href: "/email-campaign", label: getVal("dashboard.emailOutreach"), icon: Mail, color: "from-rose-500 to-pink-500" },
             ].map((action, i) => (
               <Link key={i} href={action.href}
                 className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all group">

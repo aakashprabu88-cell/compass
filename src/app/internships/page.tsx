@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Filter, MapPin, Clock, DollarSign, Briefcase, Star, Zap,
   ExternalLink, CheckCircle, XCircle, ChevronDown, TrendingUp, Users,
   Target, Brain, BookOpen, ArrowRight, X, Loader2, Bookmark, Send,
   Award, Shield, Eye, Calendar, Building2, GraduationCap, Sparkles,
-  ChevronLeft, BarChart3, AlertTriangle, FileText
+  ChevronLeft, BarChart3, AlertTriangle, FileText, Mail
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
@@ -212,10 +213,16 @@ export default function InternshipsPage() {
                   </h1>
                   <p className="text-slate-400 text-sm mt-1">Live internships from across Tamil Nadu, plus curated opportunities from FAANG, startups, and research labs — all matched to your skills</p>
                 </div>
-                <button onClick={loadTracker}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-slate-400 hover:text-white transition-colors">
-                  <BarChart3 className="w-4 h-4" /> Tracker
-                </button>
+                <div className="flex items-center gap-2">
+                  <Link href="/email-campaign"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500/15 to-teal-500/15 border border-emerald-500/25 text-sm text-emerald-400 hover:from-emerald-500/25 hover:to-teal-500/25 transition-colors">
+                    <Mail className="w-4 h-4" /> Email Outreach
+                  </Link>
+                  <button onClick={loadTracker}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-slate-400 hover:text-white transition-colors">
+                    <BarChart3 className="w-4 h-4" /> Tracker
+                  </button>
+                </div>
               </div>
 
               {/* Stats Row */}
@@ -305,6 +312,7 @@ export default function InternshipsPage() {
                     onAnalyze={() => analyzeMatch(internship)}
                     onApply={() => applyToInternship(internship)}
                     onSave={() => saveInternship(internship.id)}
+                    onEmail={() => router.push(`/email-campaign?company=${encodeURIComponent(internship.company)}&role=${encodeURIComponent(internship.title)}`)}
                     onSelect={() => setSelectedInternship(internship)}
                     getDaysUntilDeadline={getDaysUntilDeadline}
                     getDifficultyColor={getDifficultyColor}
@@ -374,8 +382,8 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
   );
 }
 
-function InternshipCard({ internship, index, onAnalyze, onApply, onSave, onSelect, getDaysUntilDeadline, getDifficultyColor, getCompetitionColor }: {
-  internship: Internship; index: number; onAnalyze: () => void; onApply: () => void; onSave: () => void; onSelect: () => void;
+function InternshipCard({ internship, index, onAnalyze, onApply, onSave, onEmail, onSelect, getDaysUntilDeadline, getDifficultyColor, getCompetitionColor }: {
+  internship: Internship; index: number; onAnalyze: () => void; onApply: () => void; onSave: () => void; onEmail: () => void; onSelect: () => void;
   getDaysUntilDeadline: (d: string | null) => number | null; getDifficultyColor: (d: string) => string; getCompetitionColor: (c: string) => string;
 }) {
   const skills = JSON.parse(internship.skillsRequired || "[]");
@@ -474,10 +482,18 @@ function InternshipCard({ internship, index, onAnalyze, onApply, onSave, onSelec
               <CheckCircle className="w-3 h-3" /> Applied
             </span>
           ) : (
-            <button onClick={onApply}
-              className="px-3 py-1 rounded-lg bg-indigo-500 text-white text-xs font-medium hover:bg-indigo-400 transition-colors flex items-center gap-1">
-              {internship._isLive ? <><ExternalLink className="w-3 h-3" /> Apply Now</> : "Apply"}
-            </button>
+            <>
+              {internship._isLive && (
+                <button onClick={onEmail}
+                  className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-400 text-xs font-medium hover:text-emerald-400 hover:border-emerald-500/30 transition-colors flex items-center gap-1">
+                  <Mail className="w-3 h-3" /> Email
+                </button>
+              )}
+              <button onClick={onApply}
+                className="px-3 py-1 rounded-lg bg-indigo-500 text-white text-xs font-medium hover:bg-indigo-400 transition-colors flex items-center gap-1">
+                {internship._isLive ? <><ExternalLink className="w-3 h-3" /> Apply Now</> : "Apply"}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -754,10 +770,11 @@ function DetailModal({ internship, matchResult, matching, onClose, onApply, onAn
 }
 
 function TrackerModal({ data, onClose }: { data: any; onClose: () => void }) {
-  const stages = ["saved", "applied", "shortlisted", "assessment", "interview", "offer", "accepted"];
+  const stages = ["saved", "applied", "shortlisted", "assessment", "interview", "rejected", "offer", "accepted"];
   const stageColors: Record<string, string> = {
     saved: "bg-slate-500", applied: "bg-blue-500", shortlisted: "bg-indigo-500",
-    assessment: "bg-amber-500", interview: "bg-purple-500", offer: "bg-green-500", accepted: "bg-emerald-500",
+    assessment: "bg-amber-500", interview: "bg-purple-500", rejected: "bg-red-500",
+    offer: "bg-green-500", accepted: "bg-emerald-500",
   };
 
   return (
