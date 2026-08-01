@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, useEffect, useMemo, useRef } from "react";
+import { Component, useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 
@@ -70,6 +70,19 @@ function createFaceTexture() {
   return tex;
 }
 
+function createGlowTexture() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 128;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, "rgba(165,180,252,1)");
+  g.addColorStop(0.4, "rgba(129,140,248,0.55)");
+  g.addColorStop(1, "rgba(99,102,241,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+}
+
 const BRASS = { color: "#b08a3e", metalness: 1, roughness: 0.3 };
 
 function CompassInner({ scrollRef, tumble }: { scrollRef: { current: number }; tumble: number }) {
@@ -79,29 +92,66 @@ function CompassInner({ scrollRef, tumble }: { scrollRef: { current: number }; t
   const needle = useRef<THREE.Group>(null!);
   const dome = useRef<THREE.Mesh>(null!);
   const dust = useRef<THREE.Points>(null!);
+  const glow = useRef<THREE.Sprite>(null!);
+  const web = useRef<THREE.LineSegments>(null!);
+  const sparksGeo = useRef<THREE.BufferGeometry>(null!);
   const mouse = useRef({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const onMove = (e: PointerEvent) => {
-      mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
-      mouse.current.y = (e.clientY / window.innerHeight) * 2 - 1;
-    };
-    window.addEventListener("pointermove", onMove);
-    return () => window.removeEventListener("pointermove", onMove);
-  }, []);
+  const flash = useRef(0);
+  const bootT = useRef(0);
+  const pulseTimer = useRef(2);
 
   const face = useMemo(() => {
     const geo = new THREE.CircleGeometry(2.3, 96);
     const mat = new THREE.MeshStandardMaterial({ map: createFaceTexture(), roughness: 0.5, metalness: 0.15 });
-    const mesh = new THREE.Mesh(geo, mat);
-    return mesh;
+    return new THREE.Mesh(geo, mat);
+  }, []);
+
+  const glowTex = useMemo(() => createGlowTexture(), []);
+
+  const sparksData = useMemo(() =>
+    Array.from({ length: 96 }, (_, i) => ({
+      r: 3.4 + Math.random() * 2.6,
+      speed: (0.4 + Math.random() * 1.1) * (Math.random() < 0.5 ? 1 : -1),
+      phase: Math.random() * Math.PI * 2,
+      tiltX: (Math.random() - 0.5) * 1.5,
+      tiltY: (Math.random() - 0.5) * 1.5,
+    })), []);
+
+  const sparksGeoRef = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(sparksData.length * 3), 3));
+    return g;
+  }, [sparksData.length]);
+
+  const webGeo = useMemo(() => {
+    const N = 70;
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i < N; i++) {
+      const r = 5.6 + Math.random() * 3.6;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      pts.push(new THREE.Vector3(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi)));
+    }
+    const pairs: number[][] = [];
+    for (let i = 0; i < N; i++) {
+      const dists = pts.map((p, idx) => ({ idx, d: p.distanceToSquared(pts[i]) })).filter(x => x.idx !== i).sort((a, b) => a.d - b.d);
+      for (let k = 0; k < 2; k++) pairs.push([i, dists[k].idx]);
+    }
+    const pos = new Float32Array(pairs.length * 6);
+    pairs.forEach(([a, b], i) => {
+      pos[i * 6] = pts[a].x; pos[i * 6 + 1] = pts[a].y; pos[i * 6 + 2] = pts[a].z;
+      pos[i * 6 + 3] = pts[b].x; pos[i * 6 + 4] = pts[b].y; pos[i * 6 + 5] = pts[b].z;
+    });
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    return g;
   }, []);
 
   const dustGeo = useMemo(() => {
-    const n = 260;
+    const n = 180;
     const pos = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) {
-      const r = 3.2 + Math.random() * 5.5;
+      const r = 3.4 + Math.random() * 6;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
       pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
@@ -113,11 +163,73 @@ function CompassInner({ scrollRef, tumble }: { scrollRef: { current: number }; t
     return g;
   }, []);
 
+  const pulses = useMemo(() => {
+    const arr: { mesh: THREE.Mesh; mat: THREE.MeshBasicMaterial; active: boolean; t: number }[] = [];
+    const orients: [number, number, number][] = [[0, 0, 0], [Math.PI / 2, 0, 0], [0, Math.PI / 2, 0], [Math.PI / 3, 0, Math.PI / 4]];
+    for (let i = 0; i < 4; i++) {
+      const geo = new THREE.RingGeometry(2.15, 2.45, 64);
+      const mat = new THREE.MeshBasicMaterial({ color: "#818cf8", transparent: true, opacity: 0, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.rotation.set(...orients[i]);
+      mesh.visible = false;
+      arr.push({ mesh, mat, active: false, t: 0 });
+    }
+    return arr;
+  }, []);
+
+  const firePulse = useCallback(() => {
+    const p = pulses.find(x => !x.active);
+    if (!p) return;
+    p.active = true;
+    p.t = 0;
+    p.mesh.visible = true;
+    p.mesh.scale.setScalar(0.4);
+    p.mat.opacity = 0.55;
+  }, [pulses]);
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.current.y = (e.clientY / window.innerHeight) * 2 - 1;
+    };
+    const onDown = () => {
+      flash.current = 1;
+      firePulse();
+      firePulse();
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerdown", onDown);
+    const bootPulses = [0.25, 0.55, 0.85].map(d => setTimeout(() => firePulse(), d * 1000));
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerdown", onDown);
+      bootPulses.forEach(clearTimeout);
+    };
+  }, [firePulse]);
+
+  useEffect(() => {
+    return () => {
+      face.geometry.dispose();
+      (face.material as THREE.Material).dispose();
+      glowTex.dispose();
+      webGeo.dispose();
+      dustGeo.dispose();
+      sparksGeoRef.dispose();
+      pulses.forEach(p => { p.mesh.geometry.dispose(); p.mat.dispose(); });
+    };
+  }, [face, glowTex, webGeo, dustGeo, sparksGeoRef, pulses]);
+
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
     const scroll = scrollRef.current ?? 0;
     const g = group.current;
     if (!g) return;
+
+    if (bootT.current < 1) {
+      bootT.current = Math.min(1, bootT.current + delta * 0.9);
+      const e = 1 - Math.pow(1 - bootT.current, 3);
+      g.scale.setScalar(0.5 + 0.5 * e);
+    }
 
     g.rotation.y += delta * 0.08;
     g.rotation.y += (scroll * (0.35 + tumble * 1.4) * Math.PI * 2 - g.rotation.y) * 0.04;
@@ -134,6 +246,45 @@ function CompassInner({ scrollRef, tumble }: { scrollRef: { current: number }; t
     dome.current.rotation.y += delta * 0.05;
     dust.current.rotation.y += delta * 0.015;
     dust.current.rotation.x += delta * 0.008;
+    web.current.rotation.y += delta * 0.02;
+    web.current.rotation.x = Math.sin(t * 0.12) * 0.08;
+
+    const arr = sparksGeoRef.attributes.position.array as Float32Array;
+    for (let i = 0; i < sparksData.length; i++) {
+      const d = sparksData[i];
+      const a = d.phase + t * d.speed;
+      const x0 = Math.cos(a) * d.r, z0 = Math.sin(a) * d.r;
+      const y1 = -z0 * Math.sin(d.tiltX);
+      const z1 = z0 * Math.cos(d.tiltX);
+      const x2 = x0 * Math.cos(d.tiltY) + z1 * Math.sin(d.tiltY);
+      const z2 = -x0 * Math.sin(d.tiltY) + z1 * Math.cos(d.tiltY);
+      arr[i * 3] = x2; arr[i * 3 + 1] = y1; arr[i * 3 + 2] = z2;
+    }
+    sparksGeoRef.attributes.position.needsUpdate = true;
+
+    flash.current = Math.max(0, flash.current - delta * 1.4);
+    const gs = 2.3 + flash.current * 0.9;
+    glow.current.scale.set(gs, gs, 1);
+    (glow.current.material as THREE.SpriteMaterial).opacity = 0.42 + flash.current * 0.3;
+
+    pulseTimer.current += delta;
+    if (pulseTimer.current > 2.6) {
+      pulseTimer.current = 0;
+      firePulse();
+    }
+    for (const p of pulses) {
+      if (!p.active) continue;
+      p.t += delta;
+      const prog = p.t / 1.6;
+      if (prog >= 1) {
+        p.active = false;
+        p.mesh.visible = false;
+        p.mat.opacity = 0;
+        continue;
+      }
+      p.mesh.scale.setScalar(0.4 + prog * 3.4);
+      p.mat.opacity = (1 - prog) * 0.55;
+    }
 
     state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, mouse.current.x * 0.7, 0.04);
     state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, 0.4 - mouse.current.y * 0.4, 0.04);
@@ -146,6 +297,14 @@ function CompassInner({ scrollRef, tumble }: { scrollRef: { current: number }; t
       <directionalLight position={[3, 4, 5]} intensity={1.8} color="#fff1d6" />
       <directionalLight position={[-4, -2, -3]} intensity={0.7} color="#818cf8" />
       <pointLight position={[0, 2, 3.5]} intensity={30} color="#a78bfa" />
+
+      <lineSegments ref={web} geometry={webGeo}>
+        <lineBasicMaterial color="#6366f1" transparent opacity={0.12} depthWrite={false} />
+      </lineSegments>
+
+      <points ref={dust} geometry={dustGeo}>
+        <pointsMaterial size={0.022} color="#94a3b8" transparent opacity={0.5} sizeAttenuation depthWrite={false} />
+      </points>
 
       <group ref={group}>
         <group ref={gimbalA} rotation={[0.35, 0, 0.2]}>
@@ -187,11 +346,15 @@ function CompassInner({ scrollRef, tumble }: { scrollRef: { current: number }; t
           <sphereGeometry args={[2.55, 48, 32, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
           <meshPhysicalMaterial color="#bfd4ff" transparent opacity={0.1} roughness={0.05} metalness={0} clearcoat={1} clearcoatRoughness={0.1} side={THREE.DoubleSide} depthWrite={false} />
         </mesh>
-      </group>
 
-      <points ref={dust} geometry={dustGeo}>
-        <pointsMaterial size={0.022} color="#94a3b8" transparent opacity={0.5} sizeAttenuation depthWrite={false} />
-      </points>
+        <sprite ref={glow} position={[0, 0, 0]}>
+          <spriteMaterial map={glowTex} transparent opacity={0.42} depthWrite={false} blending={THREE.AdditiveBlending} color="#818cf8" />
+        </sprite>
+
+        <points ref={sparksGeo} geometry={sparksGeoRef}>
+          <pointsMaterial size={0.075} color="#a5b4fc" transparent opacity={0.85} depthWrite={false} blending={THREE.AdditiveBlending} sizeAttenuation />
+        </points>
+      </group>
     </>
   );
 }

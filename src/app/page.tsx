@@ -2,14 +2,20 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, useScroll, useTransform, useSpring, useMotionValue, useMotionValueEvent } from "framer-motion";
+import { motion, useScroll, useTransform, useSpring, useMotionValue, useMotionValueEvent, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Compass, ArrowRight, Brain, Shield, Mic, Briefcase, Loader2, Zap, Globe, LogIn, UserPlus } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import PageTour from "@/components/PageTour";
 
 const CompassCanvas = dynamic(() => import("@/components/Compass3D"), { ssr: false, loading: () => null });
+
+const BOOT_STEPS = [
+  { label: "Initializing", text: "Sparks, meet gravity" },
+  { label: "Aligning field", text: "Plotting your true north" },
+  { label: "Compass AI online", text: "Ready to guide your career" },
+];
 
 const FEATURES = [
   { icon: Brain, titleKey: "landing.feature1Title", descKey: "landing.feature1Desc", color: "rgba(99,102,241,0.15)" },
@@ -116,7 +122,29 @@ function TiltCard({ children, className = "" }: { children: React.ReactNode; cla
 export default function LandingPage() {
   const router = useRouter();
   const [demoLoading, setDemoLoading] = useState(false);
+  const [booted, setBooted] = useState(true);
+  const [bootStep, setBootStep] = useState(0);
+  const reducedMotion = useReducedMotion();
   const { t, locale, setLocale } = useLanguage();
+
+  useEffect(() => {
+    if (reducedMotion) { setBooted(true); return; }
+    try {
+      if (sessionStorage.getItem("compass_boot")) { setBooted(true); return; }
+    } catch {}
+    setBooted(false);
+    const timer = setTimeout(() => {
+      try { sessionStorage.setItem("compass_boot", "1"); } catch {}
+      setBooted(true);
+    }, 2150);
+    return () => clearTimeout(timer);
+  }, [reducedMotion]);
+
+  useEffect(() => {
+    if (booted) return;
+    const iv = setInterval(() => setBootStep(s => Math.min(s + 1, BOOT_STEPS.length - 1)), 700);
+    return () => clearInterval(iv);
+  }, [booted]);
 
   const getVal = (key: string) => {
     const keys = key.split(".");
@@ -164,6 +192,56 @@ export default function LandingPage() {
 
   return (
     <div className="overflow-x-clip bg-[#07070f] text-slate-200 min-h-screen">
+      <AnimatePresence>
+        {!booted && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#05050d] px-6"
+            exit={{ opacity: 0, transition: { duration: 0.7, ease: "easeInOut" } }}
+          >
+            <div className="absolute inset-0" aria-hidden style={{ background: "radial-gradient(circle at 50% 42%, rgba(99,102,241,0.12), transparent 60%)" }} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className="relative flex items-center justify-center"
+            >
+              <div className="absolute w-[180px] h-[180px] blur-2xl rounded-full" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.45), transparent 70%)" }} />
+              <motion.div
+                animate={{ scale: [1, 1.06, 1] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-fuchsia-500 flex items-center justify-center"
+                style={{ boxShadow: "0 0 60px rgba(129,140,248,0.55)" }}
+              >
+                <Compass className="w-8 h-8 text-white" />
+              </motion.div>
+            </motion.div>
+
+            <div className="mt-12 h-12 flex items-center overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={bootStep}
+                  initial={{ y: 16, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -16, opacity: 0 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="text-center"
+                >
+                  <div className="text-[11px] tracking-[0.5em] uppercase text-indigo-300/80">{BOOT_STEPS[bootStep].label}</div>
+                  <div className="mt-2 text-lg font-semibold text-white">{BOOT_STEPS[bootStep].text}</div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 2.1, ease: "easeInOut" }}
+              className="mt-8 w-40 h-[2px] rounded-full origin-left bg-gradient-to-r from-indigo-500 via-purple-400 to-emerald-400"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.div className="fixed top-0 left-0 right-0 h-[2px] z-[60] origin-left bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400" style={{ scaleX: pageScaleX }} />
 
       {/* Nav */}
