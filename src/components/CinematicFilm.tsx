@@ -5,13 +5,13 @@ import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 
 const PHASES = [
-  { color: "#ef4444", cam: [0, 0.35, 5.3] },
-  { color: "#818cf8", cam: [0, 0.55, 4.5] },
-  { color: "#a855f7", cam: [0, 0.4, 3.9] },
-  { color: "#10b981", cam: [0, 0.95, 4.1] },
-  { color: "#22d3ee", cam: [0, 0.1, 3.4] },
-  { color: "#f59e0b", cam: [0, 0.5, 4.3] },
-  { color: "#f472b6", cam: [0, 0.6, 4.2] },
+  { color: "#ef4444", cam: [0, 0.35, 4.2] },
+  { color: "#818cf8", cam: [0, 0.55, 3.7] },
+  { color: "#a855f7", cam: [0, 0.4, 3.3] },
+  { color: "#10b981", cam: [0, 0.95, 3.5] },
+  { color: "#22d3ee", cam: [0, 0.1, 3.0] },
+  { color: "#f59e0b", cam: [0, 0.5, 3.6] },
+  { color: "#f472b6", cam: [0, 0.6, 3.5] },
 ] as const;
 
 const smooth = (x: number) => {
@@ -76,6 +76,50 @@ function makeDust(n: number) {
   return g;
 }
 
+function makeNebulaTexture() {
+  const c = document.createElement("canvas");
+  c.width = 1024; c.height = 512;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createLinearGradient(0, 0, 1024, 512);
+  g.addColorStop(0, "#020412");
+  g.addColorStop(0.35, "#081a33");
+  g.addColorStop(0.62, "#04101f");
+  g.addColorStop(1, "#02040d");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 1024, 512);
+  const blobs: [string, number, number, number][] = [
+    ["rgba(34,211,238,0.16)", 240, 160, 150],
+    ["rgba(129,140,248,0.18)", 780, 200, 190],
+    ["rgba(168,85,247,0.14)", 520, 300, 140],
+    ["rgba(56,189,248,0.10)", 150, 380, 170],
+    ["rgba(244,114,182,0.10)", 880, 370, 140],
+    ["rgba(245,158,11,0.10)", 300, 260, 120],
+  ];
+  for (const [col, x, y, r] of blobs) {
+    const rg = ctx.createRadialGradient(x, y, 0, x, y, r);
+    rg.addColorStop(0, col);
+    rg.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = rg;
+    ctx.fillRect(0, 0, 1024, 512);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function makeGrid() {
+  const size = 9;
+  const step = 0.6;
+  const lines: number[] = [];
+  for (let i = -size; i <= size; i += step) {
+    lines.push(-size, 0, i, size, 0, i);
+    lines.push(i, 0, -size, i, 0, size);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(lines), 3));
+  return g;
+}
+
 function FilmInner({ phase }: { phase: number }) {
   const mouse = useRef({ x: 0, y: 0 });
   const root = useRef<THREE.Group>(null!);
@@ -99,6 +143,7 @@ function FilmInner({ phase }: { phase: number }) {
   const burstG = useRef<THREE.Points>(null!);
   const reachG = useRef<THREE.Points>(null!);
   const panelG = useRef<THREE.Group>(null!);
+  const grid = useRef<THREE.LineSegments>(null!);
 
   const groupRefs = [g0, g1, g2, g3, g4, g5, g6];
 
@@ -137,6 +182,11 @@ function FilmInner({ phase }: { phase: number }) {
   const panelGeo = useMemo(() => new THREE.BoxGeometry(0.05, 3.3, 1.35), []);
   const panelPos = useMemo(() => [-1.15, 0, 1.15].map(x => new THREE.Vector3(x * 1.7, 0, -1.4 - Math.abs(x) * 0.45)), []);
   const cardGeo = useMemo(() => new THREE.CircleGeometry(1.32, 96), []);
+  const nebulaGeo = useMemo(() => new THREE.SphereGeometry(48, 32, 16), []);
+  const nebulaTex = useMemo(() => makeNebulaTexture(), []);
+  const gridGeo = useMemo(() => makeGrid(), []);
+  const nebulaMat = useMemo(() => new THREE.MeshBasicMaterial({ map: nebulaTex, color: "#ffffff", side: THREE.BackSide, depthWrite: false, transparent: true, opacity: 0.9 }), [nebulaTex]);
+  const gridMat = useMemo(() => new THREE.LineBasicMaterial({ color: "#22d3ee", transparent: true, opacity: 0.2, depthWrite: false }), []);
 
   const cardTexture = useMemo(() => {
     const c = document.createElement("canvas");
@@ -247,6 +297,7 @@ function FilmInner({ phase }: { phase: number }) {
 
   const disp = useRef(phase);
   const colorCache = useRef(new THREE.Color());
+  const tintCache = useRef(new THREE.Color());
   const p1 = useRef(0);
 
   const chipsArr = useMemo(() =>
@@ -308,7 +359,8 @@ function FilmInner({ phase }: { phase: number }) {
     return () => {
       shardGeo.dispose(); dustGeo.dispose(); chipGeo.dispose(); nodeGeo.dispose();
       panelGeo.dispose(); cardGeo.dispose(); cardTexture.dispose(); pathGeo.dispose(); pathSparksGeo.dispose(); webGeo.dispose(); burst.g.dispose();
-      [shardMat, sweepMat, chipMat, nodeMat, pathMat, sparkMat, webMat, burstMat, reachMat, panelMat, glowMat].forEach(m => m.dispose());
+      nebulaGeo.dispose(); nebulaTex.dispose(); gridGeo.dispose();
+      [shardMat, sweepMat, chipMat, nodeMat, pathMat, sparkMat, webMat, burstMat, reachMat, panelMat, glowMat, nebulaMat, gridMat].forEach(m => m.dispose());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -344,6 +396,14 @@ function FilmInner({ phase }: { phase: number }) {
       compassG.current.rotation.x = 0.1 + Math.sin(t * 0.35) * 0.05 + mouse.current.y * 0.12;
     }
     if (dust.current) dust.current.rotation.set(t * 0.02, t * 0.03, 0);
+    if (grid.current) {
+      grid.current.position.y = -2.4;
+      grid.current.rotation.y = t * 0.04;
+    }
+    nebulaMat.color.copy(col).lerp(tintCache.current.set("#0b1a33"), 0.35);
+    nebulaMat.opacity = 0.85 + 0.1 * Math.sin(t * 0.4);
+    gridMat.color.set(col);
+    gridMat.opacity = 0.18 + 0.06 * Math.sin(t * 0.5);
 
     phaseMeta.forEach((meta, i) => {
       const ff = fadeAt(p, i);
@@ -431,7 +491,15 @@ function FilmInner({ phase }: { phase: number }) {
         <pointsMaterial size={0.02} color="#94a3b8" transparent opacity={0.45} sizeAttenuation depthWrite={false} />
       </points>
 
-      <group ref={root} scale={[1.5, 1.5, 1.5]}>
+      <mesh geometry={nebulaGeo}>
+        <primitive object={nebulaMat} attach="material" />
+      </mesh>
+
+      <lineSegments ref={grid} geometry={gridGeo} position={[0, -2.4, 0]}>
+        <primitive object={gridMat} attach="material" />
+      </lineSegments>
+
+      <group ref={root} scale={[2.0, 2.0, 2.0]}>
         <group ref={ringA} rotation={[0.4, 0, 0.2]}>
           <mesh><torusGeometry args={[2.7, 0.07, 20, 96]} /><meshStandardMaterial color="#b08a3e" metalness={1} roughness={0.3} /></mesh>
         </group>
@@ -450,7 +518,7 @@ function FilmInner({ phase }: { phase: number }) {
           </group>
           <mesh>
             <sphereGeometry args={[1.5, 48, 32]} />
-            <meshPhysicalMaterial color="#dfe7ff" transparent opacity={0.06} roughness={0.06} metalness={0} clearcoat={1} clearcoatRoughness={0.08} depthWrite={false} />
+            <meshStandardMaterial color="#dfe7ff" transparent opacity={0.08} roughness={0.3} metalness={0} depthWrite={false} />
           </mesh>
         </group>
 
