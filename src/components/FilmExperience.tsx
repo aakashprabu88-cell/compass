@@ -115,9 +115,13 @@ export default function FilmExperience() {
           style={{ background: `radial-gradient(60% 58% at 50% 46%, ${ch.color}26, transparent 68%), radial-gradient(42% 42% at 78% 18%, ${ch.color}12, transparent 70%), radial-gradient(34% 34% at 18% 82%, ${ch.color}0e, transparent 70%)` }} />
       </AnimatePresence>
 
-      <div className="absolute inset-0">
-        <CinematicFilm phase={phase} />
-      </div>
+      <AnimatePresence>
+        {!title && (
+          <motion.div className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.1 }}>
+            <CinematicFilm phase={phase} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="absolute inset-0" style={{ background: "radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,0.55) 100%)" }} />
 

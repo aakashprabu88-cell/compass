@@ -5,13 +5,13 @@ import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 
 const PHASES = [
-  { color: "#ef4444", cam: [0, 0.35, 7.4] },
-  { color: "#818cf8", cam: [0, 0.55, 6.2] },
-  { color: "#a855f7", cam: [0, 0.4, 5.4] },
-  { color: "#10b981", cam: [0, 0.95, 5.7] },
-  { color: "#22d3ee", cam: [0, 0.1, 4.7] },
-  { color: "#f59e0b", cam: [0, 0.5, 6.0] },
-  { color: "#f472b6", cam: [0, 0.6, 5.8] },
+  { color: "#ef4444", cam: [0, 0.35, 5.3] },
+  { color: "#818cf8", cam: [0, 0.55, 4.5] },
+  { color: "#a855f7", cam: [0, 0.4, 3.9] },
+  { color: "#10b981", cam: [0, 0.95, 4.1] },
+  { color: "#22d3ee", cam: [0, 0.1, 3.4] },
+  { color: "#f59e0b", cam: [0, 0.5, 4.3] },
+  { color: "#f472b6", cam: [0, 0.6, 4.2] },
 ] as const;
 
 const smooth = (x: number) => {
@@ -246,6 +246,8 @@ function FilmInner({ phase }: { phase: number }) {
   const reach = useMemo(() => makeBurst(90), []);
 
   const disp = useRef(phase);
+  const colorCache = useRef(new THREE.Color());
+  const p1 = useRef(0);
 
   const chipsArr = useMemo(() =>
     Array.from({ length: 8 }, (_, i) => {
@@ -318,7 +320,7 @@ function FilmInner({ phase }: { phase: number }) {
     const i0 = Math.min(6, Math.floor(p));
     const i1 = Math.min(6, i0 + 1);
     const f = Math.max(0, Math.min(1, p - i0));
-    const col = new THREE.Color(PHASES[i0].color).lerp(new THREE.Color(PHASES[i1].color), f);
+    const col = colorCache.current.copy(new THREE.Color(PHASES[i0].color)).lerp(new THREE.Color(PHASES[i1].color), f);
 
     glowMat.color.copy(col);
     glowMat.opacity = 0.72 + 0.2 * Math.sin(t * 1.3);
@@ -429,7 +431,7 @@ function FilmInner({ phase }: { phase: number }) {
         <pointsMaterial size={0.02} color="#94a3b8" transparent opacity={0.45} sizeAttenuation depthWrite={false} />
       </points>
 
-      <group ref={root}>
+      <group ref={root} scale={[1.5, 1.5, 1.5]}>
         <group ref={ringA} rotation={[0.4, 0, 0.2]}>
           <mesh><torusGeometry args={[2.7, 0.07, 20, 96]} /><meshStandardMaterial color="#b08a3e" metalness={1} roughness={0.3} /></mesh>
         </group>
@@ -527,7 +529,7 @@ class FilmBoundary extends Component<{ children: React.ReactNode }, { failed: bo
 export default function CinematicFilm({ phase }: { phase: number }) {
   return (
     <FilmBoundary>
-      <Canvas camera={{ position: [0, 0.35, 7.4], fov: 42 }} dpr={[1, 2]} gl={{ antialias: true, alpha: true }} style={{ pointerEvents: "none" }}>
+      <Canvas camera={{ position: [0, 0.35, 5.3], fov: 42 }} dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }} style={{ pointerEvents: "none" }}>
         <FilmInner phase={phase} />
       </Canvas>
     </FilmBoundary>

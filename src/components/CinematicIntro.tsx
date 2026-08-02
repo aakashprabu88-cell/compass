@@ -260,7 +260,7 @@ export default function CinematicIntro({ onAligned, onEnter }: { onAligned?: (t:
         <div className="absolute top-0 inset-x-0 h-[7vh] bg-black z-20 border-b border-white/5" />
         <div className="absolute bottom-0 inset-x-0 h-[7vh] bg-black z-20 border-t border-white/5" />
 
-        <Canvas camera={{ position: [0, 0.35, 7.2], fov: 40 }} dpr={[1, 2]} gl={{ antialias: true, alpha: true }} style={{ pointerEvents: "none" }}>
+        <Canvas camera={{ position: [0, 0.35, 7.2], fov: 40 }} dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }} style={{ pointerEvents: "none" }}>
           <IntroInner onAligned={onAligned ?? (() => {})} />
         </Canvas>
 
