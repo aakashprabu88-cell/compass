@@ -159,15 +159,15 @@ export default function FilmExperience() {
           initial={{ scaleX: 0 }} animate={{ scaleX: playing && !hovering && !reduced ? 1 : 0 }} transition={{ duration: AUTO_MS / 1000, ease: "linear" }} />
       </div>
 
-      <div className="absolute left-0 right-0 bottom-0 z-20 px-6 pb-28 sm:px-12 lg:px-16">
-        <div className="max-w-xl">
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-6 pb-20 sm:px-12 lg:px-16">
+        <div className="w-full max-w-2xl">
           <AnimatePresence mode="wait">
             <motion.div key={slide} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}>
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center gap-3 mb-5">
                 <span className="text-[10px] tracking-[0.45em] uppercase" style={{ color: ch.color }}>{ch.tag}</span>
                 <span className="h-px w-12" style={{ background: ch.color }} />
               </div>
-              <h2 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.02] text-white">
+              <h2 className="text-center text-4xl sm:text-7xl font-extrabold tracking-tight leading-[1.02] text-white">
                 {ch.title.map((line, i) => (
                   <span key={i} className="block overflow-hidden py-[0.05em] -my-[0.05em]">
                     <motion.span initial={{ y: "112%" }} animate={{ y: 0 }} transition={{ duration: 0.7, delay: 0.15 + i * 0.1, ease: [0.22, 1, 0.36, 1] }} className="block">
@@ -176,12 +176,12 @@ export default function FilmExperience() {
                   </span>
                 ))}
               </h2>
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.6 }} className="text-sm sm:text-base text-slate-400 leading-relaxed mt-4 max-w-md">
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.6 }} className="text-center text-sm sm:text-base text-slate-400 leading-relaxed mt-5 max-w-md mx-auto">
                 {ch.body}
               </motion.p>
 
               {ch.chips && (
-                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.62, duration: 0.55 }} className="flex flex-wrap gap-2 mt-5 max-w-md">
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.62, duration: 0.55 }} className="flex flex-wrap justify-center gap-2 mt-6">
                   {ch.chips.map(c => (
                     <span key={c} className="px-3 py-1.5 rounded-full text-[10px] tracking-[0.18em] uppercase border"
                       style={{ borderColor: `${ch.color}40`, color: ch.color, background: `${ch.color}14` }}>{c}</span>
@@ -190,7 +190,7 @@ export default function FilmExperience() {
               )}
 
               {ch.cta && (
-                <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }} className="flex flex-wrap gap-3 mt-6">
+                <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }} className="flex flex-wrap justify-center gap-3 mt-8">
                   <button onClick={startDemo} disabled={demoLoading}
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-sm font-semibold text-white transition-all glow-sm">
                     {demoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
