@@ -88,6 +88,35 @@ export default function FilmExperience() {
     return () => clearTimeout(t);
   }, [title, playing, hovering, reduced, slide, goNext]);
 
+  const wheelLock = useRef(0);
+
+  useEffect(() => {
+    const onWheel = (e: WheelEvent) => {
+      if (title) return;
+      if (Math.abs(e.deltaY) < 12) return;
+      if (Date.now() - wheelLock.current < 900) return;
+      wheelLock.current = Date.now();
+      if (e.deltaY > 0) goNext(); else goPrev();
+    };
+    window.addEventListener("wheel", onWheel, { passive: true });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, [goNext, goPrev, title]);
+
+  const touch = useRef<{ x: number; y: number } | null>(null);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    touch.current = { x: e.clientX, y: e.clientY };
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (!touch.current) return;
+    const dx = e.clientX - touch.current.x;
+    const dy = e.clientY - touch.current.y;
+    touch.current = null;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 48) return;
+    if (Math.abs(dy) > Math.abs(dx)) { if (dy < 0) goNext(); else goPrev(); }
+    else { if (dx < 0) goNext(); else goPrev(); }
+  };
+
   const startDemo = async () => {
     setDemoLoading(true);
     try {
@@ -102,7 +131,11 @@ export default function FilmExperience() {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#04040a] text-slate-200 select-none"
-      onPointerEnter={() => setHovering(true)} onPointerLeave={() => setHovering(false)}>
+      onPointerEnter={() => setHovering(true)} onPointerLeave={() => setHovering(false)}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      style={{ touchAction: "pan-y" }}>
       <AnimatePresence>
         {title && (
           <motion.div className="absolute inset-0 z-[70]" exit={{ opacity: 0 }} transition={{ duration: 0.7 }}>
