@@ -201,10 +201,10 @@ export default function FilmExperience() {
           <AnimatePresence mode="wait">
             <motion.div key={slide} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}>
               <div className="flex items-center justify-center gap-3 mb-5">
-                <span className="text-[10px] tracking-[0.45em] uppercase" style={{ color: ch.color }}>{ch.tag}</span>
+                <span className="text-[10px] tracking-[0.45em] uppercase font-display" style={{ color: ch.color }}>{ch.tag}</span>
                 <span className="h-px w-12" style={{ background: ch.color }} />
               </div>
-              <h2 className="text-center text-4xl sm:text-7xl font-extrabold tracking-tight leading-[1.02] text-white">
+              <h2 className="text-center text-[clamp(2.6rem,8vw,6.5rem)] font-display font-bold tracking-[0.01em] leading-[1.05] text-white">
                 {ch.title.map((line, i) => (
                   <span key={i} className="block overflow-hidden py-[0.05em] -my-[0.05em]">
                     <motion.span initial={{ y: "112%" }} animate={{ y: 0 }} transition={{ duration: 0.7, delay: 0.15 + i * 0.1, ease: [0.22, 1, 0.36, 1] }} className="block">

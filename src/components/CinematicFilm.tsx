@@ -393,7 +393,8 @@ function FilmInner({ phase }: { phase: number }) {
     if (needle.current) needle.current.rotation.z = t * 0.25 + p * 0.4;
     if (compassG.current) {
       compassG.current.rotation.y = -root.current.rotation.y;
-      compassG.current.rotation.x = 0.1 + Math.sin(t * 0.35) * 0.05 + mouse.current.y * 0.12;
+      compassG.current.rotation.x = 0.1 + Math.sin(t * 0.35) * 0.05 + mouse.current.y * 0.22;
+      compassG.current.rotation.z += (mouse.current.x * 0.12 - compassG.current.rotation.z) * 0.08;
     }
     if (dust.current) dust.current.rotation.set(t * 0.02, t * 0.03, 0);
     if (grid.current) {
@@ -474,9 +475,9 @@ function FilmInner({ phase }: { phase: number }) {
     const tx = a[0] + (b[0] - a[0]) * f;
     const ty = a[1] + (b[1] - a[1]) * f;
     const tz = a[2] + (b[2] - a[2]) * f;
-    cam.position.x += (tx + mouse.current.x * 0.6 - cam.position.x) * 0.05;
-    cam.position.y += (ty - mouse.current.y * 0.35 - cam.position.y) * 0.05;
-    cam.position.z += (tz - cam.position.z) * 0.05;
+    cam.position.x += (tx + mouse.current.x * 0.9 - cam.position.x) * 0.1;
+    cam.position.y += (ty - mouse.current.y * 0.6 - cam.position.y) * 0.1;
+    cam.position.z += (tz - cam.position.z) * 0.08;
     cam.lookAt(0, 0, 0);
   });
 

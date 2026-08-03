@@ -122,9 +122,12 @@ function IntroInner({ onAligned }: { onAligned: (n: number) => void }) {
     const el = (performance.now() - start.current) / 1000;
     const cam = state.camera;
     const dolly = easeOutCubic(clamp01((el - 0.3) / 1.8));
-    cam.position.x = mouse.current.x * 0.55;
-    cam.position.y = 0.35 + mouse.current.y * 0.3;
-    cam.position.z = 7.2 - 1.9 * dolly;
+    const tx = mouse.current.x * 0.85;
+    const ty = 0.35 + mouse.current.y * 0.5;
+    const tz = 7.2 - 1.9 * dolly;
+    cam.position.x += (tx - cam.position.x) * 0.08;
+    cam.position.y += (ty - cam.position.y) * 0.08;
+    cam.position.z += (tz - cam.position.z) * 0.08;
     cam.lookAt(0, -1.2, 0);
 
     if (sceneG.current) sceneG.current.rotation.y = Math.sin(el * 0.16) * 0.12;
@@ -264,13 +267,15 @@ export default function CinematicIntro({ onAligned, onEnter }: { onAligned?: (t:
           <IntroInner onAligned={onAligned ?? (() => {})} />
         </Canvas>
 
-        <motion.div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center pointer-events-none">
-          <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7 }}
-            className="text-[10px] sm:text-xs tracking-[0.6em] uppercase text-slate-400">
-            Compass presents
-          </motion.p>
+        <motion.div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center pointer-events-none px-4">
+          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7 }}
+            className="flex items-center gap-4">
+            <span className="h-px w-10 sm:w-16 bg-gradient-to-r from-transparent to-amber-300/60" />
+            <span className="text-[10px] sm:text-xs tracking-[0.6em] uppercase text-slate-300 font-display">Compass presents</span>
+            <span className="h-px w-10 sm:w-16 bg-gradient-to-l from-transparent to-amber-300/60" />
+          </motion.div>
 
-          <h1 className="mt-2 flex text-[clamp(3rem,15vw,10rem)] font-black leading-none tracking-tight" style={{ perspective: 900 }} aria-label="COMPASS">
+          <h1 className="mt-2 flex text-[clamp(3.4rem,16vw,11rem)] font-display font-black leading-none tracking-[0.02em] drop-shadow-[0_10px_60px_rgba(217,192,136,0.35)]" style={{ perspective: 900 }} aria-label="COMPASS">
             {"COMPASS".split("").map((ch, i) => (
               <span key={i} className="inline-block overflow-hidden pb-[0.06em] -mb-[0.06em]">
                 <motion.span
@@ -298,7 +303,9 @@ export default function CinematicIntro({ onAligned, onEnter }: { onAligned?: (t:
               onClick={onEnter}
               animate={{ boxShadow: ["0 0 0 0 rgba(245,158,11,0.45)", "0 0 0 14px rgba(245,158,11,0)"] }}
               transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
-              className="pointer-events-auto inline-flex items-center gap-3 px-9 py-4 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-sm sm:text-base font-bold text-white">
+              className="pointer-events-auto relative inline-flex items-center gap-3 px-9 py-4 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-sm sm:text-base font-bold text-white overflow-hidden">
+              <motion.span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                animate={{ x: ["-100%", "100%"] }} transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }} />
               <Play className="w-4 h-4 fill-current" /> Begin the film
             </motion.button>
           </motion.div>
