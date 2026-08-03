@@ -2,79 +2,41 @@
 
 import { Component, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { motion } from "framer-motion";
 import { Play } from "lucide-react";
 import MouseParallax from "@/components/MouseParallax";
+import { makeCompassFaceTexture } from "@/lib/compassFaceTexture";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 const easeOutCubic = (x: number) => 1 - Math.pow(1 - x, 3);
 
-function makeCompassTexture() {
+function makeGlowTexture() {
   const c = document.createElement("canvas");
-  c.width = c.height = 1024;
+  c.width = c.height = 256;
   const ctx = c.getContext("2d")!;
-  const g = ctx.createRadialGradient(512, 512, 200, 512, 512, 512);
-  g.addColorStop(0, "#f9f4e6");
-  g.addColorStop(1, "#e9dec2");
+  const g = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  g.addColorStop(0, "rgba(255,238,190,0.95)");
+  g.addColorStop(0.35, "rgba(245,178,86,0.35)");
+  g.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 1024, 1024);
-  ctx.beginPath();
-  ctx.arc(512, 512, 500, 0, Math.PI * 2);
-  ctx.fillStyle = "#b08a3e";
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(512, 512, 476, 0, Math.PI * 2);
-  ctx.fillStyle = "#f2ead4";
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(512, 512, 368, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(20,20,20,0.35)";
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  for (let a = 0; a < 360; a += 2) {
-    const rad = (a * Math.PI) / 180;
-    const long = a % 30 === 0;
-    const med = a % 10 === 0;
-    const r1 = 470;
-    const r2 = long ? 408 : med ? 448 : 466;
-    ctx.beginPath();
-    ctx.moveTo(512 + Math.sin(rad) * r1, 512 - Math.cos(rad) * r1);
-    ctx.lineTo(512 + Math.sin(rad) * r2, 512 - Math.cos(rad) * r2);
-    ctx.strokeStyle = long ? "#1a1a1a" : med ? "#3a3a3a" : "#6a6a6a";
-    ctx.lineWidth = long ? 10 : med ? 6 : 3;
-    ctx.stroke();
+  ctx.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(c);
+}
+
+function makeRing(n: number, rmin: number, rmax: number) {
+  const pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = rmin + Math.random() * (rmax - rmin);
+    pos[i * 3] = Math.cos(a) * r;
+    pos[i * 3 + 1] = (Math.random() - 0.5) * 0.06;
+    pos[i * 3 + 2] = Math.sin(a) * r;
   }
-  ctx.font = "900 64px Georgia, 'Times New Roman', serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  const dirs: [string, number, number, string][] = [
-    ["N", 512, 512 - 342, "#c0392b"],
-    ["E", 512 + 342, 512, "#1a1a1a"],
-    ["S", 512, 512 + 342, "#1a1a1a"],
-    ["W", 512 - 342, 512, "#1a1a1a"],
-  ];
-  dirs.forEach(([t, x, y, col]) => {
-    ctx.fillStyle = col;
-    ctx.fillText(t, x, y);
-  });
-  ctx.font = "700 40px Georgia, serif";
-  ctx.fillStyle = "rgba(26,26,26,0.75)";
-  [["NE", 512 + 246, 512 - 246], ["SE", 512 + 246, 512 + 246], ["SW", 512 - 246, 512 + 246], ["NW", 512 - 246, 512 - 246]].forEach(([t, x, y]) => {
-    ctx.fillText(t as string, x as number, y as number);
-  });
-  ctx.beginPath();
-  ctx.arc(512, 512, 40, 0, Math.PI * 2);
-  ctx.fillStyle = "#b08a3e";
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(512, 512, 16, 0, Math.PI * 2);
-  ctx.fillStyle = "#1a1a1a";
-  ctx.fill();
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 8;
-  return tex;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  return g;
 }
 
 function makeDust(n: number) {
@@ -93,6 +55,7 @@ function makeDust(n: number) {
 }
 
 function IntroInner({ onAligned }: { onAligned: (n: number) => void }) {
+  const { gl, scene } = useThree();
   const mouse = useRef({ x: 0, y: 0 });
   const start = useRef(performance.now());
   const sceneG = useRef<THREE.Group>(null!);
@@ -100,14 +63,23 @@ function IntroInner({ onAligned }: { onAligned: (n: number) => void }) {
   const needle = useRef<THREE.Group>(null!);
   const orbit = useRef<THREE.Mesh>(null!);
   const dust = useRef<THREE.Points>(null!);
+  const dustRing = useRef<THREE.Points>(null!);
+  const astrolabe = useRef<THREE.Group>(null!);
+  const moons = useRef<THREE.Group>(null!);
   const nMark = useRef<THREE.Mesh>(null!);
+  const glowTex = useMemo(() => makeGlowTexture(), []);
   const coreMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#f59e0b", transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }), []);
   const nMarkMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#f59e0b", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), []);
-  const orbitMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#f59e0b", transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }), []);
+  const orbitMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#f59e0b", transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false }), []);
+  const astroMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#fcd34d", transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }), []);
+  const moonMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#f7d98c", transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }), []);
+  const haloMat = useMemo(() => new THREE.SpriteMaterial({ map: glowTex, color: "#fcd34d", transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false }), [glowTex]);
   const dustMat = useMemo(() => new THREE.PointsMaterial({ color: "#f59e0b", size: 0.03, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true }), []);
+  const dustRingMat = useMemo(() => new THREE.PointsMaterial({ color: "#fcd34d", size: 0.024, transparent: true, opacity: 0.65, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true }), []);
   const dustGeo = useMemo(() => makeDust(110), []);
+  const dustRingGeo = useMemo(() => makeRing(220, 1.6, 2.6), []);
   const cardGeo = useMemo(() => new THREE.CircleGeometry(1.15, 96), []);
-  const cardTex = useMemo(() => makeCompassTexture(), []);
+  const cardTex = useMemo(() => makeCompassFaceTexture(), []);
   const aligned = useRef(false);
 
   useEffect(() => {
@@ -118,6 +90,17 @@ function IntroInner({ onAligned }: { onAligned: (n: number) => void }) {
     window.addEventListener("pointermove", onMove);
     return () => window.removeEventListener("pointermove", onMove);
   }, []);
+
+  useEffect(() => {
+    const pmrem = new THREE.PMREMGenerator(gl);
+    const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = env;
+    return () => {
+      scene.environment = null;
+      env.dispose();
+      pmrem.dispose();
+    };
+  }, [gl, scene]);
 
   useFrame((state) => {
     const el = (performance.now() - start.current) / 1000;
@@ -166,6 +149,10 @@ function IntroInner({ onAligned }: { onAligned: (n: number) => void }) {
       orbit.current.rotation.x = 1.1 + Math.sin(el * 0.2) * 0.08;
     }
     if (dust.current) dust.current.rotation.y = el * 0.05;
+    if (dustRing.current) dustRing.current.rotation.y = el * 0.015;
+    if (astrolabe.current) astrolabe.current.rotation.z = -el * 0.1;
+    if (moons.current) moons.current.rotation.y = el * 0.5;
+    haloMat.opacity = 0.26 + 0.09 * Math.sin(el * 0.9);
   });
 
   return (
@@ -173,16 +160,37 @@ function IntroInner({ onAligned }: { onAligned: (n: number) => void }) {
       <ambientLight intensity={0.55} />
       <directionalLight position={[3, 4, 5]} intensity={1.4} color="#fff1d6" />
       <directionalLight position={[-4, -2, -3]} intensity={0.6} color="#818cf8" />
-      <pointLight position={[0, -1.2, 3]} intensity={22} color="#f59e0b" />
+      <pointLight position={[0, -1.2, 3]} intensity={30} color="#f59e0b" />
 
       <points ref={dust} geometry={dustGeo}>
         <primitive object={dustMat} attach="material" />
       </points>
 
+      <points ref={dustRing} geometry={dustRingGeo}>
+        <primitive object={dustRingMat} attach="material" />
+      </points>
+
+      <sprite position={[0, -1.2, -1.6]} scale={[9, 9, 1]}>
+        <primitive object={haloMat} attach="material" />
+      </sprite>
+
       <mesh ref={orbit}>
         <torusGeometry args={[2.3, 0.02, 12, 96]} />
         <primitive object={orbitMat} attach="material" />
       </mesh>
+
+      <group ref={astrolabe} rotation={[1.25, 0.25, 0]}>
+        <mesh><torusGeometry args={[2.55, 0.012, 12, 128]} /><primitive object={astroMat} attach="material" /></mesh>
+      </group>
+
+      <group ref={moons} rotation={[1.3, 0.1, 0.4]}>
+        {[0, 2.09, 4.19].map((a, i) => (
+          <mesh key={i} position={[Math.cos(a) * 2.72, Math.sin(a) * 2.72, 0]}>
+            <sphereGeometry args={[0.055, 14, 12]} />
+            <primitive object={moonMat} attach="material" />
+          </mesh>
+        ))}
+      </group>
 
       <group ref={sceneG} position={[0, -1.2, 0]}>
         <group ref={lid} position={[0, 1.18, 0]}>

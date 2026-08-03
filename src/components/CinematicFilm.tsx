@@ -2,7 +2,9 @@
 
 import { Component, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { makeCompassFaceTexture } from "@/lib/compassFaceTexture";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
 const PHASES = [
   { color: "#ef4444", cam: [0, 0.35, 4.2] },
@@ -120,7 +122,21 @@ function makeGrid() {
   return g;
 }
 
+function makeGlowTexture() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 256;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  g.addColorStop(0, "rgba(255,255,255,0.9)");
+  g.addColorStop(0.4, "rgba(255,255,255,0.22)");
+  g.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(c);
+}
+
 function FilmInner({ phase }: { phase: number }) {
+  const { gl, scene } = useThree();
   const mouse = useRef({ x: 0, y: 0 });
   const root = useRef<THREE.Group>(null!);
   const ringA = useRef<THREE.Group>(null!);
@@ -144,6 +160,8 @@ function FilmInner({ phase }: { phase: number }) {
   const reachG = useRef<THREE.Points>(null!);
   const panelG = useRef<THREE.Group>(null!);
   const grid = useRef<THREE.LineSegments>(null!);
+  const cage = useRef<THREE.Mesh>(null!);
+  const halo = useRef<THREE.Sprite>(null!);
 
   const groupRefs = [g0, g1, g2, g3, g4, g5, g6];
 
@@ -187,84 +205,12 @@ function FilmInner({ phase }: { phase: number }) {
   const gridGeo = useMemo(() => makeGrid(), []);
   const nebulaMat = useMemo(() => new THREE.MeshBasicMaterial({ map: nebulaTex, color: "#ffffff", side: THREE.BackSide, depthWrite: false, transparent: true, opacity: 0.9 }), [nebulaTex]);
   const gridMat = useMemo(() => new THREE.LineBasicMaterial({ color: "#22d3ee", transparent: true, opacity: 0.2, depthWrite: false }), []);
+  const glowTex = useMemo(() => makeGlowTexture(), []);
+  const haloMat = useMemo(() => new THREE.SpriteMaterial({ map: glowTex, color: "#818cf8", transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false }), [glowTex]);
+  const cageMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#818cf8", wireframe: true, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false }), []);
+  const cageGeo = useMemo(() => new THREE.IcosahedronGeometry(3.3, 0), []);
 
-  const cardTexture = useMemo(() => {
-    const c = document.createElement("canvas");
-    c.width = c.height = 1024;
-    const ctx = c.getContext("2d")!;
-    const g = ctx.createRadialGradient(512, 512, 200, 512, 512, 512);
-    g.addColorStop(0, "#f9f4e6");
-    g.addColorStop(1, "#e9dec2");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 1024, 1024);
-    ctx.beginPath();
-    ctx.arc(512, 512, 500, 0, Math.PI * 2);
-    ctx.fillStyle = "#b08a3e";
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(512, 512, 476, 0, Math.PI * 2);
-    ctx.fillStyle = "#f2ead4";
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(512, 512, 368, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(20,20,20,0.35)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(512, 512, 300, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(20,20,20,0.2)";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    for (let a = 0; a < 360; a += 2) {
-      const rad = (a * Math.PI) / 180;
-      const long = a % 30 === 0;
-      const med = a % 10 === 0;
-      const r1 = 470;
-      const r2 = long ? 408 : med ? 448 : 466;
-      ctx.beginPath();
-      ctx.moveTo(512 + Math.sin(rad) * r1, 512 - Math.cos(rad) * r1);
-      ctx.lineTo(512 + Math.sin(rad) * r2, 512 - Math.cos(rad) * r2);
-      ctx.strokeStyle = long ? "#1a1a1a" : med ? "#3a3a3a" : "#6a6a6a";
-      ctx.lineWidth = long ? 10 : med ? 6 : 3;
-      ctx.stroke();
-    }
-    ctx.font = "900 64px Georgia, 'Times New Roman', serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    const dirs: [string, number, number, string][] = [
-      ["N", 512, 512 - 342, "#c0392b"],
-      ["E", 512 + 342, 512, "#1a1a1a"],
-      ["S", 512, 512 + 342, "#1a1a1a"],
-      ["W", 512 - 342, 512, "#1a1a1a"],
-    ];
-    dirs.forEach(([t, x, y, col]) => {
-      ctx.fillStyle = col;
-      ctx.fillText(t, x, y);
-    });
-    ctx.font = "700 40px Georgia, serif";
-    ctx.fillStyle = "rgba(26,26,26,0.75)";
-    [["NE", 512 + 246, 512 - 246], ["SE", 512 + 246, 512 + 246], ["SW", 512 - 246, 512 + 246], ["NW", 512 - 246, 512 - 246]].forEach(([t, x, y]) => {
-      ctx.fillText(t as string, x as number, y as number);
-    });
-    ctx.font = "700 44px Georgia, serif";
-    ctx.fillStyle = "#222";
-    for (let a = 30; a < 360; a += 30) {
-      const rad = (a * Math.PI) / 180;
-      ctx.fillText(String(a), 512 + Math.sin(rad) * 388, 512 - Math.cos(rad) * 388);
-    }
-    ctx.beginPath();
-    ctx.arc(512, 512, 40, 0, Math.PI * 2);
-    ctx.fillStyle = "#b08a3e";
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(512, 512, 16, 0, Math.PI * 2);
-    ctx.fillStyle = "#1a1a1a";
-    ctx.fill();
-    const tex = new THREE.CanvasTexture(c);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = 8;
-    return tex;
-  }, []);
+  const cardTexture = useMemo(() => makeCompassFaceTexture(), []);
 
   const curve = useMemo(() => {
     const pts: THREE.Vector3[] = [];
@@ -356,11 +302,22 @@ function FilmInner({ phase }: { phase: number }) {
   }, []);
 
   useEffect(() => {
+    const pmrem = new THREE.PMREMGenerator(gl);
+    const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = env;
+    return () => {
+      scene.environment = null;
+      env.dispose();
+      pmrem.dispose();
+    };
+  }, [gl, scene]);
+
+  useEffect(() => {
     return () => {
       shardGeo.dispose(); dustGeo.dispose(); chipGeo.dispose(); nodeGeo.dispose();
       panelGeo.dispose(); cardGeo.dispose(); cardTexture.dispose(); pathGeo.dispose(); pathSparksGeo.dispose(); webGeo.dispose(); burst.g.dispose();
-      nebulaGeo.dispose(); nebulaTex.dispose(); gridGeo.dispose();
-      [shardMat, sweepMat, chipMat, nodeMat, pathMat, sparkMat, webMat, burstMat, reachMat, panelMat, glowMat, nebulaMat, gridMat].forEach(m => m.dispose());
+      nebulaGeo.dispose(); nebulaTex.dispose(); gridGeo.dispose(); cageGeo.dispose(); glowTex.dispose();
+      [shardMat, sweepMat, chipMat, nodeMat, pathMat, sparkMat, webMat, burstMat, reachMat, panelMat, glowMat, nebulaMat, gridMat, haloMat, cageMat].forEach(m => m.dispose());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -405,6 +362,15 @@ function FilmInner({ phase }: { phase: number }) {
     nebulaMat.opacity = 0.85 + 0.1 * Math.sin(t * 0.4);
     gridMat.color.set(col);
     gridMat.opacity = 0.18 + 0.06 * Math.sin(t * 0.5);
+
+    if (cage.current) {
+      cage.current.rotation.y += delta * 0.05;
+      cage.current.rotation.x = Math.sin(t * 0.12) * 0.25;
+    }
+    cageMat.color.copy(col);
+    cageMat.opacity = 0.06 + 0.03 * Math.sin(t * 0.5);
+    haloMat.color.copy(col);
+    haloMat.opacity = 0.15 + 0.05 * Math.sin(t * 0.6);
 
     phaseMeta.forEach((meta, i) => {
       const ff = fadeAt(p, i);
@@ -493,6 +459,10 @@ function FilmInner({ phase }: { phase: number }) {
       <directionalLight position={[-4, -2, -3]} intensity={0.6} color="#818cf8" />
       <pointLight ref={light} position={[0, 0.5, 2.5]} intensity={26} color="#818cf8" />
 
+      <sprite ref={halo} position={[0, 0, 0]} scale={[12, 12, 1]}>
+        <primitive object={haloMat} attach="material" />
+      </sprite>
+
       <points ref={dust} geometry={dustGeo}>
         <pointsMaterial size={0.02} color="#94a3b8" transparent opacity={0.45} sizeAttenuation depthWrite={false} />
       </points>
@@ -506,6 +476,9 @@ function FilmInner({ phase }: { phase: number }) {
       </lineSegments>
 
       <group ref={root} scale={[2.0, 2.0, 2.0]}>
+        <mesh ref={cage} geometry={cageGeo}>
+          <primitive object={cageMat} attach="material" />
+        </mesh>
         <group ref={ringA} rotation={[0.4, 0, 0.2]}>
           <mesh><torusGeometry args={[2.7, 0.07, 20, 96]} /><meshStandardMaterial color="#b08a3e" metalness={1} roughness={0.3} /></mesh>
         </group>

@@ -89,6 +89,26 @@ function makeHoloFaceTexture() {
     ctx.stroke();
   });
 
+  ctx.shadowBlur = 0;
+  ctx.font = "600 30px 'Segoe UI', system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "rgba(160,225,255,0.75)";
+  for (let a = 0; a < 360; a += 30) {
+    const rad = (a * Math.PI) / 180;
+    ctx.fillText(String(a), cx + Math.sin(rad) * R(0.74), cx - Math.cos(rad) * R(0.74));
+  }
+
+  ctx.strokeStyle = "rgba(103,232,249,0.35)";
+  ctx.lineWidth = 1.5;
+  [30, 60, 120, 150, 210, 240, 300, 330].forEach(a => {
+    const rad = (a * Math.PI) / 180;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.sin(rad) * R(0.62), cx - Math.cos(rad) * R(0.62));
+    ctx.lineTo(cx + Math.sin(rad) * R(0.82), cx - Math.cos(rad) * R(0.82));
+    ctx.stroke();
+  });
+
   ctx.beginPath();
   ctx.arc(cx, cx, R(0.09), 0, Math.PI * 2);
   ctx.fillStyle = "rgba(224,250,255,0.95)";
@@ -183,6 +203,8 @@ function CompassInner({ dir, dragRef }: { dir: number | null; dragRef: DragState
   const prevDir = useRef<number | null>(null);
   const punch = useRef(0);
   const mouse = useRef({ x: 0, y: 0 });
+  const cage = useRef<THREE.Mesh>(null!);
+  const sparks = useRef<THREE.Group>(null!);
 
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
@@ -226,6 +248,10 @@ function CompassInner({ dir, dragRef }: { dir: number | null; dragRef: DragState
   const beamGeo = useMemo(() => new THREE.CylinderGeometry(0.1, 0.6, 2.9, 24, 1, true), []);
   const discGeo = useMemo(() => new THREE.CircleGeometry(2.9, 48), []);
   const nebulaGeo = useMemo(() => new THREE.SphereGeometry(42, 32, 16), []);
+  const cageGeo = useMemo(() => new THREE.IcosahedronGeometry(2.9, 0), []);
+  const sparkGeo = useMemo(() => new THREE.OctahedronGeometry(0.055, 0), []);
+  const sparkMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#fcd34d", transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }), []);
+  const cageMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#67e8f9", wireframe: true, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false }), []);
 
   useEffect(() => {
     const pmrem = new THREE.PMREMGenerator(gl);
@@ -242,8 +268,8 @@ function CompassInner({ dir, dragRef }: { dir: number | null; dragRef: DragState
     return () => {
       glowTex.dispose(); faceTex.dispose(); nebulaTex.dispose(); dustGeo.dispose(); gridGeo.dispose();
       cardGeo.dispose(); needleGeo.dispose(); hubGeo.dispose(); tickGeo.dispose();
-      ringGeoA.dispose(); ringGeoB.dispose(); satGeo.dispose(); beamGeo.dispose(); discGeo.dispose(); nebulaGeo.dispose();
-      [holoMat, needleMat, needleTipMat, hubMat, ringMat, ringMat2, satMat, beamMat, auraMat, discMat, gridMat, dustMat, nebulaMat].forEach(m => m.dispose());
+      ringGeoA.dispose(); ringGeoB.dispose(); satGeo.dispose(); beamGeo.dispose(); discGeo.dispose(); nebulaGeo.dispose(); cageGeo.dispose(); sparkGeo.dispose();
+      [holoMat, needleMat, needleTipMat, hubMat, ringMat, ringMat2, satMat, beamMat, auraMat, discMat, gridMat, dustMat, nebulaMat, cageMat, sparkMat].forEach(m => m.dispose());
       tickMats.forEach(m => m.dispose());
       tickGlowMats.forEach(m => m.dispose());
     };
@@ -306,6 +332,18 @@ function CompassInner({ dir, dragRef }: { dir: number | null; dragRef: DragState
       ringB.current.rotation.z += delta * -0.35;
     }
 
+    if (cage.current) {
+      cage.current.rotation.x = Math.sin(t * 0.16) * 0.2;
+      cage.current.rotation.y += delta * 0.12;
+    }
+    if (sparks.current) {
+      sparks.current.rotation.y += delta * 0.4;
+      sparks.current.children.forEach((s, i) => {
+        s.scale.setScalar(1 + 0.25 * Math.sin(t * 1.6 + i * 1.7));
+      });
+    }
+    cageMat.opacity = 0.07 + 0.03 * Math.sin(t * 0.7);
+
     const activeColor = activeIdx != null ? DIRS[activeIdx].color : CYAN;
     auraMat.color.set(activeColor);
     auraMat.opacity = 0.42 + 0.16 * Math.sin(t * 1.1) + (activeIdx != null ? 0.16 : 0);
@@ -360,6 +398,9 @@ function CompassInner({ dir, dragRef }: { dir: number | null; dragRef: DragState
       </mesh>
 
       <group ref={float} position={[0, 0.15, 0]}>
+        <mesh ref={cage} geometry={cageGeo}>
+          <primitive object={cageMat} attach="material" />
+        </mesh>
         <group ref={ringA}>
           <mesh>
             <primitive object={ringGeoA} attach="geometry" />
@@ -378,6 +419,17 @@ function CompassInner({ dir, dragRef }: { dir: number | null; dragRef: DragState
             <primitive object={ringGeoB} attach="geometry" />
             <primitive object={ringMat2} attach="material" />
           </mesh>
+        </group>
+
+        <group ref={sparks}>
+          {Array.from({ length: 8 }, (_, i) => {
+            const a = (i / 8) * Math.PI * 2;
+            return (
+              <mesh key={i} geometry={sparkGeo} position={[Math.cos(a) * 2.85, Math.sin(a) * 2.85, 0]}>
+                <primitive object={sparkMat} attach="material" />
+              </mesh>
+            );
+          })}
         </group>
 
         <group ref={card}>
