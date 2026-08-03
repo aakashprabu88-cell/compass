@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { motion } from "framer-motion";
 import { Play } from "lucide-react";
+import MouseParallax from "@/components/MouseParallax";
 
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 const easeOutCubic = (x: number) => 1 - Math.pow(1 - x, 3);
@@ -122,15 +123,17 @@ function IntroInner({ onAligned }: { onAligned: (n: number) => void }) {
     const el = (performance.now() - start.current) / 1000;
     const cam = state.camera;
     const dolly = easeOutCubic(clamp01((el - 0.3) / 1.8));
-    const tx = mouse.current.x * 0.85;
-    const ty = 0.35 + mouse.current.y * 0.5;
     const tz = 7.2 - 1.9 * dolly;
-    cam.position.x += (tx - cam.position.x) * 0.08;
-    cam.position.y += (ty - cam.position.y) * 0.08;
+    cam.position.x += (-mouse.current.x * 0.5 - cam.position.x) * 0.08;
+    cam.position.y += (0.35 - mouse.current.y * 0.3 - cam.position.y) * 0.08;
     cam.position.z += (tz - cam.position.z) * 0.08;
     cam.lookAt(0, -1.2, 0);
 
-    if (sceneG.current) sceneG.current.rotation.y = Math.sin(el * 0.16) * 0.12;
+    if (sceneG.current) {
+      sceneG.current.rotation.y = Math.sin(el * 0.16) * 0.12;
+      sceneG.current.position.x += (mouse.current.x * 0.55 - sceneG.current.position.x) * 0.09;
+      sceneG.current.position.y += (-1.2 + mouse.current.y * 0.4 - sceneG.current.position.y) * 0.09;
+    }
 
     if (lid.current) lid.current.rotation.x = -2.05 * easeOutCubic(clamp01((el - 0.7) / 1.15));
 
@@ -267,7 +270,7 @@ export default function CinematicIntro({ onAligned, onEnter }: { onAligned?: (t:
           <IntroInner onAligned={onAligned ?? (() => {})} />
         </Canvas>
 
-        <motion.div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center pointer-events-none px-4">
+        <MouseParallax className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center pointer-events-none px-4">
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7 }}
             className="flex items-center gap-4">
             <span className="h-px w-10 sm:w-16 bg-gradient-to-r from-transparent to-amber-300/60" />
@@ -320,7 +323,7 @@ export default function CinematicIntro({ onAligned, onEnter }: { onAligned?: (t:
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
             Aligned to true north
           </motion.div>
-        </motion.div>
+        </MouseParallax>
 
         <style>{`@keyframes introGrain { 0%{transform:translate(0,0)} 25%{transform:translate(-2px,3px)} 50%{transform:translate(3px,-2px)} 75%{transform:translate(-1px,-3px)} 100%{transform:translate(2px,2px)} }`}</style>
       </div>

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight, Compass, Sparkles, UserPlus, Zap } from "lucide-react";
 import { DIRS } from "@/lib/directions";
+import MouseParallax from "@/components/MouseParallax";
 
 const DirectionCompass = dynamic(() => import("@/components/DirectionCompass"), { ssr: false, loading: () => null });
 
@@ -175,7 +176,8 @@ export default function CompassSwipe() {
             animate={{ x: 0, y: 0, opacity: 1, filter: "blur(0px)", scale: 1 }}
             exit={{ opacity: 0, scale: 0.97, filter: "blur(12px)" }}
             transition={{ duration: 0.95, ease: [0.16, 1, 0.3, 1] }}>
-            <motion.div className="relative w-full max-w-3xl text-center"
+            <MouseParallax className="relative w-full max-w-3xl text-center" intensity={22} rotate={6}
+              style={{ zIndex: 1 }}
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.15 }}>
               <div className="pointer-events-none absolute inset-x-0 -top-7 flex justify-center">
                 <motion.span className="font-black text-[26vh] leading-none text-white/[0.045]"
@@ -235,7 +237,7 @@ export default function CompassSwipe() {
                   Next feature <ChevronRight className="w-4 h-4" />
                 </button>
               </motion.div>
-            </motion.div>
+            </MouseParallax>
           </motion.div>
         )}
       </AnimatePresence>

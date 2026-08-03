@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Compass, ChevronLeft, ChevronRight, Play, Pause, Loader2, Zap, UserPlus, RotateCcw, House } from "lucide-react";
+import MouseParallax from "@/components/MouseParallax";
 
 const CinematicFilm = dynamic(() => import("@/components/CinematicFilm"), { ssr: false, loading: () => null });
 const CinematicIntro = dynamic(() => import("@/components/CinematicIntro"), { ssr: false, loading: () => null });
@@ -197,7 +198,7 @@ export default function FilmExperience() {
       </div>
 
       <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-6 pb-20 sm:px-12 lg:px-16">
-        <div className="w-full max-w-2xl">
+        <MouseParallax className="w-full max-w-2xl" intensity={18} rotate={5}>
           <AnimatePresence mode="wait">
             <motion.div key={slide} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}>
               <div className="flex items-center justify-center gap-3 mb-5">
@@ -243,7 +244,7 @@ export default function FilmExperience() {
               )}
             </motion.div>
           </AnimatePresence>
-        </div>
+        </MouseParallax>
       </div>
 
       <div className="absolute bottom-0 inset-x-0 z-30 flex items-center justify-center gap-4 px-6 pb-7">

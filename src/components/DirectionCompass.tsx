@@ -182,6 +182,16 @@ function CompassInner({ dir, dragRef }: { dir: number | null; dragRef: DragState
   const heading = useRef(0);
   const prevDir = useRef<number | null>(null);
   const punch = useRef(0);
+  const mouse = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.current.y = (e.clientY / window.innerHeight) * 2 - 1;
+    };
+    window.addEventListener("pointermove", onMove);
+    return () => window.removeEventListener("pointermove", onMove);
+  }, []);
 
   const glowTex = useMemo(() => makeGlowTexture("rgba(255,255,255,0.95)", "rgba(255,255,255,0.25)"), []);
   const faceTex = useMemo(() => makeHoloFaceTexture(), []);
@@ -277,6 +287,8 @@ function CompassInner({ dir, dragRef }: { dir: number | null; dragRef: DragState
     if (float.current) {
       float.current.rotation.y += delta * 0.14;
       float.current.position.y = Math.sin(t * 0.9) * 0.06;
+      float.current.position.x += (mouse.current.x * 0.55 - float.current.position.x) * 0.1;
+      float.current.position.z += (mouse.current.y * -0.4 - float.current.position.z) * 0.1;
       float.current.scale.setScalar(1 + punch.current * 0.08);
     }
     if (card.current) {

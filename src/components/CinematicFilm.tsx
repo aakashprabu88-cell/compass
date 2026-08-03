@@ -475,10 +475,15 @@ function FilmInner({ phase }: { phase: number }) {
     const tx = a[0] + (b[0] - a[0]) * f;
     const ty = a[1] + (b[1] - a[1]) * f;
     const tz = a[2] + (b[2] - a[2]) * f;
-    cam.position.x += (tx + mouse.current.x * 0.9 - cam.position.x) * 0.1;
-    cam.position.y += (ty - mouse.current.y * 0.6 - cam.position.y) * 0.1;
+    cam.position.x += (tx - cam.position.x) * 0.08;
+    cam.position.y += (ty - cam.position.y) * 0.08;
     cam.position.z += (tz - cam.position.z) * 0.08;
     cam.lookAt(0, 0, 0);
+
+    if (rootG) {
+      rootG.position.x += (mouse.current.x * 0.7 - rootG.position.x) * 0.1;
+      rootG.position.y += (mouse.current.y * 0.45 - rootG.position.y) * 0.1;
+    }
   });
 
   return (
