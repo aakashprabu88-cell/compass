@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const TOTAL = 34.5;
@@ -79,7 +79,19 @@ const FEATURES = [
 ];
 
 export default function AppIntro() {
+  const router = useRouter();
   const [run, setRun] = useState(0);
+
+  const exitIntro = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        const d = await res.json();
+        if (d?.id) { router.push("/dashboard"); return; }
+      }
+    } catch {}
+    router.push("/login");
+  };
 
   const problemRef = useRef<HTMLElement>(null);
   const compassRef = useRef<HTMLElement>(null);
@@ -304,9 +316,9 @@ export default function AppIntro() {
             <div className="sub" style={{ fontSize: "clamp(15px,1.6vw,20px)", color: "var(--i-muted)" }}>
               Navigate your future. <span style={{ color: "var(--i-cyan)" }}>Don&apos;t just search for it.</span>
             </div>
-            <Link href="/home" className="cta">
+            <button onClick={exitIntro} className="cta">
               Explore Compass →
-            </Link>
+            </button>
           </div>
         </section>
 
@@ -315,7 +327,7 @@ export default function AppIntro() {
         </div>
         <div className="i-controls">
           <button onClick={() => setRun((r) => r + 1)}>↻ Replay</button>
-          <Link href="/home">Skip intro →</Link>
+          <button onClick={exitIntro}>Skip intro →</button>
         </div>
       </div>
     </div>
