@@ -1,10 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-
-const TOTAL = 34.5;
-const FEATURE_LEN = 3.1;
+import { useEffect, useRef } from "react";
 
 const TICKS = Array.from({ length: 24 }, (_, i) => i * 15);
 
@@ -80,7 +77,11 @@ const FEATURES = [
 
 export default function AppIntro() {
   const router = useRouter();
-  const [run, setRun] = useState(0);
+
+  const stageRef = useRef<HTMLDivElement>(null);
+  const tfillRef = useRef<HTMLDivElement>(null);
+  const needleNRef = useRef<HTMLDivElement>(null);
+  const needleSRef = useRef<HTMLDivElement>(null);
 
   const exitIntro = async () => {
     try {
@@ -93,31 +94,13 @@ export default function AppIntro() {
     router.push("/login");
   };
 
-  const problemRef = useRef<HTMLElement>(null);
-  const compassRef = useRef<HTMLElement>(null);
-  const featuresRef = useRef<HTMLElement>(null);
-  const transformRef = useRef<HTMLElement>(null);
-  const endRef = useRef<HTMLElement>(null);
-
-  const featureRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const tfillRef = useRef<HTMLDivElement>(null);
-  const needleNRef = useRef<HTMLDivElement>(null);
-  const needleSRef = useRef<HTMLDivElement>(null);
+  const replay = () => {
+    stageRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   useEffect(() => {
-    const scenes = {
-      problem: problemRef.current,
-      compass: compassRef.current,
-      features: featuresRef.current,
-      transform: transformRef.current,
-      end: endRef.current,
-    };
-
-    Object.values(scenes).forEach((s) => s?.classList.remove("active"));
-    featureRefs.current.forEach((f) => {
-      if (f) f.style.display = "none";
-    });
-    if (tfillRef.current) tfillRef.current.style.width = "0%";
+    const stage = stageRef.current;
+    if (!stage) return;
 
     const spin = setInterval(() => {
       const s = needleNRef.current;
@@ -131,58 +114,48 @@ export default function AppIntro() {
       }
     }, 30);
 
-    let raf = 0;
-    let start: number | null = null;
+    const sections = Array.from(stage.querySelectorAll<HTMLElement>(".scene"));
+    const active = new Map<HTMLElement, boolean>();
 
-    const show = (active: HTMLElement | null) => {
-      Object.values(scenes).forEach((s) => {
-        if (s) s.classList.toggle("active", s === active);
-      });
+    const apply = () => {
+      sections.forEach((s) => s.classList.toggle("active", !!active.get(s)));
     };
 
-    const tick = (ts: number) => {
-      if (start === null) start = ts;
-      const t = (ts - start) / 1000;
-
-      if (tfillRef.current) {
-        tfillRef.current.style.width = `${Math.min(100, (t / TOTAL) * 100)}%`;
-      }
-
-      if (t < 4) show(scenes.problem);
-      else if (t < 7) show(scenes.compass);
-      else if (t < 25.5) {
-        show(scenes.features);
-        const idx = Math.min(FEATURES.length - 1, Math.floor((t - 7) / FEATURE_LEN));
-        featureRefs.current.forEach((f, i) => {
-          if (f) f.style.display = i === idx ? "flex" : "none";
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          active.set(e.target as HTMLElement, e.isIntersecting);
         });
-      } else if (t < 29) {
-        show(scenes.transform);
-      } else {
-        show(scenes.end);
-        if (tfillRef.current) tfillRef.current.style.width = "100%";
-        clearInterval(spin);
-        return;
+        apply();
+      },
+      { root: stage, threshold: 0.5 }
+    );
+    sections.forEach((s) => io.observe(s));
+
+    const onScroll = () => {
+      const max = stage.scrollHeight - stage.clientHeight;
+      if (tfillRef.current) {
+        tfillRef.current.style.width = `${max > 0 ? Math.min(100, (stage.scrollTop / max) * 100) : 100}%`;
       }
-
-      raf = requestAnimationFrame(tick);
     };
+    stage.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
 
-    raf = requestAnimationFrame(tick);
     return () => {
-      cancelAnimationFrame(raf);
       clearInterval(spin);
+      io.disconnect();
+      stage.removeEventListener("scroll", onScroll);
     };
-  }, [run]);
+  }, []);
 
   return (
     <div className="intro-root">
-      <div className="i-stage">
+      <div ref={stageRef} className="i-stage">
         <div className="i-grid" aria-hidden />
         <div className="i-aurora" aria-hidden />
 
         {/* Scene 1 — Problem */}
-        <section ref={problemRef} className="scene">
+        <section className="scene">
           <div className="status-bar">
             <span className="dot" /> The Problem
           </div>
@@ -216,7 +189,7 @@ export default function AppIntro() {
         </section>
 
         {/* Scene 2 — Compass */}
-        <section ref={compassRef} className="scene">
+        <section className="scene">
           <div className="center" style={{ width: "100%" }}>
             <div className="compass-wrap line-in">
               <div className="compass">
@@ -240,31 +213,22 @@ export default function AppIntro() {
         </section>
 
         {/* Scene 3 — Features */}
-        <section ref={featuresRef} className="scene">
-          <div className="status-bar">
-            <span className="dot" /> What Compass Does
-          </div>
-          {FEATURES.map((f, i) => (
-            <div
-              key={f.title}
-              ref={(el) => {
-                featureRefs.current[i] = el;
-              }}
-              className="feature"
-              style={{ display: "none" }}
-            >
-              <div className="f-icon pop">
-                <svg viewBox="0 0 24 24">{f.icon}</svg>
-              </div>
-              <div className="f-kicker pop">{f.kicker}</div>
-              <div className="f-title pop">{f.title}</div>
-              <div className="f-desc pop">{f.desc}</div>
+        {FEATURES.map((f) => (
+          <section key={f.title} className="scene feature">
+            <div className="status-bar">
+              <span className="dot" /> What Compass Does
             </div>
-          ))}
-        </section>
+            <div className="f-icon pop">
+              <svg viewBox="0 0 24 24">{f.icon}</svg>
+            </div>
+            <div className="f-kicker pop">{f.kicker}</div>
+            <div className="f-title pop">{f.title}</div>
+            <div className="f-desc pop">{f.desc}</div>
+          </section>
+        ))}
 
         {/* Scene 4 — Transformation */}
-        <section ref={transformRef} className="scene">
+        <section className="scene">
           <div className="path" />
           <div className="node" style={{ left: "20%" }}>
             <span>Assess</span>
@@ -298,7 +262,7 @@ export default function AppIntro() {
         </section>
 
         {/* Scene 5 — End */}
-        <section ref={endRef} className="scene">
+        <section className="scene">
           <div className="center line-in" style={{ width: "100%", padding: "0 6vw" }}>
             <div className="logo-badge">
               <div className="compass" style={{ position: "absolute", inset: 0 }}>
@@ -326,7 +290,7 @@ export default function AppIntro() {
           <div ref={tfillRef} className="tfill" />
         </div>
         <div className="i-controls">
-          <button onClick={() => setRun((r) => r + 1)}>↻ Replay</button>
+          <button onClick={replay}>↻ Replay</button>
           <button onClick={exitIntro}>Skip intro →</button>
         </div>
       </div>

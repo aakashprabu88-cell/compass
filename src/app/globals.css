@@ -80,13 +80,17 @@ body {
 }
 .intro-root .i-stage {
   position: relative;
-  width: min(100vw, calc(100vh * 16 / 9));
-  height: min(100vh, calc(100vw * 9 / 16));
+  width: 100vw;
+  height: 100vh;
   background: radial-gradient(120% 90% at 50% 0%, #0b1220 0%, var(--i-bg) 55%, #04060b 100%);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
 }
+.intro-root .i-stage::-webkit-scrollbar { display: none; }
 .intro-root .i-grid {
-  position: absolute; inset: 0;
+  position: fixed; inset: 0; z-index: 0;
   background-image:
     linear-gradient(rgba(56,189,248,0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(56,189,248,0.05) 1px, transparent 1px);
@@ -97,7 +101,7 @@ body {
 }
 @keyframes iGridDrift { from { background-position: 0 0, 0 0; } to { background-position: 0 56px, 56px 0; } }
 .intro-root .i-aurora {
-  position: absolute; inset: -20%;
+  position: fixed; inset: -20%; z-index: 0;
   background:
     radial-gradient(40% 35% at 25% 30%, rgba(56,189,248,0.14), transparent 60%),
     radial-gradient(45% 40% at 75% 65%, rgba(125,211,252,0.10), transparent 60%);
@@ -105,8 +109,7 @@ body {
 }
 @keyframes iPulse { 0%,100% { opacity: .7; } 50% { opacity: 1; } }
 
-.intro-root .scene { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity .6s ease, visibility .6s; }
-.intro-root .scene.active { opacity: 1; visibility: visible; }
+.intro-root .scene { position: relative; min-height: 100vh; scroll-snap-align: start; z-index: 1; }
 .intro-root .center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
 .intro-root h1 { font-size: clamp(30px, 4.2vw, 58px); font-weight: 800; letter-spacing: .5px; line-height: 1.15; }
 .intro-root h2 { font-size: clamp(34px, 5vw, 68px); font-weight: 800; letter-spacing: .5px; }
@@ -158,7 +161,7 @@ body {
 @keyframes iBob { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-8px); } }
 .intro-root .glow-ring { position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%); width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, rgba(56,189,248,0.25), transparent 65%); filter: blur(6px); }
 
-.intro-root .feature { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 8vw; }
+.intro-root .feature { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 8vw; }
 .intro-root .f-icon { width: 84px; height: 84px; margin-bottom: 26px; display: flex; align-items: center; justify-content: center; border-radius: 22px; border: 1px solid var(--i-line); background: rgba(11,18,32,0.9); box-shadow: var(--i-glow), inset 0 0 24px rgba(56,189,248,0.12); }
 .intro-root .f-icon svg { width: 44px; height: 44px; stroke: var(--i-blue); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .intro-root .f-kicker { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: var(--i-blue); margin-bottom: 14px; }
@@ -179,10 +182,10 @@ body {
 .intro-root .cta { display: inline-block; margin-top: 34px; padding: 15px 42px; border-radius: 999px; font-size: 17px; font-weight: 700; letter-spacing: .5px; color: #06121f; background: linear-gradient(90deg, var(--i-blue), var(--i-cyan)); box-shadow: 0 0 34px rgba(56,189,248,0.55); animation: iCtaPulse 2s ease-in-out infinite; }
 @keyframes iCtaPulse { 0%,100% { box-shadow: 0 0 24px rgba(56,189,248,0.4); } 50% { box-shadow: 0 0 46px rgba(56,189,248,0.75); } }
 
-.intro-root .tbar { position: absolute; left: 6%; right: 6%; bottom: 5%; height: 2px; background: rgba(125,211,252,0.15); border-radius: 2px; }
+.intro-root .tbar { position: fixed; left: 6%; right: 6%; bottom: 5%; height: 2px; background: rgba(125,211,252,0.15); border-radius: 2px; z-index: 3; }
 .intro-root .tfill { height: 100%; width: 0; background: linear-gradient(90deg, var(--i-blue), var(--i-cyan)); box-shadow: 0 0 8px rgba(56,189,248,0.6); }
 
-.intro-root .i-controls { position: absolute; bottom: 12px; right: 18px; display: flex; gap: 14px; font-size: 11px; letter-spacing: 2px; color: rgba(148,163,184,0.6); text-transform: uppercase; }
+.intro-root .i-controls { position: fixed; bottom: 12px; right: 18px; display: flex; gap: 14px; font-size: 11px; letter-spacing: 2px; color: rgba(148,163,184,0.6); text-transform: uppercase; z-index: 3; }
 .intro-root .i-controls button { background: none; border: none; color: inherit; font: inherit; letter-spacing: inherit; cursor: pointer; text-transform: uppercase; padding: 0; }
 .intro-root .i-controls button:hover { color: var(--i-cyan); }
 
