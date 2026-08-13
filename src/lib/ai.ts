@@ -920,8 +920,13 @@ Return ONLY valid JSON:
   "aiAnalysis": "2-3 sentence personalized analysis referencing their specific skills and the internship requirements"
 }`;
 
-  const text = await generateText(prompt, undefined, { temperature: 0.5, maxTokens: 3000 });
-  const parsed = extractJSON(text);
+  let parsed: any = null;
+  try {
+    const text = await generateText(prompt, undefined, { temperature: 0.5, maxTokens: 3000 });
+    parsed = extractJSON(text);
+  } catch (e) {
+    console.error("internship match AI failed", e);
+  }
   if (parsed?.matchScore) return parsed;
 
   // Fallback: basic algorithmic match

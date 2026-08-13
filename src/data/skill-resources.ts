@@ -5,7 +5,7 @@
 
 export const SKILL_RESOURCES: Record<string, SkillResources> = {
   "Python": { free: ["Python.org Tutorial", "freeCodeCamp Python"], paid: ["Udemy: 100 Days of Code"] },
-  "Machine Learning": { free: ["Andrew Ng'\''s ML Course", "Kaggle Learn"], paid: ["Coursera ML Specialization"] },
+  "Machine Learning": { free: ["Andrew Ng's ML Course", "Kaggle Learn"], paid: ["Coursera ML Specialization"] },
   "Deep Learning": { free: ["fast.ai", "deeplearning.ai"], paid: ["Udacity Nanodegree"] },
   "Data Analysis": { free: ["Kaggle Courses", "Google Data Analytics Certificate"], paid: ["DataCamp"] },
   "SQL": { free: ["SQLBolt", "Mode Analytics Tutorial"], paid: ["Coursera: SQL for Data Science"] },

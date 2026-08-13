@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Compass — Live Demo Presentation</title>
+<style>
+  :root {
+    --bg: #05050d;
+    --card: #101022;
+    --card2: #16162b;
+    --line: rgba(255,255,255,0.09);
+    --indigo: #6366f1;
+    --violet: #a78bfa;
+    --emerald: #34d399;
+    --text: #eef0ff;
+    --muted: #9499b8;
+    --amber: #fbbf24;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; scroll-snap-type:y mandatory; }
+  html::-webkit-scrollbar { width:12px; }
+  html::-webkit-scrollbar-track { background:#06060e; }
+  html::-webkit-scrollbar-thumb { background:linear-gradient(#6366f1,#a78bfa); border-radius:8px; border:3px solid #06060e; }
+  html::-webkit-scrollbar-thumb:hover { background:#818cf8; }
+  body { background:linear-gradient(180deg,#04040a,#0a0a1a 55%,#06060f); color:var(--text); font-family:"Segoe UI", system-ui, -apple-system, Roboto, sans-serif; overflow-x:hidden; }
+
+  /* ambient aurora + grid + vignette */
+  body::before {
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(1200px 820px at 12% 8%, rgba(99,102,241,.22), transparent 60%),
+      radial-gradient(1000px 700px at 88% 16%, rgba(167,139,250,.18), transparent 60%),
+      radial-gradient(900px 900px at 50% 105%, rgba(52,211,153,.12), transparent 60%);
+    animation:aurora 16s ease-in-out infinite alternate;
+  }
+  @keyframes aurora {
+    0%   { transform:translate3d(-2%,-1%,0) scale(1); filter:hue-rotate(0deg); }
+    50%  { transform:translate3d(2%,1.5%,0) scale(1.07); filter:hue-rotate(14deg); }
+    100% { transform:translate3d(-1%,2%,0) scale(1.02); filter:hue-rotate(-6deg); }
+  }
+  body::after {
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:
+      linear-gradient(rgba(129,140,248,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(129,140,248,.06) 1px, transparent 1px);
+    background-size:44px 44px;
+    -webkit-mask-image:radial-gradient(ellipse at 50% 38%, #000 20%, transparent 72%);
+    mask-image:radial-gradient(ellipse at 50% 38%, #000 20%, transparent 72%);
+  }
+  #stars { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  #stars i { position:absolute; border-radius:50%; background:rgba(255,255,255,.55); box-shadow:0 0 8px rgba(129,140,248,.75); animation:tw 4s ease-in-out infinite; }
+  @keyframes tw { 0%,100%{ transform:translateY(0) scale(.6); opacity:.3 } 50%{ transform:translateY(-30px) scale(1.2); opacity:1 } }
+  .vig { position:fixed; inset:0; z-index:8; pointer-events:none; background:radial-gradient(ellipse at center, transparent 55%, rgba(2,2,10,.55) 100%); }
+
+  /* browser chrome — fixed */
+  .chrome { position:fixed; top:0; left:0; right:0; height:40px; z-index:40; display:flex; align-items:center; gap:12px; padding:0 16px; background:rgba(10,10,22,0.92); border-bottom:1px solid rgba(255,255,255,0.07); backdrop-filter:blur(10px); }
+  .chrome::after { content:""; position:absolute; left:0; right:0; bottom:-1px; height:1px; background:linear-gradient(90deg,transparent,rgba(129,140,248,.7),rgba(52,211,153,.5),transparent); }
+  .dots { display:flex; gap:7px; }
+  .dots i { width:11px; height:11px; border-radius:50%; }
+  .dots i:nth-child(1){background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
+  .addr { flex:1; max-width:480px; margin:0 auto; padding:5px 14px; border-radius:7px; background:#1a1a2e; color:#aab0d0; font-size:12px; display:flex; align-items:center; gap:7px; }
+  .addr svg { width:12px; height:12px; fill:none; stroke:#34d399; }
+
+  section { height:100vh; scroll-snap-align:start; position:relative; z-index:1; display:flex; align-items:center; padding:74px 6vw 46px; overflow:hidden; }
+  .center { max-width:1000px; margin:0 auto; width:100%; position:relative; }
+
+  .rv > * { opacity:0; transform:translateY(30px); transition:opacity .8s ease, transform .8s ease; }
+  .rv.on > * { opacity:1; transform:none; }
+  .rv > *:nth-child(1){transition-delay:.05s}.rv > *:nth-child(2){transition-delay:.2s}
+  .rv > *:nth-child(3){transition-delay:.35s}.rv > *:nth-child(4){transition-delay:.5s}
+  .rv > *:nth-child(5){transition-delay:.65s}.rv > *:nth-child(6){transition-delay:.8s}
+  .rv > *:nth-child(7){transition-delay:.95s}.rv > *:nth-child(8){transition-delay:1.1s}
+  .rv > *:nth-child(9){transition-delay:1.25s}.rv > *:nth-child(10){transition-delay:1.4s}
+
+  /* shared ui */
+  .nav { display:flex; align-items:center; gap:20px; }
+  .logo { display:flex; align-items:center; gap:9px; font-weight:700; font-size:18px; }
+  .logo .ico { width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,#6366f1,#a78bfa); display:flex; align-items:center; justify-content:center; box-shadow:0 0 18px rgba(99,102,241,.5); animation:logopulse 3s ease-in-out infinite; }
+  @keyframes logopulse { 0%,100%{ box-shadow:0 0 12px rgba(99,102,241,.4);} 50%{ box-shadow:0 0 26px rgba(167,139,250,.7);} }
+  .logo .ico svg { width:18px; height:18px; stroke:#fff; fill:none; }
+  .kicker { font-size:11px; letter-spacing:.35em; text-transform:uppercase; color:var(--indigo); font-weight:600; }
+  h1 { font-size:clamp(34px,5.4vw,74px); font-weight:800; line-height:1.05; letter-spacing:-.5px; }
+  h2 { font-size:clamp(26px,3.6vw,50px); font-weight:800; line-height:1.1; letter-spacing:-.4px; }
+  h3 { font-size:clamp(18px,2vw,26px); font-weight:700; }
+  .grad { background:linear-gradient(120deg,#818cf8,#c084fc,#34d399,#818cf8); background-size:300% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; animation:gradmove 8s linear infinite; }
+  @keyframes gradmove { to { background-position:300% 0; } }
+  .sub { color:var(--muted); font-size:clamp(14px,1.6vw,19px); line-height:1.6; margin-top:12px; max-width:680px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; transition:border-color .3s ease, box-shadow .3s ease; }
+  .card:hover { border-color:rgba(129,140,248,.35); box-shadow:0 0 30px rgba(99,102,241,.12); }
+  .badge { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px; font-size:12.5px; background:rgba(99,102,241,.14); border:1px solid rgba(99,102,241,.32); color:#a5b4fc; position:relative; overflow:hidden; }
+  .badge::after { content:""; position:absolute; top:0; bottom:0; width:40%; left:-60%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent); animation:sweep 3.6s ease-in-out infinite; }
+  .chip { display:inline-flex; align-items:center; padding:7px 13px; border-radius:999px; font-size:12.5px; background:var(--card2); border:1px solid var(--line); color:#c7cbe0; }
+  .btn { display:inline-flex; align-items:center; gap:8px; padding:12px 24px; border-radius:12px; font-size:14.5px; font-weight:600; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; border:none; cursor:pointer; animation:btnglow 2.6s ease-in-out infinite; }
+  .btn:hover { filter:brightness(1.12); }
+  @keyframes btnglow { 0%,100%{ box-shadow:0 0 0 0 rgba(99,102,241,.5);} 50%{ box-shadow:0 0 0 14px rgba(99,102,241,0);} }
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+  .bar { height:8px; border-radius:8px; background:rgba(255,255,255,.08); overflow:hidden; }
+  .bar i { display:block; height:100%; width:0; border-radius:8px; background:linear-gradient(90deg,#6366f1,#a78bfa); transition:width 1.1s ease; }
+  .bar i.f { width:var(--w); }
+  .bar i.f::after, .risk-bar i.f::after, .bar2 i.f::after { content:""; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent); transform:translateX(-100%); animation:shim 2.2s ease-in-out infinite; }
+  @keyframes shim { to { transform:translateX(100%); } }
+  .bar i.f, .risk-bar i.f, .bar2 i.f { position:relative; overflow:hidden; }
+  .up-arrow { margin:2px 0; text-align:center; color:#4b5167; font-size:18px; animation:arrowP 1.6s ease-in-out infinite; }
+  @keyframes arrowP { 0%,100%{ transform:translateY(0); opacity:.45 } 50%{ transform:translateY(5px); opacity:1 } }
+  @keyframes sweep { 0% { left:-60%; } 60%,100% { left:120%; } }
+
+  /* S1 */
+  .floats { position:relative; min-height:140px; margin:26px 0; }
+  .fl { position:absolute; font-size:13.5px; padding:8px 14px; border-radius:999px; background:var(--card2); border:1px solid var(--line); color:#b6bbd6; animation:fy 3.6s ease-in-out infinite; box-shadow:0 0 18px rgba(99,102,241,.12); }
+  .fl:nth-child(2n){ animation-duration:4.4s; animation-delay:.5s; }
+  .fl:nth-child(3n){ animation-duration:3s; animation-delay:1s; }
+  @keyframes fy { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-13px) } }
+  .student { width:84px; height:112px; margin:0 auto; position:relative; }
+  .student .hd { width:36px; height:36px; border-radius:50%; margin:0 auto; background:linear-gradient(180deg,#e6e9f7,#a4aac8); box-shadow:0 0 20px rgba(129,140,248,.4); }
+  .student .bd { width:56px; height:62px; margin:5px auto 0; border-radius:26px 26px 10px 10px; background:linear-gradient(180deg,#232342,#12122a); border:1px solid var(--line); }
+  .student::after { content:""; position:absolute; left:50%; bottom:-14px; width:70px; height:8px; transform:translateX(-50%); border-radius:50%; background:rgba(129,140,248,.15); filter:blur(3px); animation:shadowP 3.6s ease-in-out infinite; }
+  @keyframes shadowP { 0%,100%{ transform:translateX(-50%) scale(1); opacity:.7 } 50%{ transform:translateX(-50%) scale(.82); opacity:.4 } }
+  .statrow { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:26px; }
+  .stat { text-align:center; padding:16px; border-radius:14px; background:var(--card); border:1px solid var(--line); position:relative; overflow:hidden; transition:transform .3s ease, border-color .3s ease; }
+  .stat::before { content:""; position:absolute; inset:0; background:radial-gradient(circle at 50% 130%, rgba(99,102,241,.22), transparent 62%); }
+  .stat:hover { transform:translateY(-3px); border-color:rgba(129,140,248,.4); }
+  .stat b { display:block; font-size:28px; color:#fff; position:relative; }
+  .stat span { font-size:12.5px; color:var(--muted); position:relative; }
+
+  /* compass 3D intro */
+  .s2glow { position:absolute; left:50%; top:50%; width:380px; height:380px; transform:translate(-50%,-50%); background:radial-gradient(circle, rgba(99,102,241,.24), transparent 65%); filter:blur(24px); }
+  .cwrap { position:relative; width:230px; height:230px; margin:0 auto; }
+  .rays { position:absolute; inset:-110px; border-radius:50%; background:repeating-conic-gradient(rgba(129,140,248,.07) 0 9deg, transparent 9deg 18deg); -webkit-mask:radial-gradient(circle, transparent 52%, #000 53%, transparent 60%); mask:radial-gradient(circle, transparent 52%, #000 53%, transparent 60%); animation:cn 26s linear infinite; }
+  .pulse { position:absolute; inset:-20px; border-radius:50%; border:1px solid rgba(129,140,248,.3); animation:pulseK 3s ease-out infinite; }
+  @keyframes pulseK { 0%{ transform:scale(.9); opacity:.9 } 100%{ transform:scale(1.28); opacity:0 } }
+  .ring { position:absolute; inset:0; border-radius:50%; border:2px solid rgba(129,140,248,.4); box-shadow:0 0 40px rgba(99,102,241,.35), inset 0 0 30px rgba(99,102,241,.18); animation:ringPulse 4s ease-in-out infinite; }
+  @keyframes ringPulse { 0%,100%{ box-shadow:0 0 26px rgba(99,102,241,.3), inset 0 0 22px rgba(99,102,241,.12);} 50%{ box-shadow:0 0 60px rgba(99,102,241,.55), inset 0 0 42px rgba(167,139,250,.26);} }
+  .ring.grad { border:none; background:conic-gradient(#6366f1,#a78bfa,#34d399,#6366f1); -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px)); mask:radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px)); animation:cn 6s linear infinite, ringPulse 4s ease-in-out infinite; }
+  .ring.dash { inset:14%; border:1px dashed rgba(167,139,250,.55); box-shadow:none; animation:cn 14s linear infinite reverse; }
+  .orb { position:absolute; inset:-20px; animation:cn 10s linear infinite; }
+  .orb i { position:absolute; top:-5px; left:50%; width:10px; height:10px; margin-left:-5px; border-radius:50%; background:#c4b5fd; box-shadow:0 0 14px #a78bfa; }
+  .orb i:nth-child(2){ top:auto; bottom:-5px; width:6px; height:6px; margin-left:-3px; background:#34d399; box-shadow:0 0 12px #34d399; }
+  .orb2 { position:absolute; inset:-44px; animation:cn 13s linear infinite reverse; }
+  .orb2 i { position:absolute; top:-4px; left:50%; width:7px; height:7px; margin-left:-3.5px; border-radius:50%; background:#fbbf24; box-shadow:0 0 12px #fbbf24; }
+  .core { position:absolute; left:50%; top:50%; width:26px; height:26px; margin:-13px 0 0 -13px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #e0e7ff, #818cf8 60%, #4f46e5); box-shadow:0 0 26px rgba(129,140,248,.95); animation:coreP 2.4s ease-in-out infinite; }
+  @keyframes coreP { 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.18);} }
+  .ndl { position:absolute; left:50%; top:50%; width:5px; height:74px; margin:-74px 0 0 -2.5px; border-radius:3px; transform-origin:50% 37px; }
+  .ndl.n { background:linear-gradient(180deg,#818cf8,#4f46e5); box-shadow:0 0 14px rgba(99,102,241,.9); }
+  .ndl.s { background:#3a3f5a; }
+  @keyframes cn { to { transform:rotate(360deg); } }
+  .spin-n { animation:cn 7s linear infinite; }
+  .spin-s { animation:cn 7s linear infinite reverse; }
+  .sw-title { position:relative; display:inline-block; overflow:hidden; }
+  .sw-title::after { content:""; position:absolute; top:0; bottom:0; width:46%; left:-70%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent); animation:sweep 4.5s ease-in-out infinite; }
+
+  /* assessment */
+  .steps { display:flex; gap:10px; flex-wrap:wrap; margin:16px 0; }
+  .step { padding:9px 16px; border-radius:11px; background:var(--card2); border:1px solid var(--line); font-size:13px; color:#9aa0b8; transition:all .4s ease; }
+  .step.act { background:rgba(99,102,241,.2); border-color:#6366f1; color:#fff; box-shadow:0 0 22px rgba(99,102,241,.45); }
+  .prog { height:7px; border-radius:7px; background:rgba(255,255,255,.08); overflow:hidden; }
+  .prog i { display:block; height:100%; width:0; border-radius:7px; background:linear-gradient(90deg,#6366f1,#a78bfa); transition:width .7s ease; }
+  .rec { border:1px solid rgba(129,140,248,.4); background:linear-gradient(160deg,rgba(99,102,241,.16),rgba(11,11,24,.6)); border-radius:16px; padding:20px; margin-top:18px; animation:recGlow 4s ease-in-out infinite; }
+  @keyframes recGlow { 0%,100%{ box-shadow:0 0 0 rgba(99,102,241,0);} 50%{ box-shadow:0 0 34px rgba(99,102,241,.2);} }
+  .path-item { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 15px; border-radius:11px; background:var(--card2); border:1px solid var(--line); margin-top:9px; transition:transform .3s ease, border-color .3s ease; }
+  .path-item:hover { transform:translateX(4px); border-color:rgba(129,140,248,.4); }
+
+  /* S4 */
+  .metric { text-align:center; }
+  .metric b { font-size:30px; }
+  .metric:hover { transform:translateY(-3px); }
+  .risk-bar { height:14px; border-radius:8px; background:rgba(255,255,255,.08); overflow:hidden; margin-top:6px; }
+  .risk-bar i { display:block; height:100%; width:0; border-radius:8px; transition:width 1.2s ease; }
+  .risk-bar i.f { width:var(--w); }
+
+  /* S5 */
+  .job { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 17px; border-radius:13px; background:var(--card2); border:1px solid var(--line); margin-top:10px; transition:transform .3s ease, border-color .3s ease, box-shadow .3s ease; }
+  .job:hover { transform:translateY(-3px); border-color:rgba(129,140,248,.4); box-shadow:0 10px 28px rgba(99,102,241,.14); }
+  .job h4 { font-size:15px; }
+  .job p { font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .ms { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600; color:#6ee7b7; background:rgba(52,211,153,.12); border:1px solid rgba(52,211,153,.32); }
+
+  /* S6 */
+  .qbox { display:flex; align-items:center; gap:16px; padding:16px; border-radius:14px; background:var(--card2); border:1px solid var(--line); }
+  .avatar { width:46px; height:46px; border-radius:50%; flex:none; background:linear-gradient(135deg,#6366f1,#8b5cf6); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; animation:avP 2.6s ease-in-out infinite; box-shadow:0 0 20px rgba(99,102,241,.5); }
+  @keyframes avP { 0%,100%{ box-shadow:0 0 12px rgba(99,102,241,.4);} 50%{ box-shadow:0 0 30px rgba(167,139,250,.7);} }
+  .bar2 { height:7px; border-radius:7px; background:rgba(255,255,255,.08); overflow:hidden; }
+  .bar2 i { display:block; height:100%; width:0; border-radius:7px; background:linear-gradient(90deg,#6366f1,#a78bfa); transition:width 1.2s ease; }
+  .bar2 i.f { width:var(--w); }
+  .score { width:110px; height:110px; border-radius:50%; background:conic-gradient(#818cf8 var(--sc,0%), rgba(255,255,255,.08) 0); display:flex; align-items:center; justify-content:center; position:relative; flex:none; animation:scoreGlow 3s ease-in-out infinite; }
+  @keyframes scoreGlow { 0%,100%{ box-shadow:0 0 16px rgba(99,102,241,.25);} 50%{ box-shadow:0 0 34px rgba(99,102,241,.5);} }
+  .score::after { content:""; position:absolute; inset:10px; border-radius:50%; background:var(--card); }
+  .score b { position:relative; z-index:1; font-size:28px; }
+
+  /* S7 */
+  .gaprow { display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:center; }
+  .gapcol h4 { font-size:13px; text-transform:uppercase; letter-spacing:.18em; color:var(--muted); margin-bottom:10px; }
+  .gitem { display:flex; align-items:center; gap:9px; padding:9px 12px; border-radius:10px; background:var(--card2); border:1px solid var(--line); font-size:13.5px; margin-top:8px; transition:transform .3s ease; }
+  .gitem:hover { transform:translateX(4px); }
+  .dotg { width:8px; height:8px; border-radius:50%; flex:none; }
+  .course { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 15px; border-radius:11px; background:var(--card2); border:1px solid var(--line); margin-top:8px; transition:transform .3s ease, border-color .3s ease; }
+  .course:hover { transform:translateY(-2px); border-color:rgba(129,140,248,.4); }
+
+  /* S8 */
+  .tech { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:13px; }
+  .ttile { padding:20px; border-radius:14px; background:var(--card); border:1px solid var(--line); position:relative; overflow:hidden; transition:transform .3s ease, border-color .3s ease, box-shadow .3s ease; }
+  .ttile::after { content:""; position:absolute; top:0; bottom:0; width:46%; left:-70%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent); animation:sweep 4.6s ease-in-out infinite; }
+  .ttile:hover { transform:translateY(-4px); border-color:rgba(129,140,248,.42); box-shadow:0 12px 30px rgba(99,102,241,.16); }
+  .ttile b { font-size:16px; display:block; }
+  .ttile span { font-size:12.5px; color:var(--muted); margin-top:6px; display:block; }
+
+  /* S9 */
+  .jgrid { display:grid; grid-template-columns:1fr 1fr; gap:6px 30px; margin-top:22px; }
+  .jstep { display:flex; align-items:center; gap:14px; padding:11px 16px; border-radius:13px; background:var(--card2); border:1px solid var(--line); transition:transform .3s ease, border-color .3s ease, box-shadow .3s ease; }
+  .jstep:hover { transform:translateY(-2px); border-color:rgba(129,140,248,.42); box-shadow:0 8px 24px rgba(99,102,241,.14); }
+  .jno { width:34px; height:34px; border-radius:10px; flex:none; background:rgba(99,102,241,.2); border:1px solid rgba(99,102,241,.45); color:#a5b4fc; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 14px rgba(99,102,241,.25); }
+  .jstep b { font-size:15px; }
+  .jstep span { display:block; font-size:12.5px; color:var(--muted); }
+
+  /* S10 */
+  .final-hint { position:relative; margin:26px auto 0; border:1px dashed rgba(255,255,255,.16); border-radius:16px; height:180px; max-width:640px; background:rgba(255,255,255,.02); animation:hintGlow 3.5s ease-in-out infinite; }
+  @keyframes hintGlow { 0%,100%{ border-color:rgba(255,255,255,.12);} 50%{ border-color:rgba(129,140,248,.4);} }
+  .final-hint span { position:absolute; top:12px; right:16px; font-size:11px; letter-spacing:.2em; color:#5b6184; text-transform:uppercase; }
+
+  @media (max-height:840px) {
+    section { padding:60px 6vw 30px; }
+    .card { padding:16px; }
+    h1 { font-size:clamp(30px,5vw,54px); }
+    h2 { font-size:clamp(24px,3.4vw,42px); }
+    .sub { margin-top:8px; line-height:1.5; }
+    .floats { min-height:110px; margin:18px 0; }
+    .statrow { margin-top:18px; }
+    .cwrap { width:170px; height:170px; }
+    .ndl { height:54px; margin:-54px 0 0 -2.5px; transform-origin:50% 27px; }
+    .cwrap .ndl.s { height:54px; margin:-54px 0 0 -2.5px; transform-origin:50% 27px; }
+    .jstep { padding:8px 12px; }
+  }
+</style>
+</head>
+<body>
+  <div id="stars"></div>
+  <div class="vig"></div>
+
+  <!-- browser chrome -->
+  <div class="chrome">
+    <div class="dots"><i></i><i></i><i></i></div>
+    <div class="addr">
+      <svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v4a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4z"/><path d="M6 12a6 6 0 0 0 12 0"/></svg>
+      compass-psi-woad.vercel.app
+    </div>
+  </div>
+
+  <!-- S1 PROBLEM -->
+  <section id="s1">
+    <div class="center">
+      <div class="nav" style="justify-content:space-between; margin-bottom:3.5vh;">
+        <div class="logo"><span class="ico"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5L13.7 13.7 8.5 15.5 10.3 10.3z" fill="currentColor" stroke="none"/></svg></span>Compass</div>
+        <div class="nav" style="gap:16px; font-size:13px; color:var(--muted);"><span>Features</span><span>Careers</span><span>Jobs</span><span style="color:#a5b4fc;">Sign In</span></div>
+      </div>
+      <div class="rv" id="s1rv">
+        <div class="kicker">The Problem</div>
+        <h1 style="margin-top:10px;">Students don&apos;t lack opportunities.<br /><span class="grad">They lack direction.</span></h1>
+        <p class="sub">Millions graduate every year with skills nobody maps to roles — and employers can&apos;t find who&apos;s actually ready.</p>
+      </div>
+      <div class="rv" id="s1fl">
+        <div class="floats">
+          <div class="fl" style="left:0; top:0;">🎓 Engineering</div>
+          <div class="fl" style="right:0; top:6px;">💼 Job listings</div>
+          <div class="fl" style="left:6%; bottom:0;">📚 Courses</div>
+          <div class="fl" style="right:8%; bottom:8px;">🎯 Careers?</div>
+          <div class="student"><div class="hd"></div><div class="bd"></div></div>
+        </div>
+        <div class="statrow">
+          <div class="stat"><b data-count="85" data-suf="%">85%</b><span>grads under-skilled for industry</span></div>
+          <div class="stat"><b data-count="0" data-suf="">0</b><span>clear career direction at school</span></div>
+          <div class="stat"><b>₹0</b><span>guidance budget for most students</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S2 COMPASS -->
+  <section id="s2">
+    <div class="center" style="text-align:center;">
+      <div class="rv" id="s2rv">
+        <div class="s2glow"></div>
+        <div class="cwrap">
+          <div class="rays"></div>
+          <div class="pulse"></div>
+          <div class="ring grad"></div>
+          <div class="ring dash"></div>
+          <div class="orb"><i></i><i></i></div>
+          <div class="orb2"><i></i></div>
+          <div class="ndl n spin-n"></div>
+          <div class="ndl s spin-s"></div>
+          <div class="core"></div>
+        </div>
+        <h1 style="margin-top:26px;"><span class="sw-title">COMPASS</span></h1>
+        <h3 class="grad" style="letter-spacing:.4em; margin-top:10px;">NAVIGATE YOUR FUTURE</h3>
+        <p class="sub" style="margin:16px auto 0;">From assessment to offer letter — one AI-powered career navigator.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- S3 ASSESSMENT -->
+  <section id="s3">
+    <div class="center">
+      <div class="rv" id="s3rv">
+        <div class="kicker">AI Career Assessment</div>
+        <h2 style="margin-top:10px;">Understand the student</h2>
+        <p class="sub">Interests, personality, skills and goals — turned into a precise candidate profile.</p>
+      </div>
+      <div class="card rv" id="s3card" style="margin-top:22px;">
+        <div class="steps" id="steps">
+          <div class="step">Interests</div>
+          <div class="step">Personality</div>
+          <div class="step">Skills</div>
+          <div class="step">Goals</div>
+        </div>
+        <div class="prog"><i id="progbar"></i></div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px; gap:14px; flex-wrap:wrap;">
+          <span id="qtext" style="font-size:14.5px; color:#c7cbe0;">Tell us what excites you most in a day of work?</span>
+          <button class="btn" id="assessBtn">Continue</button>
+        </div>
+      </div>
+      <div class="rec rv" id="s3rec">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:14px;">
+          <div>
+            <div class="kicker">Recommendations</div>
+            <h3 style="margin-top:6px;">Your career matches</h3>
+          </div>
+          <span class="badge">50+ Career Paths</span>
+        </div>
+        <div style="margin-top:12px;">
+          <div class="path-item"><span>Data Analyst</span><span class="ms">94% match</span></div>
+          <div class="path-item"><span>Product Designer</span><span class="ms">91% match</span></div>
+          <div class="path-item"><span>Full-Stack Developer</span><span class="ms">89% match</span></div>
+          <div class="path-item"><span>Digital Marketer</span><span class="ms">86% match</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S4 INTELLIGENCE -->
+  <section id="s4">
+    <div class="center">
+      <div class="rv" id="s4rv">
+        <div class="kicker">Career Intelligence</div>
+        <h2 style="margin-top:10px;">Your career dashboard</h2>
+        <p class="sub">Match score, skills, personality, future demand and automation risk — in one place.</p>
+      </div>
+      <div class="grid2 rv" id="s4grid" style="margin-top:22px;">
+        <div class="card metric"><b style="color:#a5b4fc;">94%</b><span style="display:block;font-size:12.5px;color:var(--muted);margin-top:4px;">Career Match Score</span></div>
+        <div class="card metric"><b style="color:#34d399;">8</b><span style="display:block;font-size:12.5px;color:var(--muted);margin-top:4px;">Skills Matched</span></div>
+        <div class="card metric"><b style="color:#fbbf24;">High</b><span style="display:block;font-size:12.5px;color:var(--muted);margin-top:4px;">Personality Compatibility</span></div>
+        <div class="card metric"><b style="color:#e879f9;">Growing</b><span style="display:block;font-size:12.5px;color:var(--muted);margin-top:4px;">Future Demand</span></div>
+      </div>
+      <div class="card rv" id="s4shield" style="margin-top:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <div class="kicker">Automation Shield</div>
+            <h3 style="margin-top:6px;">AI automation impact by career</h3>
+          </div>
+          <span class="badge">Future Readiness</span>
+        </div>
+        <div style="margin-top:14px;">
+          <div style="margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:5px;"><span>Data Analyst</span><span style="color:#34d399;">Low risk</span></div>
+            <div class="risk-bar"><i style="--w:18%; background:linear-gradient(90deg,#34d399,#34d399);"></i></div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:5px;"><span>Accountant</span><span style="color:#fbbf24;">Moderate</span></div>
+            <div class="risk-bar"><i style="--w:52%; background:linear-gradient(90deg,#fbbf24,#f59e0b);"></i></div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:5px;"><span>Data Entry Clerk</span><span style="color:#f87171;">High risk</span></div>
+            <div class="risk-bar"><i style="--w:86%; background:linear-gradient(90deg,#f87171,#ef4444);"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S5 JOBS -->
+  <section id="s5">
+    <div class="center">
+      <div class="rv" id="s5rv">
+        <div class="kicker">Jobs &amp; Internships</div>
+        <h2 style="margin-top:10px;">Opportunities that match you</h2>
+        <p class="sub">Live openings ranked by skill, location and career overlap — with AI-drafted applications.</p>
+      </div>
+      <div class="rv" id="s5jobs" style="margin-top:20px;">
+        <div class="job"><div><h4>Data Analyst — Chennai</h4><p>AI &amp; Analytics · Hybrid · 3+ yrs</p></div><span class="ms">94% match</span></div>
+        <div class="job"><div><h4>Product Designer — Coimbatore</h4><p>Design · Remote · Fresher OK</p></div><span class="ms">91% match</span></div>
+        <div class="job"><div><h4>Full-Stack Developer — Bengaluru</h4><p>Web · Onsite · 1+ yrs</p></div><span class="ms">89% match</span></div>
+        <div class="job"><div><h4>Growth Intern — Remote</h4><p>Marketing · Internship · 6 mo</p></div><span class="ms">86% match</span></div>
+      </div>
+      <div class="card rv" id="s5card" style="margin-top:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <div class="kicker">AI-Powered Matching</div>
+            <h3 style="margin-top:6px;">Top 15 relevant opportunities</h3>
+          </div>
+          <span class="badge">Auto-applications</span>
+        </div>
+        <p class="sub" style="margin-top:10px;">Profile → skills → location → match score → one-click apply. Applications drafted by AI and sent in bulk with a built-in send history.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- S6 INTERVIEW -->
+  <section id="s6">
+    <div class="center">
+      <div class="rv" id="s6rv">
+        <div class="kicker">AI Mock Interview</div>
+        <h2 style="margin-top:10px;">Practice like it&apos;s real</h2>
+        <p class="sub">Question-by-question evaluation with a live AI score.</p>
+      </div>
+      <div class="card rv" id="s6card" style="margin-top:20px;">
+        <div class="qbox">
+          <div class="avatar">AI</div>
+          <div style="flex:1;">
+            <div style="font-size:12px; color:var(--muted);">Interviewer · Technical</div>
+            <div style="font-size:15.5px; margin-top:3px;">“Explain how you would optimize a slow SQL query.”</div>
+          </div>
+          <span class="badge">60+ Questions</span>
+        </div>
+        <div class="grid2" style="margin-top:14px;" id="intbars">
+          <div class="card" style="background:transparent; border:none; padding:0;">
+            <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:5px;"><span>Communication</span><span style="color:#a5b4fc;">88%</span></div>
+            <div class="bar2"><i style="--w:88%;"></i></div>
+          </div>
+          <div class="card" style="background:transparent; border:none; padding:0;">
+            <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:5px;"><span>Confidence</span><span style="color:#a5b4fc;">82%</span></div>
+            <div class="bar2"><i style="--w:82%;"></i></div>
+          </div>
+          <div class="card" style="background:transparent; border:none; padding:0;">
+            <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:5px;"><span>Technical Knowledge</span><span style="color:#a5b4fc;">90%</span></div>
+            <div class="bar2"><i style="--w:90%;"></i></div>
+          </div>
+          <div class="card" style="background:transparent; border:none; padding:0;">
+            <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:5px;"><span>Problem Solving</span><span style="color:#a5b4fc;">85%</span></div>
+            <div class="bar2"><i style="--w:85%;"></i></div>
+          </div>
+        </div>
+      </div>
+      <div class="card rv" id="s6score" style="margin-top:16px; display:flex; align-items:center; gap:24px;">
+        <div class="score" id="scoreRing"><b>86</b></div>
+        <div style="flex:1;">
+          <div class="kicker">AI Feedback</div>
+          <h3 style="margin-top:6px;">Strong — interview-ready</h3>
+          <p class="sub" style="margin-top:8px;">Clear structure, confident delivery. Practice one more round to push the score above 90.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S7 SKILL GAP -->
+  <section id="s7">
+    <div class="center">
+      <div class="rv" id="s7rv">
+        <div class="kicker">Skill Gap Analysis</div>
+        <h2 style="margin-top:10px;">Close the gap, fast</h2>
+        <p class="sub">Compass spots what&apos;s missing and sequences exactly what to learn next.</p>
+      </div>
+      <div class="card rv" id="s7card" style="margin-top:20px;">
+        <div class="gaprow">
+          <div class="gapcol">
+            <h4>Current Skills</h4>
+            <div class="gitem"><span class="dotg" style="background:#34d399;"></span>Python</div>
+            <div class="gitem"><span class="dotg" style="background:#34d399;"></span>Statistics</div>
+            <div class="gitem"><span class="dotg" style="background:#34d399;"></span>Communication</div>
+          </div>
+          <div class="up-arrow">→</div>
+          <div class="gapcol">
+            <h4>Skill Gaps</h4>
+            <div class="gitem"><span class="dotg" style="background:#fbbf24;"></span>SQL</div>
+            <div class="gitem"><span class="dotg" style="background:#fbbf24;"></span>BI Tools (Power BI)</div>
+            <div class="gitem"><span class="dotg" style="background:#fbbf24;"></span>Machine Learning</div>
+          </div>
+        </div>
+      </div>
+      <div class="card rv" id="s7rec" style="margin-top:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <div class="kicker">Recommended Learning</div>
+            <h3 style="margin-top:6px;">Your personalized path</h3>
+          </div>
+          <span class="badge">Free Courses</span>
+        </div>
+        <div style="margin-top:12px;">
+          <div class="course"><div><b>SQL for Data Analysis</b><span style="display:block;font-size:12.5px;color:var(--muted);">Week 1 · 6 modules</span></div><span class="ms">Start</span></div>
+          <div class="course"><div><b>Power BI Essentials</b><span style="display:block;font-size:12.5px;color:var(--muted);">Week 2 · 8 modules</span></div><span class="ms">Start</span></div>
+          <div class="course"><div><b>ML Foundations</b><span style="display:block;font-size:12.5px;color:var(--muted);">Week 3–4 · 12 modules</span></div><span class="ms">Start</span></div>
+        </div>
+        <div style="margin-top:14px;">
+          <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:6px;"><span>Skill Progress</span><span style="color:#a5b4fc;">64%</span></div>
+          <div class="bar"><i id="skillbar" style="--w:64%;"></i></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S8 TECH -->
+  <section id="s8">
+    <div class="center">
+      <div class="rv" id="s8rv">
+        <div class="kicker">Technology Stack</div>
+        <h2 style="margin-top:10px;">Built production-ready</h2>
+        <p class="sub">A scalable, cloud-deployed architecture powering the entire journey.</p>
+      </div>
+      <div class="tech rv" id="s8tech" style="margin-top:24px;">
+        <div class="ttile"><b>React</b><span>Next.js 16 · App Router</span></div>
+        <div class="ttile"><b>JavaScript / TypeScript</b><span>Strict, typed, testable</span></div>
+        <div class="ttile"><b>AI / Machine Learning</b><span>LLM career engine</span></div>
+        <div class="ttile"><b>Adzuna API</b><span>Live job feed — Tamil Nadu</span></div>
+        <div class="ttile"><b>AI Assessment Engine</b><span>Aptitude + psychometric</span></div>
+        <div class="ttile"><b>AI Interview Analysis</b><span>Real-time response scoring</span></div>
+        <div class="ttile"><b>Cloud Deployment</b><span>Vercel · PostgreSQL</span></div>
+        <div class="ttile"><b>Responsive Architecture</b><span>Desktop · mobile · offline-first</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S9 JOURNEY -->
+  <section id="s9">
+    <div class="center">
+      <div class="rv" id="s9rv" style="text-align:center;">
+        <div class="kicker" style="display:block;">Complete User Journey</div>
+        <h2 style="margin-top:10px;">End-to-end career navigation</h2>
+        <p class="sub" style="margin:12px auto 0;">Not just a recommendation quiz — the whole road from student to offer letter.</p>
+      </div>
+      <div class="rv" id="s9steps" style="margin-top:20px;">
+        <div class="jgrid">
+          <div class="jcol">
+            <div class="jstep"><div class="jno">1</div><div><b>Onboarding</b><span>Profile + goals in under 3 minutes</span></div></div>
+            <div class="up-arrow">↓</div>
+            <div class="jstep"><div class="jno">2</div><div><b>AI Assessment</b><span>Interests, personality, skills, aptitude</span></div></div>
+            <div class="up-arrow">↓</div>
+            <div class="jstep"><div class="jno">3</div><div><b>Career Recommendation</b><span>Personalized match across 50+ paths</span></div></div>
+            <div class="up-arrow">↓</div>
+            <div class="jstep"><div class="jno">4</div><div><b>Automation Shield</b><span>Future-readiness and risk insight</span></div></div>
+          </div>
+          <div class="jcol">
+            <div class="jstep"><div class="jno">5</div><div><b>Jobs &amp; Internships</b><span>Matched, ranked, one-click apply</span></div></div>
+            <div class="up-arrow">↓</div>
+            <div class="jstep"><div class="jno">6</div><div><b>AI Mock Interview</b><span>Practice until you&apos;re ready</span></div></div>
+            <div class="up-arrow">↓</div>
+            <div class="jstep"><div class="jno">7</div><div><b>Skill Gap Analysis</b><span>Learn exactly what employers want</span></div></div>
+            <div class="up-arrow">↓</div>
+            <div class="jstep"><div class="jno">8</div><div><b>Career Roadmap</b><span>One clear path to the offer letter</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S10 FINAL -->
+  <section id="s10">
+    <div class="center" style="text-align:center;">
+      <div class="rv" id="s10rv">
+        <div class="cwrap" style="width:150px; height:150px;">
+          <div class="pulse"></div>
+          <div class="ring grad"></div>
+          <div class="ring dash"></div>
+          <div class="orb"><i></i><i></i></div>
+          <div class="orb2"><i></i></div>
+          <div class="ndl n spin-n" style="height:50px; margin:-50px 0 0 -2.5px; transform-origin:50% 25px;"></div>
+          <div class="ndl s spin-s" style="height:50px; margin:-50px 0 0 -2.5px; transform-origin:50% 25px;"></div>
+          <div class="core" style="width:20px; height:20px; margin:-10px 0 0 -10px;"></div>
+        </div>
+        <h1 style="margin-top:16px; letter-spacing:6px;"><span class="sw-title">COMPASS</span></h1>
+        <h3 class="grad" style="letter-spacing:.4em; margin-top:6px;">NAVIGATE YOUR FUTURE</h3>
+        <p class="sub" style="margin:14px auto 0;">AI-Powered · Personalized · Future-Ready</p>
+      </div>
+      <div class="final-hint rv" id="s10hint"><span>Presenter: app link / QR goes here</span></div>
+    </div>
+  </section>
+
+<script>
+  (function () {
+    /* ambient particles */
+    var stars = document.getElementById("stars");
+    for (var n = 0; n < 44; n++) {
+      var i = document.createElement("i");
+      var s = (1 + Math.random() * 2.2).toFixed(1);
+      i.style.cssText = "left:" + (Math.random() * 100).toFixed(2) + "%;top:" + (Math.random() * 100).toFixed(2) + "%;width:" + s + "px;height:" + s + "px;animation-duration:" + (3 + Math.random() * 5).toFixed(1) + "s;animation-delay:" + (Math.random() * 4).toFixed(1) + "s;";
+      stars.appendChild(i);
+    }
+
+    /* reveal on scroll */
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          e.target.classList.add("on");
+          var id = e.target.id;
+          if (id === "s1fl") fireCounts();
+          if (id === "s4shield") fireRiskBars();
+          if (id === "s6card") fireIntBars();
+          if (id === "s7rec") fireSkillBar();
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.25 });
+
+    ["s1rv","s1fl","s2rv","s3rv","s3card","s3rec","s4rv","s4grid","s4shield",
+     "s5rv","s5jobs","s5card","s6rv","s6card","s6score","s7rv","s7card","s7rec",
+     "s8rv","s8tech","s9rv","s9steps","s10rv","s10hint"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) io.observe(el);
+    });
+
+    /* animated stat counters */
+    function fireCounts() {
+      document.querySelectorAll("[data-count]").forEach(function (el) {
+        var target = parseInt(el.getAttribute("data-count"), 10);
+        var suf = el.getAttribute("data-suf") || "";
+        if (isNaN(target) || target === 0) { el.textContent = target + suf; return; }
+        var t0 = null;
+        function st(ts) {
+          if (!t0) t0 = ts;
+          var p = Math.min(1, (ts - t0) / 1200);
+          el.textContent = Math.round(target * p) + suf;
+          if (p < 1) requestAnimationFrame(st);
+        }
+        requestAnimationFrame(st);
+      });
+    }
+
+    function fireRiskBars() { setTimeout(function () { document.querySelectorAll(".risk-bar i").forEach(function (b) { b.classList.add("f"); }); }, 400); }
+    function fireIntBars() { setTimeout(function () { document.querySelectorAll("#intbars .bar2 i").forEach(function (b) { b.classList.add("f"); }); var sc = document.getElementById("scoreRing"); if (sc) sc.style.setProperty("--sc", "86%"); }, 400); }
+    function fireSkillBar() { setTimeout(function () { var sb = document.getElementById("skillbar"); if (sb) sb.classList.add("f"); }, 500); }
+
+    /* assessment click flow */
+    var stepIdx = 0;
+    var STEP_TXT = ["Interests", "Personality", "Skills", "Goals"];
+    document.getElementById("assessBtn").addEventListener("click", nextStep);
+    function nextStep() {
+      if (stepIdx >= 4) return;
+      var steps = document.querySelectorAll("#steps .step");
+      var bar = document.getElementById("progbar");
+      steps[stepIdx].classList.add("act");
+      bar.style.width = ((stepIdx + 1) / 4 * 100) + "%";
+      document.getElementById("qtext").textContent = "Perfect — " + STEP_TXT[stepIdx] + " noted. Almost done.";
+      stepIdx++;
+      if (stepIdx === 4) {
+        document.getElementById("qtext").textContent = "Analyzing your profile…";
+        setTimeout(function () {
+          document.getElementById("qtext").textContent = "Recommendations ready.";
+          document.getElementById("s3rec").classList.add("on");
+        }, 900);
+      }
+    }
+  })();
+</script>
+</body>
+</html>

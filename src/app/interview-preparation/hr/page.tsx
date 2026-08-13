@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, MessageSquare, HelpCircle, CheckCircle2, AlertCircle, Lightbulb, ChevronRight, Send, Sparkles, RefreshCw } from "lucide-react";
+import { ArrowLeft, MessageSquare, HelpCircle, CheckCircle2, XCircle, AlertCircle, Lightbulb, ChevronRight, Send, Sparkles, RefreshCw, Loader2 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import PageTour from "@/components/PageTour";
 
@@ -62,6 +62,8 @@ export default function HRInterviewPage() {
   const [selectedQ, setSelectedQ] = useState<number | null>(null);
   const [answer, setAnswer] = useState("");
   const [sessionQuestions, setSessionQuestions] = useState(() => shuffle(HR_QUESTIONS).slice(0, QUESTIONS_PER_SET));
+  const [evaluating, setEvaluating] = useState(false);
+  const [feedback, setFeedback] = useState<{ score: number; feedback: string; strengths: string[]; improvements: string[] } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,6 +87,22 @@ export default function HRInterviewPage() {
     setSessionQuestions(shuffle(HR_QUESTIONS).slice(0, QUESTIONS_PER_SET));
     setSelectedQ(null);
     setAnswer("");
+    setFeedback(null);
+  };
+
+  const getFeedback = async () => {
+    if (selectedQ === null || !answer.trim() || evaluating) return;
+    setEvaluating(true);
+    setFeedback(null);
+    try {
+      const res = await fetch("/api/interview/evaluate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: sessionQuestions[selectedQ].q, answer }),
+      });
+      if (res.ok) setFeedback(await res.json());
+    } catch (e) { console.error("hr feedback failed", e); }
+    setEvaluating(false);
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
@@ -137,7 +155,7 @@ export default function HRInterviewPage() {
           <div data-tour="prep-hr-list" className="space-y-2">
             {sessionQuestions.map((q, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}>
-                <button onClick={() => setSelectedQ(selectedQ === i ? null : i)}
+                <button onClick={() => { setSelectedQ(selectedQ === i ? null : i); setFeedback(null); }}
                   className="w-full text-left p-4 rounded-xl border border-white/5 hover:border-white/10 transition-all"
                   style={{ background: "rgba(17,17,24,0.5)" }}>
                   <div className="flex items-start gap-3">
@@ -156,10 +174,35 @@ export default function HRInterviewPage() {
                           <textarea value={answer} onChange={e => setAnswer(e.target.value)} placeholder="Practice your answer..."
                             className="w-full h-20 p-3 rounded-lg bg-white/[0.02] border border-white/10 text-xs outline-none focus:border-rose-500/50 transition-all resize-none" />
                           <div className="flex justify-end">
-                            <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-400 text-xs font-medium hover:bg-rose-500/20 transition-all">
-                              <Sparkles className="w-3 h-3" /> Get Feedback
+                            <button onClick={getFeedback} disabled={!answer.trim() || evaluating}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-400 text-xs font-medium hover:bg-rose-500/20 transition-all disabled:opacity-50">
+                              {evaluating ? <><Loader2 className="w-3 h-3 animate-spin" /> Analyzing...</> : <><Sparkles className="w-3 h-3" /> Get Feedback</>}
                             </button>
                           </div>
+                          {feedback && (
+                            <div className="space-y-3 pt-1">
+                              <div className={`text-xs font-semibold ${feedback.score >= 7 ? "text-green-400" : feedback.score >= 5 ? "text-amber-400" : "text-red-400"}`}>
+                                Score: {Math.round(feedback.score * 10)}%
+                              </div>
+                              <p className="text-xs text-slate-400">{feedback.feedback}</p>
+                              {feedback.strengths?.length > 0 && (
+                                <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/10">
+                                  <h4 className="text-[10px] font-semibold text-green-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3" /> Strengths</h4>
+                                  <ul className="space-y-1">
+                                    {feedback.strengths.map((s, i) => <li key={i} className="text-xs text-slate-400 flex gap-1.5"><span className="text-green-400">•</span>{s}</li>)}
+                                  </ul>
+                                </div>
+                              )}
+                              {feedback.improvements?.length > 0 && (
+                                <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/10">
+                                  <h4 className="text-[10px] font-semibold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"><XCircle className="w-3 h-3" /> Improvements</h4>
+                                  <ul className="space-y-1">
+                                    {feedback.improvements.map((s, i) => <li key={i} className="text-xs text-slate-400 flex gap-1.5"><span className="text-red-400">•</span>{s}</li>)}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </motion.div>
                       )}
                     </div>

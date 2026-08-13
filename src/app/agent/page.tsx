@@ -49,7 +49,7 @@ export default function AgentPage() {
   const [messages, setMessages] = useState<AgentMessage[]>([
     {
       role: "assistant",
-      content: "Hey! I'\''m your AI Career Agent. I'\''ve been analyzing your profile and here'\''s what I recommend you focus on this week. Check out the action items on the right — I'\''ve prioritized them based on your goals and market data.",
+      content: "Hey! I'm your AI Career Agent. I've been analyzing your profile and here's what I recommend you focus on this week. Check out the action items on the right — I've prioritized them based on your goals and market data.",
       timestamp: new Date(),
     },
   ]);
@@ -82,7 +82,7 @@ export default function AgentPage() {
       const data = await res.json();
       const assistantMsg: AgentMessage = {
         role: "assistant",
-        content: data.response || "I'\''ll help you figure that out. Can you tell me more about your career goals?",
+        content: data.response || "I'll help you figure that out. Can you tell me more about your career goals?",
         actions: data.actions || [],
         timestamp: new Date(),
       };

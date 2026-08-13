@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, BookOpen, BookText, FileText, AlignLeft, SpellCheck, Type, BookA, Quote, MessageSquare, Search, Volume2, ChevronRight, Brain, Languages } from "lucide-react";
+import { ArrowLeft, BookOpen, BookText, FileText, AlignLeft, SpellCheck, Type, BookA, Quote, MessageSquare, Search, Volume2, Brain, Languages } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import PageTour from "@/components/PageTour";
 
@@ -73,7 +73,7 @@ export default function VerbalPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3" data-tour="prep-verbal-grid">
             {TOPICS.map((topic, i) => (
               <motion.div key={topic.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.02 * i }}>
-                <div className="group block p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-all cursor-pointer"
+                <div className="group block p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-all"
                   style={{ background: "rgba(17,17,24,0.5)" }}>
                   <div className="flex items-start gap-3">
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: topic.color }}>
@@ -82,7 +82,6 @@ export default function VerbalPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">
                         <h3 className="font-semibold text-sm">{topic.title}</h3>
-                        <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
                       </div>
                       <p className="text-xs text-slate-500">{topic.desc}</p>
                     </div>

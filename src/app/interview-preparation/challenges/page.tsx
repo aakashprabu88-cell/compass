@@ -41,6 +41,7 @@ export default function ChallengesPage() {
   const router = useRouter();
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [completedDays, setCompletedDays] = useState<Set<string>>(new Set(DAILY_CHALLENGES.filter(c => c.completed).map(c => c.day)));
 
   useEffect(() => {
     let cancelled = false;
@@ -105,10 +106,11 @@ export default function ChallengesPage() {
             <div className="grid grid-cols-7 gap-2">
               {DAILY_CHALLENGES.map((c, i) => (
                 <button key={c.day}
+                  onClick={() => !(i > 2) && setCompletedDays(prev => { const next = new Set(prev); if (next.has(c.day)) next.delete(c.day); else next.add(c.day); return next; })}
                   className="text-center p-2 rounded-lg border border-white/5 hover:border-white/10 transition-all disabled:opacity-50"
-                  disabled={i > 2} style={{ background: c.completed ? "rgba(16,185,129,0.05)" : "rgba(17,17,24,0.3)" }}>
+                  disabled={i > 2} style={{ background: completedDays.has(c.day) ? "rgba(16,185,129,0.05)" : "rgba(17,17,24,0.3)" }}>
                   <div className="text-[10px] text-slate-500 mb-1">{c.day}</div>
-                  {c.completed ? <CheckCircle2 className="w-4 h-4 mx-auto text-emerald-400" /> : <Zap className="w-4 h-4 mx-auto text-slate-600" />}
+                  {completedDays.has(c.day) ? <CheckCircle2 className="w-4 h-4 mx-auto text-emerald-400" /> : <Zap className="w-4 h-4 mx-auto text-slate-600" />}
                   <div className="text-[10px] mt-0.5 text-slate-500">{c.points}pts</div>
                 </button>
               ))}
@@ -123,7 +125,7 @@ export default function ChallengesPage() {
               <h2 className="text-sm font-semibold mb-3 flex items-center gap-2"><Layers className="w-4 h-4 text-purple-400" /> Weekly Battles</h2>
               <div className="space-y-2">
                 {WEEKLY_CHALLENGES.map((c, i) => (
-                  <button key={c.week} className="w-full text-left p-3 rounded-lg border border-white/5 hover:border-white/10 transition-all">
+                  <button key={c.week} onClick={() => router.push("/interview-preparation/aptitude/weekly-test")} className="w-full text-left p-3 rounded-lg border border-white/5 hover:border-white/10 transition-all cursor-pointer">
                     <div className="flex items-center justify-between mb-0.5">
                       <span className="text-xs font-medium">{c.title}</span>
                       <span className="text-[10px] text-slate-500">{c.points}pts</span>
@@ -144,7 +146,7 @@ export default function ChallengesPage() {
               <h2 className="text-sm font-semibold mb-3 flex items-center gap-2"><Target className="w-4 h-4 text-amber-400" /> Company-Specific</h2>
               <div className="space-y-2">
                 {COMPANY_CHALLENGES.map((c, i) => (
-                  <button key={c.company} className="w-full text-left p-3 rounded-lg border border-white/5 hover:border-white/10 transition-all">
+                  <button key={c.company} onClick={() => router.push(`/interview-preparation/company/${c.company.toLowerCase()}`)} className="w-full text-left p-3 rounded-lg border border-white/5 hover:border-white/10 transition-all cursor-pointer">
                     <div className="flex items-center justify-between mb-0.5">
                       <span className="text-xs font-medium">{c.title}</span>
                       <span className={`text-[10px] ${c.difficulty === "Hard" ? "text-rose-400" : "text-amber-400"}`}>{c.difficulty}</span>

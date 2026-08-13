@@ -32,9 +32,6 @@ export default function JobsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
-  const [subscribing, setSubscribing] = useState(false);
   const [applying, setApplying] = useState<string | null>(null);
   const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set());
   const [hasRealData, setHasRealData] = useState(false);
@@ -43,9 +40,6 @@ export default function JobsPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (user) {
-      setEmail((user as any).email || "");
-    }
     Promise.all([
       fetch("/api/jobs").then(r => r.json()),
       fetch("/api/apply").then(r => r.json()),
@@ -75,17 +69,6 @@ export default function JobsPage() {
     if (typeFilter !== "all") filtered = filtered.filter(j => j.type === typeFilter);
     setJobs(filtered);
   }, [searchQuery, cityFilter, typeFilter, allJobs]);
-
-  const subscribe = async () => {
-    if (!email.trim()) return;
-    setSubscribing(true);
-    try {
-      const res = await fetch("/api/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
-      if (res.ok) { setSubscribed(true); toast.success("Subscribed! You'\''ll get job alerts."); }
-      else { toast.error("Subscription failed"); }
-    } catch { toast.error("Network error"); }
-    setSubscribing(false);
-  };
 
   const quickApply = async (jobId: string) => {
     setApplying(jobId);

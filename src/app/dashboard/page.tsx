@@ -103,12 +103,22 @@ export default function DashboardPage() {
         setPaths(Array.isArray(pathsData) ? pathsData : []);
         setGaps(Array.isArray(gapsData) ? gapsData : []);
         if (track?.stats) setPipeline({
-          saved: track.stats.total || 0, applied: track.stats.applied || 0, shortlisted: track.stats.shortlisted || 0,
-          assessment: track.stats.assessment || 0, interview: track.stats.interview || 0, rejected: track.stats.rejected || 0,
-          offer: track.stats.offer || 0, accepted: track.stats.accepted || 0,
+          saved: track.stats.total || 0, applied: track.stats.applied || 0,
+          shortlisted: track.pipeline?.shortlisted?.length || 0, assessment: track.pipeline?.assessment?.length || 0,
+          interview: track.pipeline?.interview?.length || 0, rejected: track.pipeline?.rejected?.length || 0,
+          offer: track.pipeline?.offer?.length || 0, accepted: track.pipeline?.accepted?.length || 0,
         });
         if (Array.isArray(apps)) setAppCount(apps.length);
         if (emails?.emails) setSentCount(emails.emails.filter((e: any) => e.status === "sent").length);
+        const analysis = await safeFetch("/api/analysis");
+        if (cancelled) return;
+        if (analysis?.summary) {
+          setAiAdvice({
+            summary: analysis.summary,
+            recommendedPaths: (analysis.careerPaths || []).map((p: any) => ({ title: p.title, matchScore: p.matchScore, reason: p.reason || "" })),
+            skillGaps: (analysis.gaps || []).map((g: any) => ({ skill: g.skill, gap: g.priority === "high" ? 6 : 4, priority: g.priority === "high" ? "High" : "Medium" })),
+          });
+        }
         try { const c = localStorage.getItem("compass_career_advice"); if (c) setAiAdvice(JSON.parse(c)); } catch {}
         try { const g = localStorage.getItem("compass_daily_goals"); if (g) setGoals(JSON.parse(g)); } catch {}
       } catch (e) { console.error("dashboard load", e); }

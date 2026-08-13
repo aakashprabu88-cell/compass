@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Users, Star, Lightbulb, Target, Award, ChevronRight, BookOpen, CheckCircle2, Shuffle } from "lucide-react";
+import { ArrowLeft, Users, Star, Lightbulb, Target, Award, ChevronRight, BookOpen, CheckCircle2, XCircle, Loader2, Shuffle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import PageTour from "@/components/PageTour";
@@ -57,11 +57,29 @@ export default function BehavioralPage() {
   const [selectedQ, setSelectedQ] = useState<number | null>(null);
   const [answer, setAnswer] = useState("");
   const [sessionQuestions, setSessionQuestions] = useState(() => shuffle(QUESTIONS).slice(0, QUESTIONS_PER_SET));
+  const [evaluating, setEvaluating] = useState(false);
+  const [feedback, setFeedback] = useState<{ score: number; feedback: string; strengths: string[]; improvements: string[]; starAnalysis: { situation: string; task: string; action: string; result: string }; nextQuestion: string } | null>(null);
 
   const newSet = () => {
     setSessionQuestions(shuffle(QUESTIONS).slice(0, QUESTIONS_PER_SET));
     setSelectedQ(null);
     setAnswer("");
+    setFeedback(null);
+  };
+
+  const getFeedback = async () => {
+    if (selectedQ === null || !answer.trim() || evaluating) return;
+    setEvaluating(true);
+    setFeedback(null);
+    try {
+      const res = await fetch("/api/interview/evaluate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: sessionQuestions[selectedQ].q, answer }),
+      });
+      if (res.ok) setFeedback(await res.json());
+    } catch (e) { console.error("behavioral feedback failed", e); }
+    setEvaluating(false);
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
@@ -92,7 +110,7 @@ export default function BehavioralPage() {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  onClick={() => setSelectedQ(i)}
+                  onClick={() => { setSelectedQ(i); setFeedback(null); setAnswer(""); }}
                   className={`w-full text-left p-4 rounded-xl border transition-all ${
                     selectedQ === i ? "bg-indigo-500/10 border-indigo-500/30" : "bg-white/[0.02] border-white/5 hover:border-white/10"
                   }`}>
@@ -125,16 +143,74 @@ export default function BehavioralPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-500">{answer.length} characters</span>
                     <div className="flex gap-2">
-                      <button onClick={() => setAnswer("")}
+                      <button onClick={() => { setAnswer(""); setFeedback(null); }}
                         className="px-3 py-1.5 text-xs bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
                         Clear
                       </button>
                       <button
-                        className="px-3 py-1.5 text-xs bg-indigo-500 hover:bg-indigo-400 rounded-lg transition-colors font-medium">
-                        Get AI Feedback
+                        onClick={getFeedback}
+                        disabled={!answer.trim() || evaluating}
+                        className="px-3 py-1.5 text-xs bg-indigo-500 hover:bg-indigo-400 rounded-lg transition-colors font-medium disabled:opacity-50 flex items-center gap-1.5">
+                        {evaluating ? <><Loader2 className="w-3 h-3 animate-spin" /> Analyzing...</> : "Get AI Feedback"}
                       </button>
                     </div>
                   </div>
+
+                  {feedback && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-4">
+                      <div className="flex items-center gap-5 p-4 rounded-xl bg-gradient-to-r from-indigo-500/5 to-purple-500/5 border border-indigo-500/20">
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
+                          style={{ background: `conic-gradient(${feedback.score >= 7 ? "#10b981" : feedback.score >= 5 ? "#f59e0b" : "#ef4444"} ${feedback.score * 10}%, rgba(255,255,255,0.08) 0)` }}>
+                          <div className="w-12 h-12 rounded-full bg-[#111118] flex items-center justify-center">{Math.round(feedback.score * 10)}%</div>
+                        </div>
+                        <div>
+                          <div className={`font-semibold ${feedback.score >= 7 ? "text-green-400" : feedback.score >= 5 ? "text-amber-400" : "text-red-400"}`}>
+                            {feedback.score >= 7 ? "Strong answer" : feedback.score >= 5 ? "Good, but improvable" : "Needs work"}
+                          </div>
+                          <p className="text-xs text-slate-400 mt-1">{feedback.feedback}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        <div className="p-3 rounded-xl bg-green-500/5 border border-green-500/10">
+                          <h4 className="text-xs font-semibold text-green-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /> Strengths</h4>
+                          <ul className="space-y-1.5">
+                            {feedback.strengths.map((s, i) => <li key={i} className="text-xs text-slate-400 flex gap-1.5"><span className="text-green-400">•</span>{s}</li>)}
+                          </ul>
+                        </div>
+                        <div className="p-3 rounded-xl bg-red-500/5 border border-red-500/10">
+                          <h4 className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"><XCircle className="w-3.5 h-3.5" /> Improvements</h4>
+                          <ul className="space-y-1.5">
+                            {feedback.improvements.map((s, i) => <li key={i} className="text-xs text-slate-400 flex gap-1.5"><span className="text-red-400">•</span>{s}</li>)}
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">STAR Analysis</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          {[
+                            { label: "Situation", value: feedback.starAnalysis.situation },
+                            { label: "Task", value: feedback.starAnalysis.task },
+                            { label: "Action", value: feedback.starAnalysis.action },
+                            { label: "Result", value: feedback.starAnalysis.result },
+                          ].map((s, i) => (
+                            <div key={i} className="p-2 rounded-lg bg-white/[0.02] border border-white/5">
+                              <div className="text-[10px] text-slate-500 uppercase mb-1">{s.label}</div>
+                              <div className="text-xs text-slate-300">{s.value}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {feedback.nextQuestion && (
+                        <div className="p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
+                          <p className="text-xs text-slate-500 mb-1">Follow-up to practice:</p>
+                          <p className="text-sm">{feedback.nextQuestion}</p>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
                 </motion.div>
               ) : (
                 <div className="rounded-xl border border-white/5 p-12 text-center" style={{ background: "rgba(17,17,24,0.5)" }}>

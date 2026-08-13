@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Sparkles, MessageSquare, Lightbulb, Target, Bookmark, Zap, ChevronRight, Send, TrendingUp, Clock, Award, Star, BarChart3, GraduationCap } from "lucide-react";
+import { ArrowLeft, Sparkles, MessageSquare, Lightbulb, Target, Bookmark, Zap, ChevronRight, Send, TrendingUp, Clock, Award, Star, BarChart3, GraduationCap, Loader2 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import PageTour from "@/components/PageTour";
 
@@ -37,6 +37,10 @@ export default function MentorPage() {
   const [loading, setLoading] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([
+    { role: "assistant", content: "Hi! I'm your AI Mentor. I've analyzed your preparation data. Your biggest opportunity is in Dynamic Programming. Would you like me to create a focused study plan?" },
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +59,38 @@ export default function MentorPage() {
   }, [router]);
 
   const logout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); };
+
+  const sendChat = async (override?: string) => {
+    const text = (override ?? message).trim();
+    if (!text || chatLoading) return;
+    setMessage("");
+    setChatMessages(prev => [...prev, { role: "user", content: text }]);
+    setChatLoading(true);
+    try {
+      const res = await fetch("/api/ai/agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text,
+          history: chatMessages.map(m => ({ role: m.role, content: m.content })),
+        }),
+      });
+      const data = await res.json();
+      setChatMessages(prev => [...prev, { role: "assistant", content: data.response || "Let me think about that and get back to you." }]);
+    } catch (e) { console.error("mentor chat failed", e); }
+    setChatLoading(false);
+  };
+
+  const quickAction = (action: string) => {
+    if (action === "Mock Interview") { router.push("/interview-preparation/mock-interview"); return; }
+    if (action === "Track Progress") { router.push("/interview-preparation/analytics"); return; }
+    const prompts: Record<string, string> = {
+      "Review Weak Areas": "What are my weakest areas right now and how should I improve them?",
+      "Daily Challenge": "Give me a coding challenge to practice today.",
+    };
+    setChatOpen(true);
+    if (prompts[action]) sendChat(prompts[action]);
+  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -86,7 +122,8 @@ export default function MentorPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-6" data-tour="prep-mentor-actions">
             {QUICK_ACTIONS.map((a, i) => (
               <motion.button key={a.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
-                className="p-3 rounded-xl border border-white/5 hover:border-white/10 transition-all text-left"
+                onClick={() => quickAction(a.label)}
+                className="p-3 rounded-xl border border-white/5 hover:border-white/10 transition-all text-left cursor-pointer"
                 style={{ background: "rgba(17,17,24,0.5)" }}>
                 <div className="text-xs font-medium">{a.label}</div>
                 <div className="text-[10px] text-slate-500 mt-0.5">{a.desc}</div>
@@ -148,13 +185,21 @@ export default function MentorPage() {
             </button>
             {chatOpen && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4">
-                <div className="p-3 rounded-lg border border-white/5 mb-2 max-h-32 overflow-y-auto text-left">
-                  <p className="text-xs text-slate-400">Hi! I'm your AI Mentor. I've analyzed your preparation data. Your biggest opportunity is in Dynamic Programming. Would you like me to create a focused study plan?</p>
+                <div className="p-3 rounded-lg border border-white/5 mb-2 max-h-44 overflow-y-auto text-left space-y-2">
+                  {chatMessages.map((m, i) => (
+                    <div key={i} className={`text-xs ${m.role === "user" ? "text-indigo-300 text-right" : "text-slate-300"}`}>
+                      <span className={`inline-block px-2.5 py-1.5 rounded-lg ${m.role === "user" ? "bg-indigo-500/15 border border-indigo-500/20" : "bg-white/[0.03] border border-white/5"}`}>{m.content}</span>
+                    </div>
+                  ))}
+                  {chatLoading && (
+                    <div className="text-xs text-slate-500 flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> AI Mentor is thinking...</div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <input value={message} onChange={e => setMessage(e.target.value)} placeholder="Ask anything..."
+                  <input value={message} onChange={e => setMessage(e.target.value)} onKeyDown={e => { if (e.key === "Enter") sendChat(); }} placeholder="Ask anything..."
                     className="flex-1 p-2 rounded-lg bg-white/[0.02] border border-white/10 text-xs outline-none focus:border-indigo-500/50 transition-all" />
-                  <button className="p-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 transition-all">
+                  <button onClick={() => sendChat()} disabled={!message.trim() || chatLoading}
+                    className="p-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 transition-all disabled:opacity-50">
                     <Send className="w-3.5 h-3.5" />
                   </button>
                 </div>

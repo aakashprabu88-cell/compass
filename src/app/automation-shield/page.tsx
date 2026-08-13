@@ -136,7 +136,7 @@ export default function AutomationShieldPage() {
                   {growthIcon(career.growthOutlook)}
                   <span className="text-xs text-slate-400 capitalize">{career.growthOutlook}</span>
                   <span className="text-xs text-slate-600">•</span>
-                  <span className="text-xs text-slate-400">₹{(career.salaryMin / 1000).toFixed(0)}L - ₹{(career.salaryMax / 1000).toFixed(0)}L</span>
+                  <span className="text-xs text-slate-400">₹{(career.salaryMin / 100000).toFixed(1)}L - ₹{(career.salaryMax / 100000).toFixed(1)}L</span>
                 </div>
 
                 <p className="text-xs text-slate-500 leading-relaxed">{career.futureOutlook}</p>
