@@ -1,5 +1,5 @@
-﻿import CompassSwipe from "@/components/CompassSwipe";
+﻿import AppIntro from "@/components/AppIntro";
 
 export default function HomePage() {
-  return <CompassSwipe />;
+  return <AppIntro />;
 }

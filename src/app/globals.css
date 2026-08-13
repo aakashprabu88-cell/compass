@@ -58,6 +58,137 @@ body {
   animation: float 6s ease-in-out infinite;
 }
 
+/* ===== App intro (cinematic 35s entry) ===== */
+.intro-root {
+  --i-bg: #05070d;
+  --i-blue: #38bdf8;
+  --i-cyan: #7dd3fc;
+  --i-white: #f8fafc;
+  --i-muted: #94a3b8;
+  --i-line: rgba(125, 211, 252, 0.25);
+  --i-glow: 0 0 24px rgba(56, 189, 248, 0.45);
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--i-bg);
+  color: var(--i-white);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.intro-root .i-stage {
+  position: relative;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  background: radial-gradient(120% 90% at 50% 0%, #0b1220 0%, var(--i-bg) 55%, #04060b 100%);
+  overflow: hidden;
+}
+.intro-root .i-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(56,189,248,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56,189,248,0.05) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(75% 75% at 50% 50%, #000 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(75% 75% at 50% 50%, #000 30%, transparent 100%);
+  animation: iGridDrift 22s linear infinite;
+}
+@keyframes iGridDrift { from { background-position: 0 0, 0 0; } to { background-position: 0 56px, 56px 0; } }
+.intro-root .i-aurora {
+  position: absolute; inset: -20%;
+  background:
+    radial-gradient(40% 35% at 25% 30%, rgba(56,189,248,0.14), transparent 60%),
+    radial-gradient(45% 40% at 75% 65%, rgba(125,211,252,0.10), transparent 60%);
+  animation: iPulse 8s ease-in-out infinite;
+}
+@keyframes iPulse { 0%,100% { opacity: .7; } 50% { opacity: 1; } }
+
+.intro-root .scene { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity .6s ease, visibility .6s; }
+.intro-root .scene.active { opacity: 1; visibility: visible; }
+.intro-root .center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+.intro-root h1 { font-size: clamp(30px, 4.2vw, 58px); font-weight: 800; letter-spacing: .5px; line-height: 1.15; }
+.intro-root h2 { font-size: clamp(34px, 5vw, 68px); font-weight: 800; letter-spacing: .5px; }
+.intro-root .sub { margin-top: 14px; font-size: clamp(16px, 1.7vw, 24px); color: var(--i-cyan); font-weight: 500; }
+.intro-root .muted { color: var(--i-muted); }
+.intro-root .text-gradient {
+  background: linear-gradient(90deg, #e0f2fe, var(--i-blue) 55%, var(--i-cyan));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.intro-root .line-in > * { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s ease; }
+.intro-root .scene.active .line-in > * { opacity: 1; transform: none; }
+.intro-root .scene.active .line-in > *:nth-child(2) { transition-delay: .25s; }
+.intro-root .scene.active .line-in > *:nth-child(3) { transition-delay: .5s; }
+
+.intro-root .compass-wrap { position: relative; width: 190px; height: 190px; margin: 0 auto 26px; }
+.intro-root .compass {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid var(--i-line);
+  box-shadow: inset 0 0 30px rgba(56,189,248,0.25), var(--i-glow);
+  background: radial-gradient(circle at 50% 42%, rgba(56,189,248,0.12), rgba(5,7,13,0.9) 70%);
+}
+.intro-root .compass::before, .intro-root .compass::after {
+  content: ""; position: absolute; inset: 12%; border-radius: 50%;
+  border: 1px dashed rgba(125,211,252,0.4);
+}
+.intro-root .compass::after { inset: 26%; border-style: solid; border-width: 1px; }
+.intro-root .tick { position: absolute; left: 50%; top: 0; width: 2px; height: 6px; margin-left: -1px; background: var(--i-cyan); opacity: .8; transform-origin: 50% 95px; }
+.intro-root .dir { position: absolute; font-weight: 700; font-size: 13px; letter-spacing: 1px; color: var(--i-cyan); }
+.intro-root .dir.n { top: 12px; left: 50%; transform: translateX(-50%); }
+.intro-root .dir.s { bottom: 12px; left: 50%; transform: translateX(-50%); }
+.intro-root .dir.e { right: 14px; top: 50%; transform: translateY(-50%); }
+.intro-root .dir.w { left: 14px; top: 50%; transform: translateY(-50%); }
+.intro-root .needle { position: absolute; left: 50%; top: 50%; width: 6px; height: 72px; margin: -72px 0 0 -3px; border-radius: 3px; transform-origin: 50% 36px; }
+.intro-root .needle.nh { background: linear-gradient(180deg, var(--i-blue), #0ea5e9); box-shadow: 0 0 12px rgba(56,189,248,0.8); }
+.intro-root .needle.sh { background: linear-gradient(180deg, #64748b, #334155); }
+.intro-root .hub { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px; border-radius: 50%; background: var(--i-cyan); box-shadow: 0 0 18px rgba(56,189,248,0.9); }
+
+.intro-root .float-item { position: absolute; font-size: 14px; padding: 8px 14px; border: 1px solid var(--i-line); border-radius: 999px; background: rgba(11,18,32,0.85); color: var(--i-muted); animation: iFloatY 3.4s ease-in-out infinite; }
+.intro-root .float-item strong { color: var(--i-cyan); font-weight: 600; }
+@keyframes iFloatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+.intro-root .qm { font-weight: 800; color: var(--i-blue); font-size: 22px; animation: iFloatY 4s ease-in-out infinite; }
+
+.intro-root .student { position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); width: 96px; height: 130px; }
+.intro-root .student .head { width: 40px; height: 40px; border-radius: 50%; margin: 0 auto; background: linear-gradient(180deg, #e2e8f0, #94a3b8); }
+.intro-root .student .body { width: 62px; height: 74px; margin: 6px auto 0; border-radius: 28px 28px 14px 14px; background: linear-gradient(180deg, #1e293b, #0f172a); border: 1px solid var(--i-line); }
+.intro-root .student.confused { animation: iWobble 3s ease-in-out infinite; }
+@keyframes iWobble { 0%,100% { transform: translateX(-50%) rotate(0); } 25% { transform: translateX(-54%) rotate(-3deg); } 75% { transform: translateX(-46%) rotate(3deg); } }
+.intro-root .student.confident { animation: iBob 2.6s ease-in-out infinite; }
+@keyframes iBob { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-8px); } }
+.intro-root .glow-ring { position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%); width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, rgba(56,189,248,0.25), transparent 65%); filter: blur(6px); }
+
+.intro-root .feature { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 8vw; }
+.intro-root .f-icon { width: 84px; height: 84px; margin-bottom: 26px; display: flex; align-items: center; justify-content: center; border-radius: 22px; border: 1px solid var(--i-line); background: rgba(11,18,32,0.9); box-shadow: var(--i-glow), inset 0 0 24px rgba(56,189,248,0.12); }
+.intro-root .f-icon svg { width: 44px; height: 44px; stroke: var(--i-blue); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.intro-root .f-kicker { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: var(--i-blue); margin-bottom: 14px; }
+.intro-root .f-title { font-size: clamp(28px, 3.6vw, 48px); font-weight: 800; }
+.intro-root .f-desc { margin-top: 16px; font-size: clamp(15px, 1.6vw, 21px); color: var(--i-muted); max-width: 720px; }
+.intro-root .pop { animation: iPop .55s ease; }
+@keyframes iPop { 0% { transform: scale(.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+.intro-root .status-bar { position: absolute; top: 6%; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; align-items: center; font-size: 12px; letter-spacing: 3px; color: var(--i-muted); text-transform: uppercase; }
+.intro-root .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--i-blue); animation: iBlink 1s infinite; }
+@keyframes iBlink { 50% { opacity: .2; } }
+
+.intro-root .path { position: absolute; left: 0; right: 0; top: 50%; height: 2px; transform: translateY(-50%); background: linear-gradient(90deg, transparent, var(--i-blue), var(--i-cyan), transparent); }
+.intro-root .node { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--i-cyan); box-shadow: 0 0 12px rgba(56,189,248,0.9); transform: translate(-50%, -50%); opacity: 0; }
+.intro-root .node span { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); font-size: 12px; letter-spacing: 1px; white-space: nowrap; color: var(--i-muted); text-transform: uppercase; }
+
+.intro-root .logo-badge { width: 96px; height: 96px; margin: 0 auto 24px; position: relative; }
+.intro-root .cta { display: inline-block; margin-top: 34px; padding: 15px 42px; border-radius: 999px; font-size: 17px; font-weight: 700; letter-spacing: .5px; color: #06121f; background: linear-gradient(90deg, var(--i-blue), var(--i-cyan)); box-shadow: 0 0 34px rgba(56,189,248,0.55); animation: iCtaPulse 2s ease-in-out infinite; }
+@keyframes iCtaPulse { 0%,100% { box-shadow: 0 0 24px rgba(56,189,248,0.4); } 50% { box-shadow: 0 0 46px rgba(56,189,248,0.75); } }
+
+.intro-root .tbar { position: absolute; left: 6%; right: 6%; bottom: 5%; height: 2px; background: rgba(125,211,252,0.15); border-radius: 2px; }
+.intro-root .tfill { height: 100%; width: 0; background: linear-gradient(90deg, var(--i-blue), var(--i-cyan)); box-shadow: 0 0 8px rgba(56,189,248,0.6); }
+
+.intro-root .i-controls { position: absolute; bottom: 12px; right: 18px; display: flex; gap: 14px; font-size: 11px; letter-spacing: 2px; color: rgba(148,163,184,0.6); text-transform: uppercase; }
+.intro-root .i-controls button { background: none; border: none; color: inherit; font: inherit; letter-spacing: inherit; cursor: pointer; text-transform: uppercase; padding: 0; }
+.intro-root .i-controls button:hover { color: var(--i-cyan); }
+
+.intro-root .i-spin { animation: iSpin 6s linear infinite; }
+@keyframes iSpin { to { transform: rotate(360deg); } }
+
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
